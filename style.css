@@ -1,0 +1,174 @@
+/* Genel Ayarlar */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  background-color: #f4f7f6; /* Sayfa arka planı hafif gri */
+  color: #333;
+}
+
+/* --- ÜST MENÜ (TOPBAR) --- */
+.topbar {
+  background-color: #ff8c00; /* Turuncu renk */
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.8rem 2rem;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.brand {
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+.topnav__link {
+  color: white;
+  text-decoration: none;
+  margin-left: 20px;
+  font-weight: 500;
+  transition: opacity 0.3s;
+}
+
+.topnav__link:hover {
+  opacity: 0.8;
+}
+
+.user__pill {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 5px 15px;
+  border-radius: 20px;
+}
+
+/* --- LAYOUT (YAN YANA DÜZEN) --- */
+.layout {
+  display: flex;
+  min-height: calc(100vh - 60px); /* Ekranın tamamını kapla */
+}
+
+/* --- YAN MENÜ (SIDEBAR) --- */
+.sidebar {
+  width: 240px;
+  background-color: #ffffff;
+  border-right: 1px solid #ddd;
+  padding: 20px;
+  display: flex;
+  flex-direction: column; /* Linkleri alt alta sıralar */
+}
+
+.sidebar__title {
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  color: #888;
+  margin-bottom: 15px;
+  letter-spacing: 1px;
+}
+
+.sidebar__link {
+  text-decoration: none;
+  color: #444;
+  padding: 10px 12px;
+  margin-bottom: 5px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.sidebar__link:hover {
+  background-color: #fff4e6; /* Çok açık turuncu */
+  color: #ff8c00;
+}
+
+.sidebar__link.is-active {
+  background-color: #ff8c00;
+  color: white;
+}
+
+.sidebar__card {
+  margin-top: auto; /* İpucu kartını en alta iter */
+  background: #f9f9f9;
+  padding: 15px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+/* --- ANA İÇERİK (CONTENT) --- */
+.content {
+  flex: 1;
+  padding: 30px;
+}
+
+/* --- BEYAZ CARDBOARD YAPISI --- */
+.card {
+  background: white;
+  padding: 25px;
+  margin-bottom: 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05); /* Yumuşak gölge */
+}
+
+.card__title, .card__subtitle {
+  margin-bottom: 15px;
+  color: #222;
+}
+
+/* --- TABLO TASARIMI --- */
+.tableWrap {
+  overflow-x: auto;
+  margin-top: 15px;
+}
+
+.dataTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.dataTable th {
+  background-color: #f8f9fa;
+  text-align: left;
+  padding: 12px;
+  border-bottom: 2px solid #eee;
+}
+
+.dataTable td {
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+}
+
+.dataTable tr:hover {
+  background-color: #fafafa;
+}
+
+/* --- BADGES --- */
+.badge {
+  display: inline-block;
+  background: #eee;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  margin-right: 5px;
+}
+/* Araba Kartı ve Resim Ayarları */
+.image-card {
+  text-align: center; /* Başlık ve içeriği ortalar */
+}
+
+.image-container {
+  width: 100%;
+  max-width: 800px; /* Resmin çok devasa olmaması için bir sınır */
+  margin: 20px auto; /* Üstten boşluk ve ortalama */
+  border-radius: 8px;
+  overflow: hidden; /* Köşelerin resimle birlikte yuvarlanması için */
+}
+
+.responsive-image {
+  width: 100%;      /* Kartın genişliğine yayılır */
+  height: auto;     /* Yükseklik oranını otomatik ayarlar (Görüntü bozulmaz) */
+  display: block;
+  object-fit: contain; /* Resmin kesilmeden kutuya sığmasını sağlar */
+  image-rendering: auto; /* Tarayıcının en iyi netlikte çizmesini sağlar */
+}
