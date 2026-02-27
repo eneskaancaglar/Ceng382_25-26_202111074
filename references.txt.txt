@@ -1,1 +1,7 @@
+1. HAFTA: Sayfa oluşturuldu üç bölgeye ayrıldı resim eklendi.
+
 https://gemini.google.com/app/c15ccd289b465222
+
+2. HAFTA: Sayfadaki üç bölge için buton eklendi(bölgelerin altında ortada). İlk buton yazıyı değiştirdi, ikinci buton sıralama yaptı(üç farklı sıralama), üçüncü buton resmi değiştirdi.
+
+https://gemini.google.com/app/520757daa171c54c
