@@ -1,114 +1,192 @@
 <!doctype html>
 <html lang="tr">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>HTML + CSS Demo</title>
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HTML + CSS Demo</title>
+    <link rel="stylesheet" href="style.css" />
 </head>
 
 <body>
-  <!-- TOP NAV -->
-  <header class="topbar">
-    <div class="brand">CENG 382</div>
+    <header class="topbar">
+        <div class="brand">CENG 382</div>
 
-    <nav class="topnav" aria-label="Üst Menü">
-      <a class="topnav__link is-active" href="#">Anasayfa</a>
-      <a class="topnav__link" href="#">Duyurular</a>
-      <a class="topnav__link" href="#">Notlar</a>
-      <a class="topnav__link" href="#">İletişim</a>
-    </nav>
+        <nav class="topnav" aria-label="Üst Menü">
+            <a class="topnav__link is-active" href="#">Anasayfa</a>
+            <a class="topnav__link" href="#">Duyurular</a>
+            <a class="topnav__link" href="#">Notlar</a>
+            <a class="topnav__link" href="#">İletişim</a>
+        </nav>
 
-    <div class="user">
-      <span class="user__pill">ENES KAAN ÇAĞLAR 202111074</span>
+        <div class="user">
+            <span class="user__pill">ENES KAAN ÇAĞLAR 202111074</span>
+        </div>
+    </header>
+
+    <div class="layout">
+        <aside class="sidebar" aria-label="Yan Menü">
+            <h2 class="sidebar__title">Menü</h2>
+            <a class="sidebar__link is-active" href="#">Dashboard</a>
+            <a class="sidebar__link" href="#">Ödevler</a>
+            <a class="sidebar__link" href="#">Kaynaklar</a>
+            <a class="sidebar__link" href="#">Ders Planı</a>
+            <a class="sidebar__link" href="#">Ayarlar</a>
+
+            <div class="sidebar__card">
+                <h3 class="sidebar__cardTitle">İpucu</h3>
+                <p class="sidebar__cardText">
+                    Bu sayfa: header + aside + main düzenini gösterir.
+                </p>
+            </div>
+        </aside>
+
+        <main class="content">
+
+            <section class="card">
+                <h1 class="card__title"> HTML & CSS Sayfa İskeleti</h1>
+
+                <p class="card__text" id="introText">
+                    1.HAFTA: Bu örnekte <strong>üst menü</strong>, <strong>yan menü</strong> og ortada
+                    <strong>3x5 tablo</strong> bulunuyor. Öğrenciler için sınıfta “kutu modeli, padding,
+                    margin, border, hover, active” gibi konuları göstermek için ideal.
+                </p>
+                
+                <div class="badges">
+                    <span class="badge">HTML Semantik</span>
+                    <span class="badge">Flexbox</span>
+                    <span class="badge">Tablo</span>
+                    <span class="badge">Hover</span>
+                </div>
+
+                <div class="cardActions">
+                    <button class="actionBtn" id="btnText">Yazıyı Değiştir</button>
+                </div>
+            </section>
+
+            <section class="card">
+                <h2 class="card__subtitle">Örnek Veri Tablosu (3 x 5)</h2>
+
+                <div class="tableWrap">
+                    <table class="dataTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Öğrenci</th>
+                                <th>Vize</th>
+                                <th>Final</th>
+                                <th>Harf</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            <tr>
+                                <td>1</td>
+                                <td>Ayşe Kaya</td>
+                                <td>78</td>
+                                <td>85</td>
+                                <td>BA</td>
+                            </tr>
+                            <tr>
+                                <td>2</td>
+                                <td>Mehmet Demir</td>
+                                <td>65</td>
+                                <td>72</td>
+                                <td>CB</td>
+                            </tr>
+                            <tr>
+                                <td>3</td>
+                                <td>Elif Yılmaz</td>
+                                <td>90</td>
+                                <td>93</td>
+                                <td>AA</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p class="muted">Not: Bu tablo 3 satır (öğrenci) ve 5 sütun içerir.</p>
+
+                <div class="cardActions">
+                    <button class="actionBtn" id="btnSortName">İsme göre sırala</button>
+                    <button class="actionBtn" id="btnSortVize">Vize</button>
+                    <button class="actionBtn" id="btnSortFinal">Final</button>
+                </div>
+            </section>
+
+            <section class="card image-card">
+
+                <div class="image-container">
+                    <img id="featuredImage" src="resimler/araba.jpeg" alt="Araba Resmi" class="responsive-image">
+                </div>
+
+
+                <div class="cardActions">
+                    <button class="actionBtn" id="btnImage">Resmi Değiştir</button>
+                </div>
+            </section>
+
+            <footer class="footer">
+                <span>© 2026 - Web Programming</span>
+                <span class="footer__sep">•</span>
+                <a class="footer__link" href="#">Gizlilik</a>
+                <a class="footer__link" href="#">Yardım</a>
+            </footer>
+        </main>
     </div>
-  </header>
 
-  <!-- PAGE LAYOUT -->
-  <div class="layout">
-    <!-- SIDE MENU -->
-    <aside class="sidebar" aria-label="Yan Menü">
-      <h2 class="sidebar__title">Menü</h2>
-      <a class="sidebar__link is-active" href="#">Dashboard</a>
-      <a class="sidebar__link" href="#">Ödevler</a>
-      <a class="sidebar__link" href="#">Kaynaklar</a>
-      <a class="sidebar__link" href="#">Ders Planı</a>
-      <a class="sidebar__link" href="#">Ayarlar</a>
+    <script>
+        // 1) Yazı değiştirme
+        const btnText = document.getElementById("btnText");
+        const introText = document.getElementById("introText");
 
-      <div class="sidebar__card">
-        <h3 class="sidebar__cardTitle">İpucu</h3>
-        <p class="sidebar__cardText">
-          Bu sayfa: header + aside + main düzenini gösterir.
-        </p>
-      </div>
-    </aside>
+        btnText.addEventListener("click", () => {
+            introText.innerHTML = `
+                <strong>2. HAFTA: Bu hafta hedef:</strong> Semantik etiketlerle (header, nav, aside, main, footer)
+                doğru sayfa iskeleti kurmak. Flexbox ile hizalama, hover efektleri ve kutu modeli
+                (padding/margin/border) pratikleri yapacağız.<br/>
+                
+              `;
+        });
 
-    <!-- MAIN CONTENT -->
-    <main class="content">
-      <section class="card">
-        <h1 class="card__title">1. Hafta: HTML & CSS Sayfa İskeleti</h1>
-        <p class="card__text">
-          Bu örnekte <strong>üst menü</strong>, <strong>yan menü</strong> ve ortada
-          <strong>3x5 tablo</strong> bulunuyor. Öğrenciler için sınıfta “kutu modeli, padding,
-          margin, border, hover, active” gibi konuları göstermek için ideal.
-        </p>
+        // 2) Tablo sort
+        const table = document.querySelector(".dataTable");
+        const tbody = table.querySelector("tbody");
 
-        <div class="badges">
-          <span class="badge">HTML Semantik</span>
-          <span class="badge">Flexbox</span>
-          <span class="badge">Tablo</span>
-          <span class="badge">Hover</span>
-        </div>
-      </section>
+        function sortTableBy(colIndex, type = "text") {
+            const rows = Array.from(tbody.querySelectorAll("tr"));
 
-      <section class="card">
-        <h2 class="card__subtitle">Örnek Veri Tablosu (3 x 5)</h2>
+            rows.sort((a, b) => {
+                const aVal = a.children[colIndex].textContent.trim();
+                const bVal = b.children[colIndex].textContent.trim();
 
-        <div class="tableWrap">
-          <table class="dataTable">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Öğrenci</th>
-                <th>Vize</th>
-                <th>Final</th>
-                <th>Harf</th>
-              </tr>
-            </thead>
+                if (type === "number") return Number(aVal) - Number(bVal);
+                return aVal.localeCompare(bVal, "tr", { sensitivity: "base" });
+            });
 
-            <tbody>
-              <tr>
-                <td>1</td><td>Ayşe Kaya</td><td>78</td><td>85</td><td>BA</td>
-              </tr>
-              <tr>
-                <td>2</td><td>Mehmet Demir</td><td>65</td><td>72</td><td>CB</td>
-              </tr>
-              <tr>
-                <td>3</td><td>Elif Yılmaz</td><td>90</td><td>93</td><td>AA</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+            tbody.innerHTML = "";
+            rows.forEach(r => tbody.appendChild(r));
 
-        <p class="muted">
-          Not: Bu tablo 3 satır (öğrenci) ve 5 sütun içerir.
-        </p>
-      </section>
-      <section class="card image-card">
-      <h2 class="card__subtitle">Öne Çıkan Araç</h2>
-      <div class="image-container">
-        <img src="resimler/araba.jpeg" alt="Araba Resmi" class="responsive-image">
-      </div>
-      <p class="muted">Görsel kalitesi korunarak ölçeklendirilmiştir.</p>
-    </section>  
+            // sıra numarasını güncelle
+            Array.from(tbody.querySelectorAll("tr")).forEach((r, i) => {
+                r.children[0].textContent = i + 1;
+            });
+        }
 
-      <footer class="footer">
-        <span>© 2026 - Web Programming</span>
-        <span class="footer__sep">•</span>
-        <a class="footer__link" href="#">Gizlilik</a>
-        <a class="footer__link" href="#">Yardım</a>
-      </footer>
-    </main>
-  </div>
+        document.getElementById("btnSortName").addEventListener("click", () => sortTableBy(1, "text"));
+        document.getElementById("btnSortVize").addEventListener("click", () => sortTableBy(2, "number"));
+        document.getElementById("btnSortFinal").addEventListener("click", () => sortTableBy(3, "number"));
+
+        // 3) Resim değiştirme
+        const btnImage = document.getElementById("btnImage");
+        const featuredImage = document.getElementById("featuredImage");
+
+        const img1 = "resimler/araba.jpeg";
+        const img2 = "resimler/araba2.jpeg"; // 2. resmi bu isimle ekle (veya yolu değiştir)
+
+        btnImage.addEventListener("click", () => {
+            const current = featuredImage.getAttribute("src");
+            featuredImage.setAttribute("src", current === img1 ? img2 : img1);
+        });
+    </script>
 </body>
 </html>
