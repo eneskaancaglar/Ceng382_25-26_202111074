@@ -46,11 +46,11 @@
                 <h1 class="card__title"> HTML & CSS Sayfa İskeleti</h1>
 
                 <p class="card__text" id="introText">
-                    1.HAFTA: Bu örnekte <strong>üst menü</strong>, <strong>yan menü</strong> og ortada
+                    1.HAFTA: Bu örnekte <strong>üst menü</strong>, <strong>yan menü</strong> ve ortada
                     <strong>3x5 tablo</strong> bulunuyor. Öğrenciler için sınıfta “kutu modeli, padding,
                     margin, border, hover, active” gibi konuları göstermek için ideal.
                 </p>
-                
+
                 <div class="badges">
                     <span class="badge">HTML Semantik</span>
                     <span class="badge">Flexbox</span>
@@ -114,15 +114,52 @@
             </section>
 
             <section class="card image-card">
-
                 <div class="image-container">
                     <img id="featuredImage" src="resimler/araba.jpeg" alt="Araba Resmi" class="responsive-image">
                 </div>
 
-
                 <div class="cardActions">
                     <button class="actionBtn" id="btnImage">Resmi Değiştir</button>
                 </div>
+            </section>
+
+            <section class="card fxCard">
+                <h2 class="card__subtitle">Etkileşimli Animasyon</h2>
+                <p class="muted">Hız 2x, daha fazla gezinir, iz ince ve kalıcı değil. Arkaplan SİYAH.</p>
+
+                <div class="fxWrap">
+                    <canvas id="fxCanvas" aria-label="Mouse ile etkileşimli animasyon"></canvas>
+                    <div class="fxHint">🖱️ Hareket ettir</div>
+                </div>
+            </section>
+
+            <!-- YENİ CARDBOARD: + ANOMALİSİ -->
+            <section class="card">
+                <h2 class="card__subtitle">JavaScript “+” Anomalisi (String + Number)</h2>
+
+                <p class="muted">
+                    JavaScript’te <strong>+</strong> operatörü iki işi birden yapar:
+                    <strong>sayı toplama</strong> ve <strong>metin birleştirme</strong>.
+                    Eğer operandlardan biri <strong>string</strong> ise, JavaScript diğerini de
+                    string’e çevirir ve <strong>toplamak yerine birleştirir</strong>.
+                    Bu yüzden bazen “anomali” gibi görünen sonuçlar oluşur.
+                </p>
+
+                <pre style="background:#f8f9fa; padding:14px; border-radius:10px; overflow:auto; margin-top:12px;">
+'10' + 5          // "105"   (5 sayısı string'e çevrilip birleştirilir)
+10 + '5'          // "105"
+
+'10' - 5          // 5       (- operatörü string'i sayıya çevirmeye çalışır)
+Number('10') + 5  // 15      (doğru toplama)
+
+'1' + 2 + 3       // "123"   (soldan sağa: "1"+2 => "12", sonra +3 => "123")
+1 + 2 + '3'       // "33"    (1+2 => 3, sonra 3+"3" => "33")
+        </pre>
+
+                <p class="muted" style="margin-top:10px;">
+                    İpucu: Eğer gerçekten toplama istiyorsan <code>Number(x)</code>, <code>parseInt(x, 10)</code>
+                    veya unary <code>+x</code> kullan.
+                </p>
             </section>
 
             <footer class="footer">
@@ -131,62 +168,10 @@
                 <a class="footer__link" href="#">Gizlilik</a>
                 <a class="footer__link" href="#">Yardım</a>
             </footer>
+
         </main>
     </div>
 
-    <script>
-        // 1) Yazı değiştirme
-        const btnText = document.getElementById("btnText");
-        const introText = document.getElementById("introText");
-
-        btnText.addEventListener("click", () => {
-            introText.innerHTML = `
-                <strong>2. HAFTA: Bu hafta hedef:</strong> Semantik etiketlerle (header, nav, aside, main, footer)
-                doğru sayfa iskeleti kurmak. Flexbox ile hizalama, hover efektleri ve kutu modeli
-                (padding/margin/border) pratikleri yapacağız.<br/>
-                
-              `;
-        });
-
-        // 2) Tablo sort
-        const table = document.querySelector(".dataTable");
-        const tbody = table.querySelector("tbody");
-
-        function sortTableBy(colIndex, type = "text") {
-            const rows = Array.from(tbody.querySelectorAll("tr"));
-
-            rows.sort((a, b) => {
-                const aVal = a.children[colIndex].textContent.trim();
-                const bVal = b.children[colIndex].textContent.trim();
-
-                if (type === "number") return Number(aVal) - Number(bVal);
-                return aVal.localeCompare(bVal, "tr", { sensitivity: "base" });
-            });
-
-            tbody.innerHTML = "";
-            rows.forEach(r => tbody.appendChild(r));
-
-            // sıra numarasını güncelle
-            Array.from(tbody.querySelectorAll("tr")).forEach((r, i) => {
-                r.children[0].textContent = i + 1;
-            });
-        }
-
-        document.getElementById("btnSortName").addEventListener("click", () => sortTableBy(1, "text"));
-        document.getElementById("btnSortVize").addEventListener("click", () => sortTableBy(2, "number"));
-        document.getElementById("btnSortFinal").addEventListener("click", () => sortTableBy(3, "number"));
-
-        // 3) Resim değiştirme
-        const btnImage = document.getElementById("btnImage");
-        const featuredImage = document.getElementById("featuredImage");
-
-        const img1 = "resimler/araba.jpeg";
-        const img2 = "resimler/araba2.jpeg"; // 2. resmi bu isimle ekle (veya yolu değiştir)
-
-        btnImage.addEventListener("click", () => {
-            const current = featuredImage.getAttribute("src");
-            featuredImage.setAttribute("src", current === img1 ? img2 : img1);
-        });
-    </script>
+    <script src="javascript.js"></script>
 </body>
 </html>
