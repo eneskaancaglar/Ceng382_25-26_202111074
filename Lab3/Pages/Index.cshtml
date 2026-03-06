@@ -1,10 +1,45 @@
 ﻿@page
-@model IndexModel
+@model MyRazorAuthApp.Pages.IndexModel
 @{
-    ViewData["Title"] = "Home page";
+    ViewData["Title"] = "Student Grades";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="container mt-4">
+    <h2 class="mb-4">Student Grade Table</h2>
+
+    <div class="d-flex justify-content-end mb-3">
+        <form method="post">
+            <button type="submit" asp-page-handler="Calculate" class="btn btn-primary">
+                Calculate Letter Grades
+            </button>
+        </form>
+    </div>
+
+    <table class="table table-bordered table-striped">
+        <thead class="table-secondary">
+            <tr>
+                <th>#</th>
+                <th>Student</th>
+                <th>Midterm</th>
+                <th>Final</th>
+                <th>Letter Grade</th>
+            </tr>
+        </thead>
+        <tbody>
+            @for (int i = 0; i < Model.StudentNames.Length; i++)
+            {
+                <tr>
+                    <td>@(i + 1)</td>
+                    <td>@Model.StudentNames[i]</td>
+                    <td>@Model.MidtermGrades[i]</td>
+                    <td>@Model.FinalGrades[i]</td>
+                    <td>@Model.LetterGrades[i]</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="alert alert-secondary mt-3">
+        Calculation: 40% Midterm + 60% Final
+    </div>
 </div>
