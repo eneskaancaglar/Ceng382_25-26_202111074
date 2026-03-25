@@ -1,37 +1,32 @@
 ﻿@page
-@model Lab3.Pages.IndexModel
+@model MyRazorAuthApp.Pages.IndexModel
 @{
-    ViewData["Title"] = "CENG 382 Project";
+    ViewData["Title"] = "CENG 382";
     Layout = null;
 }
-
 <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>CENG 382 Project</title>
+    <title>HTML + CSS Demo</title>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            font-family: "Segoe UI", sans-serif;
-            background: #f5f7fb;
-            color: #1f2937;
+            font-family: 'Segoe UI', sans-serif;
+            background: #f0f2f5;
+            color: #1a1a2e;
         }
 
         .topbar {
-            background: #1e293b;
-            color: white;
-            height: 64px;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            background: #1e293b;
+            color: #fff;
             padding: 0 24px;
+            height: 56px;
             position: sticky;
             top: 0;
             z-index: 100;
@@ -40,569 +35,500 @@
         .brand {
             font-size: 1.2rem;
             font-weight: 700;
+            letter-spacing: 1px;
             color: #f8c400;
         }
 
-        .topnav {
-            display: flex;
-            gap: 10px;
-        }
+        .topnav { display: flex; gap: 8px; }
 
-        .topnav a {
+        .topnav__link {
             color: #cbd5e1;
             text-decoration: none;
-            padding: 8px 14px;
-            border-radius: 8px;
-            transition: 0.2s;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 0.88rem;
+            transition: background 0.2s;
         }
 
-        .topnav a:hover {
-            background: #334155;
-            color: white;
-        }
+        .topnav__link:hover { background: #334155; color: #fff; }
+        .topnav__link.is-active { background: #f8c400; color: #1e293b; font-weight: 600; }
 
-        .user-pill {
+        .user__pill {
             background: #334155;
-            padding: 8px 14px;
+            color: #e2e8f0;
+            padding: 5px 14px;
             border-radius: 20px;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
         }
 
-        .page-container {
-            max-width: 1200px;
-            margin: 24px auto;
-            padding: 0 16px;
+        .layout {
+            display: flex;
+            min-height: calc(100vh - 56px);
         }
 
-        .page-title {
-            margin-bottom: 20px;
+        .sidebar {
+            width: 220px;
+            background: #fff;
+            border-right: 1px solid #e2e8f0;
+            padding: 24px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex-shrink: 0;
         }
 
-        .page-title h1 {
-            font-size: 1.8rem;
-            color: #0f172a;
-            margin-bottom: 6px;
+        .sidebar__title {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #94a3b8;
+            margin-bottom: 8px;
         }
 
-        .page-title p {
-            color: #64748b;
+        .sidebar__link {
+            display: block;
+            padding: 8px 12px;
+            border-radius: 8px;
+            color: #475569;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: background 0.2s;
         }
 
-        .cards {
-            display: grid;
-            grid-template-columns: 1fr;
+        .sidebar__link:hover { background: #f1f5f9; color: #1e293b; }
+        .sidebar__link.is-active { background: #fef9c3; color: #92400e; font-weight: 600; }
+
+        .sidebar__card {
+            margin-top: 20px;
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .sidebar__cardTitle { font-size: 0.82rem; font-weight: 600; color: #0369a1; margin-bottom: 4px; }
+        .sidebar__cardText { font-size: 0.78rem; color: #0c4a6e; line-height: 1.5; }
+
+        .content {
+            flex: 1;
+            padding: 28px 32px;
+            display: flex;
+            flex-direction: column;
             gap: 24px;
         }
 
         .card {
-            background: white;
-            border-radius: 18px;
-            padding: 24px;
-            box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+            background: #fff;
+            border-radius: 14px;
+            padding: 24px 28px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.07);
         }
 
-        .card-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 18px;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
+        .card__title { font-size: 1.3rem; font-weight: 700; color: #1e293b; margin-bottom: 12px; }
+        .card__subtitle { font-size: 1.1rem; font-weight: 600; color: #1e293b; margin-bottom: 16px; }
+        .card__text { color: #475569; line-height: 1.7; margin-bottom: 16px; }
 
-        .card-title {
-            font-size: 1.35rem;
-            font-weight: 700;
-            color: #1e293b;
-        }
+        .badges { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; justify-content: center; }
 
-        .card-badge {
-            background: #eef2ff;
-            color: #4338ca;
-            font-size: 0.8rem;
+        .badge {
+            background: #e0f2fe;
+            color: #0369a1;
+            border: 1px solid #bae6fd;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.78rem;
             font-weight: 600;
-            padding: 6px 10px;
-            border-radius: 999px;
         }
 
-        .muted {
-            color: #64748b;
-            font-size: 0.95rem;
-            margin-bottom: 16px;
+        .cardActions {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+            justify-content: center;
         }
 
-        .table-wrap {
-            overflow-x: auto;
+        .actionBtn {
+            background: #1e293b;
+            color: #fff;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: background 0.2s;
         }
 
-        table {
+        .actionBtn:hover { background: #334155; }
+
+        .tableWrap { overflow-x: auto; margin-bottom: 12px; }
+
+        .dataTable {
             width: 100%;
             border-collapse: collapse;
-        }
-
-        th {
-            background: #1e293b;
-            color: white;
-            text-align: left;
-            padding: 12px;
-            font-size: 0.88rem;
-        }
-
-        td {
-            padding: 12px;
-            border-bottom: 1px solid #e5e7eb;
-            font-size: 0.95rem;
-            vertical-align: middle;
-        }
-
-        tr:hover {
-            background: #f8fafc;
-        }
-
-        .avatar-circle {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: #6d28d9;
-            color: white;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
             font-size: 0.9rem;
         }
 
-        .user-photo {
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid #e5e7eb;
-            display: block;
-        }
-
-        .upload-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            align-items: center;
-            margin-bottom: 16px;
-        }
-
-        .file-input {
-            border: 1px solid #d1d5db;
-            padding: 10px;
-            border-radius: 10px;
-            background: #fff;
-            width: 100%;
-            max-width: 420px;
-        }
-
-        .btn {
-            background: #7c3aed;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            padding: 10px 18px;
-            font-size: 0.95rem;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-
-        .btn:hover {
-            background: #6d28d9;
-        }
-
-        .gallery-box {
-            border: 2px dashed #d1d5db;
-            border-radius: 14px;
-            padding: 20px;
-            min-height: 160px;
-            background: #fafafa;
-        }
-
-        .gallery-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            gap: 16px;
-            margin-top: 12px;
-        }
-
-        .gallery-item {
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
-            border: 1px solid #e5e7eb;
-        }
-
-        .gallery-item img {
-            width: 100%;
-            height: 120px;
-            object-fit: cover;
-            display: block;
-        }
-
-        .gallery-item p {
-            padding: 8px;
-            font-size: 0.8rem;
-            color: #475569;
-            word-break: break-word;
-        }
-
-        .empty-text {
-            color: #94a3b8;
-            text-align: center;
-            padding: 30px 10px;
-        }
-
-        .carousel-placeholder {
-            border: 2px dashed #cbd5e1;
-            border-radius: 14px;
-            padding: 30px 20px;
-            text-align: center;
+        .dataTable th {
+            background: #f8fafc;
             color: #64748b;
-            background: #f8fafc;
+            font-weight: 600;
+            text-align: left;
+            padding: 10px 14px;
+            border-bottom: 2px solid #e2e8f0;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-        .carousel-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 16px;
-            margin-top: 12px;
+        .dataTable td {
+            padding: 10px 14px;
+            border-bottom: 1px solid #f1f5f9;
+            color: #334155;
         }
 
-        .carousel-frame {
-            width: 100%;
-            max-width: 500px;
-            height: 320px;
-            border-radius: 16px;
-            overflow: hidden;
-            background: #f8fafc;
-            border: 1px solid #e5e7eb;
+        .dataTable tbody tr:hover { background: #f8fafc; }
+
+        .muted { color: #94a3b8; font-size: 0.85rem; }
+
+        .responsive-image {
+            width: 80%;
+            max-width: 700px;
+            border-radius: 10px;
+            display: block;
+            margin: 0 auto 16px auto;
+        }
+
+        .fxWrap {
             position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            border-radius: 10px;
+            overflow: hidden;
+            height: 260px;
         }
 
-        .carousel-image {
-            display: none;
+        #fxCanvas {
             width: 100%;
             height: 100%;
-            object-fit: cover;
-        }
-
-        .carousel-image.active {
             display: block;
+            border-radius: 10px;
         }
 
-        .carousel-btn {
-            background: #1e293b;
-            color: white;
-            border: none;
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 1.2rem;
-            transition: 0.2s;
-        }
-
-        .carousel-btn:hover {
-            background: #334155;
-        }
-
-        .security-box {
-            background: #fff7ed;
-            border: 1px solid #fdba74;
-            border-radius: 14px;
-            padding: 18px;
-            line-height: 1.8;
-        }
-
-        .security-box strong {
-            color: #9a3412;
+        .fxHint {
+            position: absolute;
+            bottom: 12px;
+            right: 14px;
+            color: rgba(255,255,255,0.4);
+            font-size: 0.78rem;
+            pointer-events: none;
         }
 
         .footer {
-            margin-top: 32px;
-            padding: 24px 0;
-            text-align: center;
-            color: #64748b;
-            font-size: 0.9rem;
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            padding: 20px 0 4px;
+            color: #94a3b8;
+            font-size: 0.82rem;
         }
 
-        @@media (max-width: 768px) {
-            .topbar {
-                height: auto;
-                padding: 14px;
-                flex-direction: column;
-                gap: 10px;
-            }
-
-            .topnav {
-                flex-wrap: wrap;
-                justify-content: center;
-            }
-
-            .user-pill {
-                text-align: center;
-            }
-
-            .carousel-container {
-                flex-direction: column;
-            }
-        }
+        .footer__link { color: #64748b; text-decoration: none; }
+        .footer__link:hover { color: #1e293b; }
+        .footer__sep { color: #cbd5e1; }
     </style>
 </head>
 <body>
 
     <header class="topbar">
         <div class="brand">CENG 382</div>
-
-        <nav class="topnav">
-            <a href="/Index">Home</a>
-            <a href="/Index">Project</a>
-            <a href="/Register">Register</a>
-            <a href="#">Contact</a>
+        <nav class="topnav" aria-label="Üst Menü">
+            <a class="topnav__link is-active" href="#">Anasayfa</a>
+            <a class="topnav__link" href="#">Duyurular</a>
+            <a class="topnav__link" href="#">Notlar</a>
+            <a class="topnav__link" href="#">İletişim</a>
         </nav>
-
-        <div class="user-pill">ENES KAAN ÇAĞLAR - 202111074</div>
+        <div class="user">
+            <span class="user__pill">ENES KAAN ÇAĞLAR 202111074</span>
+        </div>
     </header>
 
-    <div class="page-container">
-        <div class="page-title">
-            <h1>Project Dashboard</h1>
-            <p>Bu sayfa ödev için istenen 4 ana kartı içerir.</p>
-        </div>
+    <div class="layout">
 
-        <div class="cards">
+        <aside class="sidebar" aria-label="Yan Menü">
+            <h2 class="sidebar__title">Menü</h2>
+            <a class="sidebar__link is-active" href="#">Dashboard</a>
+            <a class="sidebar__link" href="#">Ödevler</a>
+            <a class="sidebar__link" href="#">Kaynaklar</a>
+            <a class="sidebar__link" href="#">Ders Planı</a>
+            <a class="sidebar__link" href="#">Ayarlar</a>
+            <div class="sidebar__card">
+                <h3 class="sidebar__cardTitle">İpucu</h3>
+                <p class="sidebar__cardText">Bu sayfa: header + aside + main düzenini gösterir.</p>
+            </div>
+        </aside>
+
+        <main class="content">
 
             <section class="card">
-                <div class="card-header">
-                    <h2 class="card-title">Registered Users</h2>
-                    <span class="card-badge">@Model.Users.Count user(s)</span>
-                </div>
-
-                <p class="muted">
-                    Bu kartta kayıtlı kullanıcılar listelenir.
+                <h1 class="card__title">HTML &amp; CSS Sayfa İskeleti</h1>
+                <p class="card__text" id="introText">
+                    1.HAFTA: Bu örnekte <strong>üst menü</strong>, <strong>yan menü</strong> ve ortada
+                    <strong>3x5 tablo</strong> bulunuyor. Öğrenciler için sınıfta "kutu modeli, padding,
+                    margin, border, hover, active" gibi konuları göstermek için ideal.
                 </p>
+                <div class="badges">
+                    <span class="badge">HTML Semantik</span>
+                    <span class="badge">Flexbox</span>
+                    <span class="badge">Tablo</span>
+                    <span class="badge">Hover</span>
+                </div>
+                <div class="cardActions">
+                    <button class="actionBtn" id="btnText">Yazıyı Değiştir</button>
+                </div>
+            </section>
 
-                <div class="table-wrap">
-                    <table>
+            <section class="card">
+                <h2 class="card__subtitle">Örnek Veri Tablosu (3 x 5)</h2>
+                <div class="tableWrap">
+                    <table class="dataTable">
                         <thead>
                             <tr>
-                                <th>Photo</th>
-                                <th>Name</th>
-                                <th>Surname</th>
-                                <th>Email</th>
-                                <th>Address</th>
+                                <th>#</th>
+                                <th>Öğrenci</th>
+                                <th>Vize</th>
+                                <th>Final</th>
+                                <th>Harf</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var user in Model.Users)
+                            <tr><td>1</td><td>Ayşe Kaya</td><td>78</td><td>85</td><td>BA</td></tr>
+                            <tr><td>2</td><td>Mehmet Demir</td><td>65</td><td>72</td><td>CB</td></tr>
+                            <tr><td>3</td><td>Elif Yılmaz</td><td>90</td><td>93</td><td>AA</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="muted">Not: Bu tablo 3 satır (öğrenci) ve 5 sütun içerir.</p>
+                <div class="cardActions">
+                    <button class="actionBtn" id="btnSortName">İsme göre sırala</button>
+                    <button class="actionBtn" id="btnSortVize">Vize</button>
+                    <button class="actionBtn" id="btnSortFinal">Final</button>
+                </div>
+            </section>
+
+            <section class="card" style="text-align:center;">
+                <div class="image-container">
+                    <img id="featuredImage" src="resimler/araba.jpeg" alt="Araba Resmi" class="responsive-image">
+                </div>
+                <div class="cardActions">
+                    <button class="actionBtn" id="btnImage">Resmi Değiştir</button>
+                </div>
+            </section>
+
+            <section class="card fxCard">
+                <h2 class="card__subtitle">Etkileşimli Animasyon</h2>
+                <p class="muted" style="margin-bottom:12px;">Mouse ile etkileşimli altın parçacık animasyonu.</p>
+                <div class="fxWrap">
+                    <canvas id="fxCanvas"></canvas>
+                    <div class="fxHint">🖱️ Hareket ettir</div>
+                </div>
+            </section>
+
+            <section class="card">
+                <h2 class="card__subtitle">JavaScript "+" Anomalisi (String + Number)</h2>
+                <p class="muted" style="margin-bottom:12px;">
+                    JavaScript'te <strong>+</strong> operatörü hem <strong>sayı toplar</strong> hem de
+                    <strong>metin birleştirir</strong>. Operandlardan biri string ise birleştirme yapar.
+                </p>
+                <pre style="background:#f8fafc;border:1px solid #e2e8f0;padding:16px;border-radius:10px;overflow:auto;font-family:monospace;font-size:0.88rem;line-height:1.8;">'10' + 5          // "105"
+10 + '5'          // "105"
+'10' - 5          // 5
+Number('10') + 5  // 15
+'1' + 2 + 3       // "123"
+1 + 2 + '3'       // "33"</pre>
+                <p class="muted" style="margin-top:10px;">
+                    İpucu: <code>Number(x)</code>, <code>parseInt(x, 10)</code> veya <code>+x</code> kullan.
+                </p>
+            </section>
+
+            <section class="card">
+                <h2 class="card__subtitle">Student Grade Table</h2>
+                <div style="display:flex;justify-content:flex-end;margin-bottom:16px;">
+                    <form method="post">
+                        <button type="submit" asp-page-handler="Calculate" class="actionBtn">
+                            Calculate Letter Grades
+                        </button>
+                    </form>
+                </div>
+                <div class="tableWrap">
+                    <table class="dataTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Student</th>
+                                <th>Midterm</th>
+                                <th>Final</th>
+                                <th>Letter Grade</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (int i = 0; i < Model.StudentNames.Length; i++)
                             {
                                 <tr>
-                                    <td>
-                                        @if (!string.IsNullOrWhiteSpace(user.PhotoPath))
-                                        {
-                                            <img src="@user.PhotoPath" alt="Profile Photo" class="user-photo" />
-                                        }
-                                        else
-                                        {
-                                            <div class="avatar-circle">@user.Initials</div>
-                                        }
-                                    </td>
-                                    <td>@user.Name</td>
-                                    <td>@user.Surname</td>
-                                    <td>@user.Email</td>
-                                    <td>@user.Address</td>
+                                    <td>@(i + 1)</td>
+                                    <td>@Model.StudentNames[i]</td>
+                                    <td>@Model.MidtermGrades[i]</td>
+                                    <td>@Model.FinalGrades[i]</td>
+                                    <td>@Model.LetterGrades[i]</td>
                                 </tr>
                             }
                         </tbody>
                     </table>
                 </div>
+                <p class="muted" style="margin-top:10px;">Hesaplama: 40% Vize + 60% Final</p>
             </section>
 
-            <section class="card">
-                <div class="card-header">
-                    <h2 class="card-title">JS Method (Folder Gallery)</h2>
-                    <span class="card-badge" id="jsImageCount">0 image(s)</span>
-                </div>
+            <footer class="footer">
+                <span>© 2026 - Web Programming</span>
+                <span class="footer__sep">•</span>
+                <a class="footer__link" href="#">Gizlilik</a>
+                <a class="footer__link" href="#">Yardım</a>
+            </footer>
 
-                <p class="muted">
-                    Klasör seçildiğinde içindeki görseller JavaScript ile geçici olarak gösterilir.
-                    Sayfa yenilenirse kaybolur.
-                </p>
-
-                <div class="upload-row">
-                    <input type="file"
-                           id="jsFolderInput"
-                           class="file-input"
-                           webkitdirectory
-                           directory
-                           multiple
-                           accept="image/*" />
-                    <button type="button" class="btn" id="loadJsGalleryBtn">Load Gallery</button>
-                </div>
-
-                <div class="gallery-box">
-                    <div id="jsGalleryEmpty" class="empty-text">No images loaded yet.</div>
-                    <div id="jsGallery" class="gallery-grid"></div>
-                </div>
-            </section>
-
-            <section class="card">
-                <div class="card-header">
-                    <h2 class="card-title">C# Method (Carousel)</h2>
-                    <span class="card-badge">@Model.CSharpImages.Count image(s)</span>
-                </div>
-
-                <p class="muted">
-                    Bu bölümde seçilen fotoğraflar C# ile sunucuya yüklenir, kalıcı olarak kaydedilir ve sayfa yenilense bile görünmeye devam eder.
-                </p>
-
-                <form method="post" enctype="multipart/form-data">
-                    <div class="upload-row">
-                        <input type="file"
-                               name="CSharpFiles"
-                               class="file-input"
-                               multiple
-                               accept=".jpg,.jpeg,.png,.gif,.webp" />
-                        <button type="submit" class="btn" asp-page-handler="UploadCSharp">Upload With C#</button>
-                    </div>
-                </form>
-
-                @if (Model.CSharpImages.Count == 0)
-                {
-                    <div class="carousel-placeholder">
-                        <p>Henüz yüklenmiş fotoğraf yok.</p>
-                    </div>
-                }
-                else
-                {
-                    <div class="carousel-container">
-                        <button type="button" class="carousel-btn" id="prevBtn">❮</button>
-
-                        <div class="carousel-frame">
-                            @for (int i = 0; i < Model.CSharpImages.Count; i++)
-                            {
-                                <img src="@Model.CSharpImages[i]"
-                                     alt="Uploaded Image @(i + 1)"
-                                     class="carousel-image @(i == 0 ? "active" : "")" />
-                            }
-                        </div>
-
-                        <button type="button" class="carousel-btn" id="nextBtn">❯</button>
-                    </div>
-
-                    <p class="muted" style="margin-top:12px;">
-                        Bu görseller C# ile kaydedildiği için sayfa yenilenince kaybolmaz.
-                    </p>
-                }
-            </section>
-
-            <section class="card">
-                <div class="card-header">
-                    <h2 class="card-title">Security Vulnerability Report</h2>
-                    <span class="card-badge">1 vulnerability</span>
-                </div>
-
-                <div class="security-box">
-                    <p><strong>Vulnerability:</strong> Weak password policy</p>
-                    <p><strong>Cause:</strong> Eğer kullanıcılar çok basit şifreler seçebiliyorsa hesap güvenliği zayıflar ve brute-force veya tahmin saldırılarına açık hale gelir.</p>
-                    <p><strong>How to Prevent:</strong> En az 8 karakter, büyük harf, küçük harf, rakam ve özel karakter zorunluluğu getirilebilir. Ayrıca parola doğrulama kuralları register sayfasında uygulanmalıdır.</p>
-                    <p><strong>Note:</strong> Hocanın istediğine uygun olarak burada sadece açıklama yapılıyor, açık doğrudan düzeltilmiyor.</p>
-                </div>
-            </section>
-
-        </div>
-
-        <footer class="footer">
-            © 2026 - Web Programming Project | Header, Footer, Users, JS Gallery, C# Gallery, Security Card
-        </footer>
+        </main>
     </div>
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            const folderInput = document.getElementById("jsFolderInput");
-            const loadBtn = document.getElementById("loadJsGalleryBtn");
-            const gallery = document.getElementById("jsGallery");
-            const emptyText = document.getElementById("jsGalleryEmpty");
-            const countBadge = document.getElementById("jsImageCount");
 
-            if (loadBtn) {
-                loadBtn.addEventListener("click", function () {
-                    gallery.innerHTML = "";
+            document.getElementById("btnText").addEventListener("click", function () {
+                document.getElementById("introText").innerHTML =
+                    "<strong>2. HAFTA:</strong> Semantik etiketlerle doğru sayfa iskeleti kurmak. " +
+                    "Flexbox ile hizalama, hover efektleri ve kutu modeli pratikleri yapacağız.";
+            });
 
-                    const files = Array.from(folderInput.files);
-                    const imageFiles = files.filter(file => file.type.startsWith("image/"));
-
-                    countBadge.textContent = imageFiles.length + " image(s)";
-
-                    if (imageFiles.length === 0) {
-                        emptyText.style.display = "block";
-                        emptyText.textContent = "No images loaded yet.";
-                        return;
-                    }
-
-                    emptyText.style.display = "none";
-
-                    imageFiles.forEach(file => {
-                        const reader = new FileReader();
-
-                        reader.onload = function (e) {
-                            const item = document.createElement("div");
-                            item.className = "gallery-item";
-
-                            const img = document.createElement("img");
-                            img.src = e.target.result;
-                            img.alt = file.name;
-
-                            const text = document.createElement("p");
-                            text.textContent = file.name;
-
-                            item.appendChild(img);
-                            item.appendChild(text);
-                            gallery.appendChild(item);
-                        };
-
-                        reader.readAsDataURL(file);
-                    });
+            var tbody = document.querySelector(".dataTable tbody");
+            function sortBy(col, type) {
+                var rows = Array.from(tbody.querySelectorAll("tr"));
+                rows.sort(function (a, b) {
+                    var av = a.children[col].textContent.trim();
+                    var bv = b.children[col].textContent.trim();
+                    return type === "number" ? Number(av) - Number(bv) : av.localeCompare(bv, "tr");
                 });
+                tbody.innerHTML = "";
+                rows.forEach(function (r, i) { r.children[0].textContent = i + 1; tbody.appendChild(r); });
+            }
+            document.getElementById("btnSortName").addEventListener("click", function () { sortBy(1, "text"); });
+            document.getElementById("btnSortVize").addEventListener("click", function () { sortBy(2, "number"); });
+            document.getElementById("btnSortFinal").addEventListener("click", function () { sortBy(3, "number"); });
+
+            var img = document.getElementById("featuredImage");
+            document.getElementById("btnImage").addEventListener("click", function () {
+                img.src = img.src.indexOf("araba2") !== -1 ? "resimler/araba.jpeg" : "resimler/araba2.jpeg";
+            });
+
+            var canvas = document.getElementById("fxCanvas");
+            if (!canvas) return;
+            var ctx = canvas.getContext("2d", { alpha: false });
+            var W, H, particles = [], last = performance.now(), acc = 0;
+            var dpr = Math.min(window.devicePixelRatio || 1, 1.15);
+            var mouse = { x: 0, y: 0, has: false };
+
+            function rand(a, b) { return a + Math.random() * (b - a); }
+
+            function resize() {
+                var rect = canvas.getBoundingClientRect();
+                W = Math.max(1, Math.floor(rect.width));
+                H = Math.max(1, Math.floor(rect.height));
+                canvas.width = Math.floor(W * dpr);
+                canvas.height = Math.floor(H * dpr);
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                ctx.fillStyle = "#000";
+                ctx.fillRect(0, 0, W, H);
             }
 
-            const images = document.querySelectorAll(".carousel-image");
-            const prevBtn = document.getElementById("prevBtn");
-            const nextBtn = document.getElementById("nextBtn");
+            function initP() {
+                particles = [];
+                for (var i = 0; i < 110; i++) {
+                    particles.push({
+                        x: rand(0, W), y: rand(0, H), px: 0, py: 0,
+                        vx: rand(-1.2, 1.2), vy: rand(-1.2, 1.2),
+                        r: rand(1.6, 2.6), hue: rand(38, 48),
+                        tx: rand(0, W), ty: rand(0, H),
+                        nw: performance.now() + rand(220, 520)
+                    });
+                }
+            }
 
-            if (images.length > 0 && prevBtn && nextBtn) {
-                let currentIndex = 0;
+            canvas.parentElement.addEventListener("mousemove", function (e) {
+                var r = canvas.getBoundingClientRect();
+                mouse.x = e.clientX - r.left; mouse.y = e.clientY - r.top; mouse.has = true;
+            });
+            canvas.parentElement.addEventListener("mouseleave", function () { mouse.has = false; });
 
-                function showImage(index) {
-                    images.forEach(img => img.classList.remove("active"));
-                    images[index].classList.add("active");
+            function loop(now) {
+                var dt = Math.min(0.05, (now - last) / 1000);
+                last = now; acc += dt;
+                if (acc < 1 / 30) { requestAnimationFrame(loop); return; }
+                acc = 0;
+
+                ctx.globalCompositeOperation = "source-over";
+                ctx.fillStyle = "rgba(0,0,0,0.28)";
+                ctx.fillRect(0, 0, W, H);
+                ctx.globalCompositeOperation = "lighter";
+
+                for (var i = 0; i < particles.length; i++) {
+                    var p = particles[i];
+                    p.px = p.x; p.py = p.y;
+
+                    if (!mouse.has) {
+                        if (now > p.nw) { p.tx = rand(0, W); p.ty = rand(0, H); p.nw = now + rand(220, 520); }
+                        var dx = p.tx - p.x, dy = p.ty - p.y, d = Math.hypot(dx, dy) + 0.001;
+                        p.vx = (p.vx + dx / d * 0.34) * 0.90;
+                        p.vy = (p.vy + dy / d * 0.34) * 0.90;
+                    } else {
+                        var dxm = mouse.x - p.x, dym = mouse.y - p.y, dm = Math.hypot(dxm, dym);
+                        if (dm < 180) {
+                            var infl = Math.max(0, Math.min(1, 1 - dm / 180));
+                            var inv = 1 / (dm + 0.001);
+                            p.vx = (p.vx + dxm * inv * (1.35 * infl + 0.12)) * 0.91;
+                            p.vy = (p.vy + dym * inv * (1.35 * infl + 0.12)) * 0.91;
+                        } else {
+                            if (now > p.nw) { p.tx = rand(0, W); p.ty = rand(0, H); p.nw = now + rand(220, 600); }
+                            var dx2 = p.tx - p.x, dy2 = p.ty - p.y, d2 = Math.hypot(dx2, dy2) + 0.001;
+                            p.vx = (p.vx + dx2 / d2 * 0.28) * 0.90;
+                            p.vy = (p.vy + dy2 / d2 * 0.28) * 0.90;
+                        }
+                    }
+
+                    var sp = Math.hypot(p.vx, p.vy), ms = mouse.has ? 4.6 : 4.0;
+                    if (sp > ms) { p.vx *= ms / sp; p.vy *= ms / sp; }
+                    p.x += p.vx; p.y += p.vy;
+                    if (p.x < -12) p.x = W + 12; if (p.x > W + 12) p.x = -12;
+                    if (p.y < -12) p.y = H + 12; if (p.y > H + 12) p.y = -12;
+
+                    ctx.lineCap = "round"; ctx.lineWidth = 1.1;
+                    ctx.shadowBlur = 6; ctx.shadowColor = "hsla(" + p.hue + ",95%,60%,0.40)";
+                    ctx.strokeStyle = "hsla(" + p.hue + ",95%,60%,0.45)";
+                    ctx.beginPath(); ctx.moveTo(p.px, p.py); ctx.lineTo(p.x, p.y); ctx.stroke();
+
+                    ctx.shadowBlur = 10;
+                    ctx.fillStyle = "hsla(" + p.hue + ",95%,60%,0.22)";
+                    ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+
+                    ctx.shadowBlur = 4;
+                    ctx.fillStyle = "hsla(" + p.hue + ",100%,72%,0.62)";
+                    ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(0.95, p.r * 0.52), 0, Math.PI * 2); ctx.fill();
                 }
 
-                prevBtn.addEventListener("click", function () {
-                    currentIndex--;
-                    if (currentIndex < 0) {
-                        currentIndex = images.length - 1;
-                    }
-                    showImage(currentIndex);
-                });
-
-                nextBtn.addEventListener("click", function () {
-                    currentIndex++;
-                    if (currentIndex >= images.length) {
-                        currentIndex = 0;
-                    }
-                    showImage(currentIndex);
-                });
+                ctx.globalCompositeOperation = "source-over";
+                requestAnimationFrame(loop);
             }
+
+            resize(); initP();
+            window.addEventListener("resize", function () { resize(); initP(); });
+            requestAnimationFrame(loop);
         });
     </script>
+
 </body>
 </html>
