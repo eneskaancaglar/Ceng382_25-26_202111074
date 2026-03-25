@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "oP003+0IZvU=",
+  "dgSpecHash": "iDOucIHpBTw=",
   "success": true,
-  "projectFilePath": "C:\\Users\\ENKA\\Desktop\\git\\Ceng382_25-26_202111074\\Lab3\\Lab3.csproj",
+  "projectFilePath": "C:\\Users\\ENKA\\Desktop\\CENG382\\git\\Ceng382_25-26_202111074\\Lab3\\Lab3.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\ENKA\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",
     "C:\\Users\\ENKA\\.nuget\\packages\\microsoft.aspnetcore.diagnostics.entityframeworkcore\\10.0.3\\microsoft.aspnetcore.diagnostics.entityframeworkcore.10.0.3.nupkg.sha512",
