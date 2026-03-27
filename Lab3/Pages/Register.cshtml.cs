@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.RegularExpressions;
-using Lab3.Services;
+using Lab3.Data;
+using Lab3.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -31,10 +32,12 @@ public class RegisterInputModel
 public class RegisterModel : PageModel
 {
     private readonly IWebHostEnvironment _environment;
+    private readonly ApplicationDbContext _context;
 
-    public RegisterModel(IWebHostEnvironment environment)
+    public RegisterModel(IWebHostEnvironment environment, ApplicationDbContext context)
     {
         _environment = environment;
+        _context = context;
     }
 
     [BindProperty]
@@ -43,7 +46,6 @@ public class RegisterModel : PageModel
     [BindProperty]
     public IFormFile? ProfilePhoto { get; set; }
 
-    public string SuccessMessage { get; set; } = "";
     public string ErrorMessage { get; set; } = "";
 
     public void OnGet()
@@ -88,10 +90,7 @@ public class RegisterModel : PageModel
             return Page();
         }
 
-        string usersFilePath = Path.Combine(_environment.ContentRootPath, "App_Data", "users.json");
-        var existingUsers = UserStorage.GetUsers(usersFilePath);
-
-        bool emailExists = existingUsers.Any(x => x.Email.ToLower() == Input.Email.ToLower());
+        bool emailExists = _context.Users.Any(x => x.Email.ToLower() == Input.Email.ToLower());
 
         if (emailExists)
         {
@@ -123,16 +122,18 @@ public class RegisterModel : PageModel
             await ProfilePhoto.CopyToAsync(stream);
         }
 
-        var newUser = new UserItem
+        var newUser = new AppUser
         {
             Name = Input.Name,
             Surname = Input.Surname,
-            Email = Input.Email,
             Address = Input.Address,
+            Email = Input.Email,
+            Password = Input.Password,
             PhotoPath = "/profilephotos/" + uniqueFileName
         };
 
-        UserStorage.AddUser(usersFilePath, newUser);
+        _context.Users.Add(newUser);
+        await _context.SaveChangesAsync();
 
         return RedirectToPage("/Index");
     }

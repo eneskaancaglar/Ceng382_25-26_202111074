@@ -118,15 +118,6 @@
             opacity: 0.92;
         }
 
-        .message-success {
-            background: #ecfdf5;
-            color: #166534;
-            border: 1px solid #86efac;
-            padding: 12px;
-            border-radius: 12px;
-            margin-bottom: 16px;
-        }
-
         .message-error {
             background: #fef2f2;
             color: #991b1b;
@@ -165,11 +156,6 @@
     <div class="register-card">
         <h1 class="title">Register</h1>
         <p class="subtitle">Create your account and complete your profile.</p>
-
-        @if (!string.IsNullOrEmpty(Model.SuccessMessage))
-        {
-            <div class="message-success">@Model.SuccessMessage</div>
-        }
 
         @if (!string.IsNullOrEmpty(Model.ErrorMessage))
         {

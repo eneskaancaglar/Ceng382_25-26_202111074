@@ -1,4 +1,5 @@
-using Lab3.Services;
+using Lab3.Data;
+using Lab3.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -7,24 +8,26 @@ namespace Lab3.Pages;
 public class IndexModel : PageModel
 {
     private readonly IWebHostEnvironment _environment;
+    private readonly ApplicationDbContext _context;
 
-    public IndexModel(IWebHostEnvironment environment)
+    public IndexModel(IWebHostEnvironment environment, ApplicationDbContext context)
     {
         _environment = environment;
+        _context = context;
     }
 
-    public List<UserItem> Users { get; set; } = new List<UserItem>();
-    public List<string> CSharpImages { get; set; } = new List<string>();
+    public List<AppUser> Users { get; set; } = new();
+    public List<string> CSharpImages { get; set; } = new();
 
     public void OnGet()
     {
-        LoadUsersFromFile();
+        Users = _context.Users.ToList();
         LoadSavedImages();
     }
 
     public async Task OnPostUploadCSharpAsync(List<IFormFile> CSharpFiles)
     {
-        LoadUsersFromFile();
+        Users = _context.Users.ToList();
 
         string uploadFolder = Path.Combine(_environment.WebRootPath, "uploads");
 
@@ -59,12 +62,6 @@ public class IndexModel : PageModel
         }
 
         LoadSavedImages();
-    }
-
-    private void LoadUsersFromFile()
-    {
-        string usersFilePath = Path.Combine(_environment.ContentRootPath, "App_Data", "users.json");
-        Users = UserStorage.GetUsers(usersFilePath);
     }
 
     private void LoadSavedImages()
