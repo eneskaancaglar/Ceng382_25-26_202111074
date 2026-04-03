@@ -1,8 +1,9 @@
 {
   "ExpandedNodes": [
     "",
-    "\\Lab3"
+    "\\Lab3",
+    "\\Lab3\\Pages"
   ],
-  "SelectedNode": "\\Lab3\\wwwroot",
+  "SelectedNode": "\\Lab3\\Pages\\Index.cshtml",
   "PreviewInSolutionExplorer": false
 }

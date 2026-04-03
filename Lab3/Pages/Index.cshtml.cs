@@ -1,46 +1,84 @@
+using Lab3.Data;
+using Lab3.Models;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
-namespace MyRazorAuthApp.Pages;
+namespace Lab3.Pages;
 
 public class IndexModel : PageModel
 {
-    public string[] StudentNames { get; set; } = [];
-    public int[] MidtermGrades { get; set; } = [];
-    public int[] FinalGrades { get; set; } = [];
-    public string[] LetterGrades { get; set; } = [];
+    private readonly IWebHostEnvironment _environment;
+    private readonly ApplicationDbContext _context;
+
+    public IndexModel(IWebHostEnvironment environment, ApplicationDbContext context)
+    {
+        _environment = environment;
+        _context = context;
+    }
+
+    public List<AppUser> Users { get; set; } = new();
+    public List<string> CSharpImages { get; set; } = new();
 
     public void OnGet()
     {
-        StudentNames = new[] { "Ayşe", "Mehmet", "Zeynep" };
-        MidtermGrades = new[] { 70, 55, 90 };
-        FinalGrades = new[] { 80, 60, 75 };
-        LetterGrades = new[] { "-", "-", "-" };
+        Users = _context.Users.ToList();
+        LoadSavedImages();
     }
 
-    public void OnPostCalculate()
+    public async Task OnPostUploadCSharpAsync(List<IFormFile> CSharpFiles)
     {
-        StudentNames = new[] { "Ayşe", "Mehmet", "Zeynep" };
-        MidtermGrades = new[] { 70, 55, 90 };
-        FinalGrades = new[] { 80, 60, 75 };
+        Users = _context.Users.ToList();
 
-        LetterGrades = new string[StudentNames.Length];
+        string uploadFolder = Path.Combine(_environment.WebRootPath, "uploads");
 
-        for (int i = 0; i < StudentNames.Length; i++)
+        if (!Directory.Exists(uploadFolder))
         {
-            double average = MidtermGrades[i] * 0.40 + FinalGrades[i] * 0.60;
+            Directory.CreateDirectory(uploadFolder);
+        }
 
-            if (average >= 90)
-                LetterGrades[i] = "AA";
-            else if (average >= 85)
-                LetterGrades[i] = "BA";
-            else if (average >= 80)
-                LetterGrades[i] = "BB";
-            else if (average >= 70)
-                LetterGrades[i] = "CB";
-            else if (average >= 60)
-                LetterGrades[i] = "CC";
-            else
-                LetterGrades[i] = "FF";
+        if (CSharpFiles != null && CSharpFiles.Count > 0)
+        {
+            foreach (var file in CSharpFiles)
+            {
+                if (file.Length > 0)
+                {
+                    string extension = Path.GetExtension(file.FileName).ToLower();
+                    var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+
+                    if (!allowedExtensions.Contains(extension))
+                    {
+                        continue;
+                    }
+
+                    string uniqueFileName = Guid.NewGuid().ToString() + extension;
+                    string filePath = Path.Combine(uploadFolder, uniqueFileName);
+
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await file.CopyToAsync(stream);
+                    }
+                }
+            }
+        }
+
+        LoadSavedImages();
+    }
+
+    private void LoadSavedImages()
+    {
+        string uploadFolder = Path.Combine(_environment.WebRootPath, "uploads");
+
+        CSharpImages = new List<string>();
+
+        if (Directory.Exists(uploadFolder))
+        {
+            var files = Directory.GetFiles(uploadFolder);
+
+            foreach (var file in files)
+            {
+                string fileName = Path.GetFileName(file);
+                CSharpImages.Add("/uploads/" + fileName);
+            }
         }
     }
 }
