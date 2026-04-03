@@ -1,10 +1,91 @@
 ﻿@page
-@model IndexModel
+@model Lab3.Pages.IndexModel
 @{
-    ViewData["Title"] = "Home page";
+    ViewData["Title"] = "Northwind Project";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Northwind Project</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background: #f8fafc;
+            color: #1e293b;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+        }
+
+        p {
+            margin-bottom: 20px;
+            color: #475569;
+        }
+
+        .table-wrap {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #1e293b;
+            color: white;
+            text-align: left;
+            padding: 12px;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        tr:hover {
+            background: #f8fafc;
+        }
+    </style>
+</head>
+<body>
+    <h1>Northwind - Shippers Contact Info</h1>
+    <p>Bu tablo SQL ile eklenen ShippersContactInfo kayıtlarını göstermektedir.</p>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>ContactInfoID</th>
+                    <th>ShipperID</th>
+                    <th>Company Name</th>
+                    <th>Email</th>
+                    <th>Website</th>
+                    <th>Phone</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.ContactInfos)
+                {
+                    <tr>
+                        <td>@item.ContactInfoID</td>
+                        <td>@item.ShipperID</td>
+                        <td>@item.CompanyName</td>
+                        <td>@item.Email</td>
+                        <td>@item.Website</td>
+                        <td>@item.Phone</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
