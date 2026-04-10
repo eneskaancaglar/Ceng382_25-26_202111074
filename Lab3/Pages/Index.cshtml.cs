@@ -29,7 +29,11 @@ public class IndexModel : PageModel
                 s.CompanyName,
                 sci.Email,
                 sci.Website,
-                sci.Phone
+                sci.Phone,
+                sci.City,
+                sci.Country,
+                sci.Postcode,
+                sci.Address
             FROM ShippersContactInfo sci
             INNER JOIN Shippers s ON sci.ShipperID = s.ShipperID
             ORDER BY sci.ContactInfoID";
@@ -46,7 +50,11 @@ public class IndexModel : PageModel
                 CompanyName = reader["CompanyName"].ToString() ?? "",
                 Email = reader["Email"].ToString() ?? "",
                 Website = reader["Website"]?.ToString(),
-                Phone = reader["Phone"]?.ToString()
+                Phone = reader["Phone"]?.ToString(),
+                City = reader["City"]?.ToString(),
+                Country = reader["Country"]?.ToString(),
+                Postcode = reader["Postcode"]?.ToString(),
+                Address = reader["Address"]?.ToString()
             });
         }
     }

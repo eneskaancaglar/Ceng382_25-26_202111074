@@ -32,11 +32,13 @@
             border-radius: 12px;
             padding: 20px;
             box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            overflow-x: auto;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
+            min-width: 1200px;
         }
 
         th {
@@ -49,10 +51,20 @@
         td {
             padding: 12px;
             border-bottom: 1px solid #e2e8f0;
+            vertical-align: top;
         }
 
         tr:hover {
             background: #f8fafc;
+        }
+
+        a {
+            color: #2563eb;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
@@ -70,6 +82,10 @@
                     <th>Email</th>
                     <th>Website</th>
                     <th>Phone</th>
+                    <th>City</th>
+                    <th>Country</th>
+                    <th>Postcode</th>
+                    <th>Address</th>
                 </tr>
             </thead>
             <tbody>
@@ -80,8 +96,17 @@
                         <td>@item.ShipperID</td>
                         <td>@item.CompanyName</td>
                         <td>@item.Email</td>
-                        <td>@item.Website</td>
+                        <td>
+                            @if (!string.IsNullOrWhiteSpace(item.Website))
+                            {
+                                <a href="@item.Website" target="_blank">@item.Website</a>
+                            }
+                        </td>
                         <td>@item.Phone</td>
+                        <td>@item.City</td>
+                        <td>@item.Country</td>
+                        <td>@item.Postcode</td>
+                        <td>@item.Address</td>
                     </tr>
                 }
             </tbody>
