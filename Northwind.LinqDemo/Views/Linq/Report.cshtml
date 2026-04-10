@@ -1,0 +1,203 @@
+@model Northwind.LinqDemo.ViewModels.ReportViewModel
+
+@{
+    ViewData["Title"] = "LINQ Report";
+}
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LINQ Report</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+            background: #f8fafc;
+            color: #1e293b;
+        }
+
+        h1, h2 {
+            margin-bottom: 12px;
+        }
+
+        .summary-box, .search-box, .table-wrap {
+            background: white;
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .summary-item {
+            background: #f1f5f9;
+            border-radius: 10px;
+            padding: 14px;
+        }
+
+        .summary-label {
+            font-size: 0.9rem;
+            color: #475569;
+            margin-bottom: 6px;
+        }
+
+        .summary-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        form {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            min-width: 240px;
+            padding: 10px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+        }
+
+        button {
+            padding: 10px 16px;
+            border: none;
+            background: #2563eb;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+        }
+
+        th {
+            background: #1e293b;
+            color: white;
+            text-align: left;
+            padding: 10px;
+        }
+
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .category-title {
+            margin-top: 28px;
+            margin-bottom: 8px;
+            color: #0f172a;
+        }
+
+        .subtotal-row {
+            background: #eff6ff;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Northwind LINQ Report</h1>
+
+    <div class="search-box">
+        <form method="get" asp-controller="Linq" asp-action="Report">
+            <input type="text" name="q" value="@Model.Query" placeholder="Product name search..." />
+            <button type="submit">Search</button>
+        </form>
+    </div>
+
+    <div class="summary-box">
+        <h2>Summary</h2>
+        <div class="summary-grid">
+            <div class="summary-item">
+                <div class="summary-label">Overall Product Count</div>
+                <div class="summary-value">@Model.OverallProductCount</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-label">Average Price</div>
+                <div class="summary-value">@Model.AveragePrice.ToString("0.00")</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-label">Max Price</div>
+                <div class="summary-value">@((Model.MaxPrice ?? 0m).ToString("0.00"))</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-wrap">
+        <h2>Products Grouped By Category</h2>
+
+        @foreach (var group in Model.CategoryGroups)
+        {
+            <h3 class="category-title">@group.CategoryName</h3>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product ID</th>
+                        <th>Product Name</th>
+                        <th>Unit Price</th>
+                        <th>Units In Stock</th>
+                        <th>Inventory Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var product in group.Products)
+                    {
+                        <tr>
+                            <td>@product.ProductId</td>
+                            <td>@product.ProductName</td>
+                            <td>@product.UnitPrice.ToString("0.00")</td>
+                            <td>@product.UnitsInStock</td>
+                            <td>@product.InventoryValue.ToString("0.00")</td>
+                        </tr>
+                    }
+                    <tr class="subtotal-row">
+                        <td colspan="4">Subtotal</td>
+                        <td>@group.Subtotal.ToString("0.00")</td>
+                    </tr>
+                </tbody>
+            </table>
+        }
+    </div>
+
+    <div class="table-wrap">
+        <h2>Top 5 Customers By Total Spend</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Customer ID</th>
+                    <th>Company Name</th>
+                    <th>Order Count</th>
+                    <th>Total Spend</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var customer in Model.TopCustomers)
+                {
+                    <tr>
+                        <td>@customer.CustomerId</td>
+                        <td>@customer.CompanyName</td>
+                        <td>@customer.OrderCount</td>
+                        <td>@customer.TotalSpend.ToString("0.00")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

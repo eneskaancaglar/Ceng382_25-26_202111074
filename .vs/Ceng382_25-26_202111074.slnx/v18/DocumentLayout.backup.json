@@ -15,6 +15,14 @@
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Lab3\\Models\\ShipperContactInfoViewModel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\ENKA\\Desktop\\CENG382\\git\\Ceng382_25-26_202111074\\queries\\shippers-contact-info.sql||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:queries\\shippers-contact-info.sql||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\ENKA\\Desktop\\CENG382\\git\\Ceng382_25-26_202111074\\queries\\northwind-setup.sql||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:queries\\northwind-setup.sql||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\ENKA\\Desktop\\CENG382\\git\\Ceng382_25-26_202111074\\Lab3\\Program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Lab3\\Program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -30,19 +38,19 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 2,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "Index.cshtml",
-              "DocumentMoniker": "C:\\Users\\ENKA\\Desktop\\CENG382\\git\\Ceng382_25-26_202111074\\Lab3\\Pages\\Index.cshtml",
-              "RelativeDocumentMoniker": "Lab3\\Pages\\Index.cshtml",
-              "ToolTip": "C:\\Users\\ENKA\\Desktop\\CENG382\\git\\Ceng382_25-26_202111074\\Lab3\\Pages\\Index.cshtml",
-              "RelativeToolTip": "Lab3\\Pages\\Index.cshtml",
-              "ViewState": "AgIAAE4AAAAAAAAAAAAqwFoAAAAHAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-04-03T10:09:37.805Z",
+              "DocumentIndex": 2,
+              "Title": "ShipperContactInfoViewModel.cs",
+              "DocumentMoniker": "C:\\Users\\ENKA\\Desktop\\CENG382\\git\\Ceng382_25-26_202111074\\Lab3\\Models\\ShipperContactInfoViewModel.cs",
+              "RelativeDocumentMoniker": "Lab3\\Models\\ShipperContactInfoViewModel.cs",
+              "ToolTip": "C:\\Users\\ENKA\\Desktop\\CENG382\\git\\Ceng382_25-26_202111074\\Lab3\\Models\\ShipperContactInfoViewModel.cs",
+              "RelativeToolTip": "Lab3\\Models\\ShipperContactInfoViewModel.cs",
+              "ViewState": "AgIAAAEAAAAAAAAAAAAQwA4AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-03T10:08:23.658Z",
               "EditorCaption": ""
             },
             {
@@ -53,27 +61,53 @@
               "RelativeDocumentMoniker": "Lab3\\Pages\\Index.cshtml.cs",
               "ToolTip": "C:\\Users\\ENKA\\Desktop\\CENG382\\git\\Ceng382_25-26_202111074\\Lab3\\Pages\\Index.cshtml.cs",
               "RelativeToolTip": "Lab3\\Pages\\Index.cshtml.cs",
-              "ViewState": "AgIAACoAAAAAAAAAAAAIwDQAAAABAAAAAAAAAA==",
+              "ViewState": "AgIAAC4AAAAAAAAAAAAAADwAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-04-03T10:09:09.668Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "ShipperContactInfoViewModel.cs",
-              "DocumentMoniker": "C:\\Users\\ENKA\\Desktop\\CENG382\\git\\Ceng382_25-26_202111074\\Lab3\\Models\\ShipperContactInfoViewModel.cs",
-              "RelativeDocumentMoniker": "Lab3\\Models\\ShipperContactInfoViewModel.cs",
-              "ToolTip": "C:\\Users\\ENKA\\Desktop\\CENG382\\git\\Ceng382_25-26_202111074\\Lab3\\Models\\ShipperContactInfoViewModel.cs",
-              "RelativeToolTip": "Lab3\\Models\\ShipperContactInfoViewModel.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAIwAoAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-03T10:08:23.658Z",
+              "DocumentIndex": 0,
+              "Title": "Index.cshtml",
+              "DocumentMoniker": "C:\\Users\\ENKA\\Desktop\\CENG382\\git\\Ceng382_25-26_202111074\\Lab3\\Pages\\Index.cshtml",
+              "RelativeDocumentMoniker": "Lab3\\Pages\\Index.cshtml",
+              "ToolTip": "C:\\Users\\ENKA\\Desktop\\CENG382\\git\\Ceng382_25-26_202111074\\Lab3\\Pages\\Index.cshtml",
+              "RelativeToolTip": "Lab3\\Pages\\Index.cshtml",
+              "ViewState": "AgIAAGQAAAAAAAAAAAAiwHMAAAAHAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-04-03T10:09:37.805Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 3,
+              "Title": "shippers-contact-info.sql",
+              "DocumentMoniker": "C:\\Users\\ENKA\\Desktop\\CENG382\\git\\Ceng382_25-26_202111074\\queries\\shippers-contact-info.sql",
+              "RelativeDocumentMoniker": "queries\\shippers-contact-info.sql",
+              "ToolTip": "C:\\Users\\ENKA\\Desktop\\CENG382\\git\\Ceng382_25-26_202111074\\queries\\shippers-contact-info.sql",
+              "RelativeToolTip": "queries\\shippers-contact-info.sql",
+              "ViewState": "AgIAABQAAAAAAAAAAAAkwB4AAAACAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000826|",
+              "WhenOpened": "2026-04-10T09:36:14.388Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "northwind-setup.sql",
+              "DocumentMoniker": "C:\\Users\\ENKA\\Desktop\\CENG382\\git\\Ceng382_25-26_202111074\\queries\\northwind-setup.sql",
+              "RelativeDocumentMoniker": "queries\\northwind-setup.sql",
+              "ToolTip": "C:\\Users\\ENKA\\Desktop\\CENG382\\git\\Ceng382_25-26_202111074\\queries\\northwind-setup.sql",
+              "RelativeToolTip": "queries\\northwind-setup.sql",
+              "ViewState": "AgIAAHkkAAAAAAAAAAAuwHwkAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000826|",
+              "WhenOpened": "2026-04-10T09:35:59.933Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
               "Title": "Program.cs",
               "DocumentMoniker": "C:\\Users\\ENKA\\Desktop\\CENG382\\git\\Ceng382_25-26_202111074\\Lab3\\Program.cs",
               "RelativeDocumentMoniker": "Lab3\\Program.cs",
@@ -86,7 +120,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 6,
               "Title": "appsettings.json",
               "DocumentMoniker": "C:\\Users\\ENKA\\Desktop\\CENG382\\git\\Ceng382_25-26_202111074\\Lab3\\appsettings.json",
               "RelativeDocumentMoniker": "Lab3\\appsettings.json",
