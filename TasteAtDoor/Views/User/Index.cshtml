@@ -1,0 +1,77 @@
+@model IEnumerable<TasteAtDoor.Models.MenuItem>
+
+@{
+    ViewData["Title"] = "User Home";
+}
+
+<div class="dashboard-shell">
+    <div class="page-header-row">
+        <div>
+            <h1 class="page-title">Available Menu Items</h1>
+            <p class="page-subtitle">Browse menus created by caretakers.</p>
+        </div>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="empty-box">
+            <h3>No menu items available</h3>
+            <p>There are currently no menus created by caretakers.</p>
+        </div>
+    }
+    else
+    {
+        <div class="menu-grid">
+            @foreach (var item in Model)
+            {
+                <div class="menu-card">
+                    <img src="data:@item.ImageContentType;base64,@Convert.ToBase64String(item.ImageData)" alt="@item.Name" class="menu-card-image" />
+
+                    <div class="menu-card-header">
+                        <h3>@item.Name</h3>
+                        <span class="menu-price">@item.Price.ToString("0.00")</span>
+                    </div>
+
+                    <p class="menu-description">@item.Description</p>
+
+                    <div class="menu-meta">
+                        Caretaker:
+                        <strong>@(item.Caretaker?.FullName ?? item.Caretaker?.Email ?? "Unknown")</strong>
+                    </div>
+
+                    @if (item.CustomizationGroups.Any())
+                    {
+                        <div class="user-customization-block">
+                            <h4>Available Customizations</h4>
+
+                            @foreach (var group in item.CustomizationGroups.OrderBy(g => g.DisplayOrder).ThenBy(g => g.Id))
+                            {
+                                <div class="user-group-box">
+                                    <div class="user-group-title">
+                                        @group.Title
+                                        <span class="group-badge">@group.GroupType</span>
+                                    </div>
+
+                                    <ul class="user-option-list">
+                                        @foreach (var option in group.Options.OrderBy(o => o.DisplayOrder).ThenBy(o => o.Id))
+                                        {
+                                            <li>
+                                                @option.Name
+                                                @if (option.PriceChange != 0)
+                                                {
+                                                    <span class="option-price-change">
+                                                        (@option.PriceChange.ToString("0.00"))
+                                                    </span>
+                                                }
+                                            </li>
+                                        }
+                                    </ul>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>

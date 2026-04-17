@@ -1,5 +1,3 @@
-using System;
-
 namespace TasteAtDoor.Models
 {
     public class Order
@@ -7,7 +5,7 @@ namespace TasteAtDoor.Models
         public int Id { get; set; }
         public DateTime OrderDate { get; set; }
 
-        public int ApplicationUserId { get; set; }
+        public string ApplicationUserId { get; set; } = string.Empty;
         public ApplicationUser? ApplicationUser { get; set; }
     }
 }

@@ -1,0 +1,50 @@
+@model TasteAtDoor.Models.ViewModels.CustomizationGroupCreateViewModel
+
+@{
+    ViewData["Title"] = "Create Customization Group";
+}
+
+<div class="auth-page">
+    <div class="auth-card">
+        <h1>Create Customization Group</h1>
+        <p>Add a reusable option group for this menu item.</p>
+
+        <form asp-controller="MenuCustomization" asp-action="CreateGroup" method="post">
+            <input asp-for="MenuItemId" type="hidden" />
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="form-group mb-3">
+                <label asp-for="Title"></label>
+                <input asp-for="Title" class="form-control" />
+                <span asp-validation-for="Title" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="GroupType"></label>
+                <select asp-for="GroupType" class="form-control">
+                    <option value="Removable">Removable</option>
+                    <option value="SingleSelect">SingleSelect</option>
+                    <option value="MultiSelect">MultiSelect</option>
+                </select>
+                <span asp-validation-for="GroupType" class="text-danger"></span>
+            </div>
+
+            <div class="form-check mb-3">
+                <input asp-for="IsRequired" class="form-check-input" />
+                <label asp-for="IsRequired" class="form-check-label"></label>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="DisplayOrder"></label>
+                <input asp-for="DisplayOrder" class="form-control" />
+                <span asp-validation-for="DisplayOrder" class="text-danger"></span>
+            </div>
+
+            <button type="submit" class="btn-main">Save Group</button>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

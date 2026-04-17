@@ -1,0 +1,60 @@
+@model IEnumerable<TasteAtDoor.Models.MenuItem>
+
+@{
+    ViewData["Title"] = "Caretaker Dashboard";
+}
+
+<div class="dashboard-shell">
+    <div class="page-header-row">
+        <div>
+            <h1 class="page-title">Caretaker Dashboard</h1>
+            <p class="page-subtitle">Create and manage your menu items.</p>
+        </div>
+
+        <a asp-controller="Caretaker" asp-action="Create" class="btn-main">Create New Menu</a>
+    </div>
+
+    @if (TempData["Success"] is string successMessage)
+    {
+        <div class="success-box">@successMessage</div>
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="empty-box">
+            <h3>No menu items yet</h3>
+            <p>Create your first menu item to make it visible for users.</p>
+        </div>
+    }
+    else
+    {
+        <div class="menu-grid">
+            @foreach (var item in Model)
+            {
+                <div class="menu-card">
+                    <img src="data:@item.ImageContentType;base64,@Convert.ToBase64String(item.ImageData)" alt="@item.Name" class="menu-card-image" />
+
+                    <div class="menu-card-header">
+                        <h3>@item.Name</h3>
+                        <span class="menu-price">@item.Price.ToString("0.00")</span>
+                    </div>
+
+                    <p class="menu-description">@item.Description</p>
+
+                    <div class="caretaker-card-actions">
+                        <a asp-controller="Caretaker" asp-action="Edit" asp-route-id="@item.Id" class="table-link">Edit</a>
+
+                        <a asp-controller="MenuCustomization"
+                           asp-action="Index"
+                           asp-route-menuItemId="@item.Id"
+                           class="table-link">Customizations</a>
+
+                        <form asp-controller="Caretaker" asp-action="Delete" asp-route-id="@item.Id" method="post" class="inline-delete-form">
+                            <button type="submit" class="delete-link-button">Delete</button>
+                        </form>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

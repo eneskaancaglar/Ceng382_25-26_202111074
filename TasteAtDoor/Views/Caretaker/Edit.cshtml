@@ -1,0 +1,54 @@
+@model TasteAtDoor.Models.ViewModels.MenuEditViewModel
+
+@{
+    ViewData["Title"] = "Edit Menu";
+}
+
+<div class="auth-page">
+    <div class="auth-card">
+        <h1>Edit Menu Item</h1>
+        <p>Update your existing menu item.</p>
+
+        @if (!string.IsNullOrWhiteSpace(Model.ExistingImageBase64))
+        {
+            <div class="existing-image-box">
+                <img src="data:@Model.ExistingImageContentType;base64,@Model.ExistingImageBase64" alt="Current menu image" class="edit-preview-image" />
+            </div>
+        }
+
+        <form asp-controller="Caretaker" asp-action="Edit" method="post" enctype="multipart/form-data">
+            <input asp-for="Id" type="hidden" />
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="form-group mb-3">
+                <label asp-for="Name"></label>
+                <input asp-for="Name" class="form-control" />
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="Price"></label>
+                <input asp-for="Price" class="form-control" />
+                <span asp-validation-for="Price" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="Description"></label>
+                <textarea asp-for="Description" class="form-control" rows="4"></textarea>
+                <span asp-validation-for="Description" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="ImageFile">Replace Image (optional)</label>
+                <input asp-for="ImageFile" type="file" class="form-control" accept="image/*" />
+                <span asp-validation-for="ImageFile" class="text-danger"></span>
+            </div>
+
+            <button type="submit" class="btn-main">Update Menu Item</button>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

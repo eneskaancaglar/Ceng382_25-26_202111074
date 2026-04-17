@@ -1,0 +1,46 @@
+@model TasteAtDoor.Models.ViewModels.CustomizationOptionCreateViewModel
+
+@{
+    ViewData["Title"] = "Create Customization Option";
+}
+
+<div class="auth-page">
+    <div class="auth-card">
+        <h1>Create Customization Option</h1>
+        <p>Add an option to: <strong>@ViewBag.GroupTitle</strong></p>
+
+        <form asp-controller="MenuCustomization" asp-action="CreateOption" method="post">
+            <input asp-for="CustomizationGroupId" type="hidden" />
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="form-group mb-3">
+                <label asp-for="Name"></label>
+                <input asp-for="Name" class="form-control" />
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="PriceChange"></label>
+                <input asp-for="PriceChange" class="form-control" />
+                <span asp-validation-for="PriceChange" class="text-danger"></span>
+            </div>
+
+            <div class="form-check mb-3">
+                <input asp-for="IsDefault" class="form-check-input" />
+                <label asp-for="IsDefault" class="form-check-label"></label>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="DisplayOrder"></label>
+                <input asp-for="DisplayOrder" class="form-control" />
+                <span asp-validation-for="DisplayOrder" class="text-danger"></span>
+            </div>
+
+            <button type="submit" class="btn-main">Save Option</button>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

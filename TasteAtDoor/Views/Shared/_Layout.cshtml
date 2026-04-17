@@ -18,9 +18,35 @@
 
                 <div class="top-links">
                     <a asp-controller="Home" asp-action="Index">Home</a>
-                    <a href="#">Menu</a>
-                    <a href="#">Restaurants</a>
-                    <a href="#">Contact</a>
+
+                    @if (User.Identity?.IsAuthenticated ?? false)
+                    {
+                        @if (User.IsInRole("Caretaker"))
+                        {
+                            <a asp-controller="Caretaker" asp-action="Index">My Menus</a>
+                        }
+
+                        @if (User.IsInRole("User"))
+                        {
+                            <a asp-controller="User" asp-action="Index">Browse Menus</a>
+                        }
+
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <a asp-controller="Admin" asp-action="Index">Admin</a>
+                        }
+
+                        <a asp-controller="Account" asp-action="Index">Account</a>
+
+                        <form asp-controller="Account" asp-action="Logout" method="post" class="auth-inline-form">
+                            <button type="submit" class="auth-link-button">Logout</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <a asp-controller="Account" asp-action="Register">Register</a>
+                        <a asp-controller="Account" asp-action="Login">Login</a>
+                    }
                 </div>
             </div>
         </nav>
@@ -31,10 +57,30 @@
             <h3>Navigation</h3>
             <ul>
                 <li><a asp-controller="Home" asp-action="Index">Dashboard</a></li>
-                <li><a href="#">Special Offers</a></li>
-                <li><a href="#">Orders</a></li>
-                <li><a href="#">Favorites</a></li>
-                <li><a href="#">Profile</a></li>
+
+                @if (User.Identity?.IsAuthenticated ?? false)
+                {
+                    @if (User.IsInRole("Caretaker"))
+                    {
+                        <li><a asp-controller="Caretaker" asp-action="Index">My Menu Items</a></li>
+                        <li><a asp-controller="Caretaker" asp-action="Create">Create Menu Item</a></li>
+                    }
+
+                    @if (User.IsInRole("User"))
+                    {
+                        <li><a asp-controller="User" asp-action="Index">Available Menus</a></li>
+                    }
+
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <li><a asp-controller="Admin" asp-action="Index">Admin Dashboard</a></li>
+                    }
+                }
+                else
+                {
+                    <li><a asp-controller="Account" asp-action="Login">Login</a></li>
+                    <li><a asp-controller="Account" asp-action="Register">Register</a></li>
+                }
             </ul>
         </aside>
 

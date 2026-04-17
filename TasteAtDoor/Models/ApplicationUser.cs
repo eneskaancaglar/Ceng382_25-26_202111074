@@ -1,10 +1,13 @@
+using Microsoft.AspNetCore.Identity;
+using System.ComponentModel.DataAnnotations;
+
 namespace TasteAtDoor.Models
 {
-	public class ApplicationUser
+	public class ApplicationUser : IdentityUser
 	{
-		public int Id { get; set; }
+		[StringLength(100)]
 		public string FullName { get; set; } = string.Empty;
-		public string Email { get; set; } = string.Empty;
-		public string Role { get; set; } = string.Empty;
+
+		public ICollection<MenuItem> MenuItems { get; set; } = new List<MenuItem>();
 	}
 }

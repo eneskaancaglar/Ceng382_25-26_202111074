@@ -1,0 +1,95 @@
+@model TasteAtDoor.Models.ViewModels.MenuCustomizationIndexViewModel
+
+@{
+    ViewData["Title"] = "Menu Customizations";
+}
+
+<div class="dashboard-shell">
+    <div class="page-header-row">
+        <div>
+            <h1 class="page-title">Customizations for @Model.MenuName</h1>
+            <p class="page-subtitle">Define dynamic groups and options for this menu item.</p>
+        </div>
+
+        <a asp-controller="MenuCustomization" asp-action="CreateGroup" asp-route-menuItemId="@Model.MenuItemId" class="btn-main">
+            Add Group
+        </a>
+    </div>
+
+    @if (TempData["Success"] is string successMessage)
+    {
+        <div class="success-box">@successMessage</div>
+    }
+
+    @if (!Model.Groups.Any())
+    {
+        <div class="empty-box">
+            <h3>No customization groups yet</h3>
+            <p>Create your first group such as sauces, extras, or removable ingredients.</p>
+        </div>
+    }
+    else
+    {
+        <div class="group-stack">
+            @foreach (var group in Model.Groups)
+            {
+                <div class="group-card">
+                    <div class="group-card-header">
+                        <div>
+                            <h3>@group.Title</h3>
+                            <div class="group-badges">
+                                <span class="group-badge">@group.GroupType</span>
+                                <span class="group-badge">Required: @(group.IsRequired ? "Yes" : "No")</span>
+                            </div>
+                        </div>
+
+                        <div class="group-actions">
+                            <a asp-controller="MenuCustomization"
+                               asp-action="CreateOption"
+                               asp-route-groupId="@group.Id"
+                               class="table-link">Add Option</a>
+
+                            <form asp-controller="MenuCustomization"
+                                  asp-action="DeleteGroup"
+                                  asp-route-id="@group.Id"
+                                  method="post"
+                                  class="inline-delete-form">
+                                <button type="submit" class="delete-link-button">Delete Group</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    @if (!group.Options.Any())
+                    {
+                        <p class="group-empty-text">No options added yet.</p>
+                    }
+                    else
+                    {
+                        <div class="option-list">
+                            @foreach (var option in group.Options.OrderBy(o => o.DisplayOrder).ThenBy(o => o.Id))
+                            {
+                                <div class="option-row">
+                                    <div>
+                                        <strong>@option.Name</strong>
+                                        <span class="option-meta">
+                                            Price Change: @option.PriceChange.ToString("0.00")
+                                            | Default: @(option.IsDefault ? "Yes" : "No")
+                                        </span>
+                                    </div>
+
+                                    <form asp-controller="MenuCustomization"
+                                          asp-action="DeleteOption"
+                                          asp-route-id="@option.Id"
+                                          method="post"
+                                          class="inline-delete-form">
+                                        <button type="submit" class="delete-link-button">Delete Option</button>
+                                    </form>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>
