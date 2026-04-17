@@ -1,0 +1,8 @@
+.vs/
+TasteAtDoor/.vs/
+bin/
+obj/
+TasteAtDoor/bin/
+TasteAtDoor/obj/
+*.user
+*.suo

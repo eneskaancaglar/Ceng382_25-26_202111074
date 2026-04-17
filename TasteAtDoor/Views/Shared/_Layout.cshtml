@@ -1,0 +1,55 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Taste At Door</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <header>
+        <nav class="navbar custom-navbar">
+            <div class="container-fluid navbar-inner">
+                <a class="navbar-brand brand-text" asp-area="" asp-controller="Home" asp-action="Index">
+                    <img src="~/images/logo.png" alt="Taste At Door Logo" class="site-logo" />
+                    <span>Taste At Door</span>
+                </a>
+
+                <div class="top-links">
+                    <a asp-controller="Home" asp-action="Index">Home</a>
+                    <a href="#">Menu</a>
+                    <a href="#">Restaurants</a>
+                    <a href="#">Contact</a>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="page-wrapper">
+        <aside class="sidebar">
+            <h3>Navigation</h3>
+            <ul>
+                <li><a asp-controller="Home" asp-action="Index">Dashboard</a></li>
+                <li><a href="#">Special Offers</a></li>
+                <li><a href="#">Orders</a></li>
+                <li><a href="#">Favorites</a></li>
+                <li><a href="#">Profile</a></li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="custom-footer">
+        <p>© 2026 Taste At Door - All rights reserved.</p>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
