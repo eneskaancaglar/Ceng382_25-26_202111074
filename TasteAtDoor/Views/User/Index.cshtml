@@ -1,7 +1,8 @@
 @model IEnumerable<TasteAtDoor.Models.MenuItem>
 
 @{
-    ViewData["Title"] = "User Home";
+    ViewData["Title"] = "Browse Menus";
+    bool canAddToCart = User.IsInRole("User");
 }
 
 <div class="dashboard-shell">
@@ -10,7 +11,14 @@
             <h1 class="page-title">Available Menu Items</h1>
             <p class="page-subtitle">Browse menus created by caretakers.</p>
         </div>
+
+        @if (canAddToCart)
+        {
+            <a asp-controller="Cart" asp-action="Index" class="btn-main">Go to Cart</a>
+        }
     </div>
+
+    <div id="cart-client-message" class="success-box" style="display:none;"></div>
 
     @if (!Model.Any())
     {
@@ -70,8 +78,33 @@
                             }
                         </div>
                     }
+
+                    @if (canAddToCart)
+                    {
+                        <button type="button"
+                                class="btn-main add-to-cart-button"
+                                data-menu-id="@item.Id"
+                                data-menu-name="@item.Name"
+                                data-menu-price="@item.Price"
+                                data-image-content-type="@item.ImageContentType"
+                                data-image-base64="@Convert.ToBase64String(item.ImageData)">
+                            Add to Cart
+                        </button>
+                    }
                 </div>
             }
         </div>
     }
 </div>
+
+@section Scripts {
+    @if (canAddToCart)
+    {
+        <script src="~/js/cart-storage.js" asp-append-version="true"></script>
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                TasteAtDoorCart.initMenuButtons("cart-client-message");
+            });
+        </script>
+    }
+}

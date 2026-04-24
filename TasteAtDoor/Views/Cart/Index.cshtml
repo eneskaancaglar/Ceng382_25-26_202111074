@@ -1,0 +1,36 @@
+@{
+    ViewData["Title"] = "Cart";
+}
+
+<div class="dashboard-shell">
+    <div class="page-header-row">
+        <div>
+            <h1 class="page-title">Your Cart</h1>
+            <p class="page-subtitle">Review your selected items before payment.</p>
+        </div>
+    </div>
+
+    <div id="cart-empty-state" class="empty-box" style="display:none;">
+        <h3>Your cart is empty</h3>
+        <p>Add menu items from the user page.</p>
+    </div>
+
+    <div id="cart-items-container" class="cart-stack"></div>
+
+    <div id="cart-summary-box" class="cart-summary-box" style="display:none;">
+        <h3 id="cart-total-price">Total Price: 0.00</h3>
+
+        <div class="checkout-button-row">
+            <a asp-controller="Cart" asp-action="Checkout" class="btn-main">Proceed to Payment</a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/cart-storage.js" asp-append-version="true"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            TasteAtDoorCart.renderCartPage("cart-items-container", "cart-empty-state", "cart-summary-box", "cart-total-price");
+        });
+    </script>
+}

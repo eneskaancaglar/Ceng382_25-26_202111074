@@ -1,10 +1,39 @@
+@model TasteAtDoor.Models.ViewModels.Account.AccountDetailsViewModel
+
 @{
-    ViewData["Title"] = "Account";
+    ViewData["Title"] = "My Account";
 }
 
 <div class="auth-page">
     <div class="auth-card">
-        <h1>Account</h1>
-        <p>You are signed in successfully.</p>
+        <h1>My Account</h1>
+        <p>You are currently signed in with the following account.</p>
+
+        <div class="order-success-box">
+            <div><strong>Full Name:</strong> @Model.FullName</div>
+            <div><strong>Email:</strong> @Model.Email</div>
+            <div><strong>Username:</strong> @Model.UserName</div>
+            <div>
+                <strong>Role(s):</strong>
+                @if (Model.Roles.Any())
+                {
+                    @string.Join(", ", Model.Roles)
+                }
+                else
+                {
+                    <span>No role assigned</span>
+                }
+            </div>
+        </div>
+
+        <div class="hero-buttons">
+            <form asp-controller="Account" asp-action="SwitchAccount" method="post">
+                <button type="submit" class="btn-main">Switch Account</button>
+            </form>
+
+            <form asp-controller="Account" asp-action="Logout" method="post">
+                <button type="submit" class="btn-secondary-main">Logout</button>
+            </form>
+        </div>
     </div>
 </div>

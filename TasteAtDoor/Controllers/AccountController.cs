@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using TasteAtDoor.Models;
@@ -81,7 +82,7 @@ namespace TasteAtDoor.Controllers
             var result = await _signInManager.PasswordSignInAsync(
                 model.Email,
                 model.Password,
-                model.RememberMe,
+                false,
                 lockoutOnFailure: false);
 
             if (!result.Succeeded)
@@ -102,6 +103,30 @@ namespace TasteAtDoor.Controllers
             return await RedirectByRole(user);
         }
 
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> Index()
+        {
+            var user = await _userManager.GetUserAsync(User);
+
+            if (user is null)
+            {
+                return RedirectToAction(nameof(Register));
+            }
+
+            var roles = await _userManager.GetRolesAsync(user);
+
+            var model = new AccountDetailsViewModel
+            {
+                FullName = user.FullName,
+                Email = user.Email ?? string.Empty,
+                UserName = user.UserName ?? string.Empty,
+                Roles = roles.ToList()
+            };
+
+            return View(model);
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
@@ -110,10 +135,13 @@ namespace TasteAtDoor.Controllers
             return RedirectToAction("Index", "Home");
         }
 
-        [HttpGet]
-        public IActionResult Index()
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SwitchAccount()
         {
-            return View();
+            await _signInManager.SignOutAsync();
+            return RedirectToAction(nameof(Login));
         }
 
         [HttpGet]

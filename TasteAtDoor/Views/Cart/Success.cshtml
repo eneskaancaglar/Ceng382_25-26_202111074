@@ -1,0 +1,33 @@
+@model TasteAtDoor.Models.ViewModels.OrderSuccessViewModel
+
+@{
+    ViewData["Title"] = "Order Completed";
+}
+
+<div class="auth-page">
+    <div class="auth-card">
+        <h1>Order Completed</h1>
+        <p>Your payment has been processed successfully.</p>
+
+        <div class="order-success-box">
+            <div><strong>Order ID:</strong> @Model.OrderId</div>
+            <div><strong>Order Date:</strong> @Model.OrderDate</div>
+            <div><strong>Status:</strong> @Model.Status</div>
+            <div><strong>Total Price:</strong> @Model.TotalPrice.ToString("0.00")</div>
+        </div>
+
+        <div class="hero-buttons">
+            <a asp-controller="User" asp-action="Index" class="btn-main">Back to Menus</a>
+            <a asp-controller="Cart" asp-action="Index" class="btn-secondary-main">Open Cart</a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/cart-storage.js" asp-append-version="true"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            TasteAtDoorCart.clearCart();
+        });
+    </script>
+}

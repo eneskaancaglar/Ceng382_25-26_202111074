@@ -1,0 +1,82 @@
+@model TasteAtDoor.Models.ViewModels.CheckoutViewModel
+
+@{
+    ViewData["Title"] = "Checkout";
+}
+
+<div class="dashboard-shell">
+    <div class="page-header-row">
+        <div>
+            <h1 class="page-title">Payment</h1>
+            <p class="page-subtitle">Complete your order with a simulated payment.</p>
+        </div>
+    </div>
+
+    <div class="checkout-layout">
+        <div class="table-card">
+            <h3 class="section-title">Order Summary</h3>
+
+            <div id="checkout-empty-state" class="empty-box" style="display:none;">
+                <h3>Your cart is empty</h3>
+                <p>Please go back and add items before checkout.</p>
+            </div>
+
+            <div id="checkout-summary-stack" class="checkout-summary-stack"></div>
+
+            <div id="checkout-total-box" class="checkout-total-box" style="display:none;">
+                Total Price: <strong id="checkout-total-price">0.00</strong>
+            </div>
+        </div>
+
+        <div class="auth-card">
+            <h3 class="section-title">Card Information</h3>
+
+            <form asp-controller="Cart" asp-action="Checkout" method="post" id="checkout-form">
+                <input asp-for="CartJson" type="hidden" id="CartJson" />
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                <div class="form-group mb-3">
+                    <label asp-for="CardHolderName"></label>
+                    <input asp-for="CardHolderName" class="form-control" />
+                    <span asp-validation-for="CardHolderName" class="text-danger"></span>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label asp-for="CardNumber"></label>
+                    <input asp-for="CardNumber" class="form-control" />
+                    <span asp-validation-for="CardNumber" class="text-danger"></span>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label asp-for="ExpiryDate"></label>
+                    <input asp-for="ExpiryDate" class="form-control" placeholder="MM/YY" />
+                    <span asp-validation-for="ExpiryDate" class="text-danger"></span>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label asp-for="CVV"></label>
+                    <input asp-for="CVV" class="form-control" />
+                    <span asp-validation-for="CVV" class="text-danger"></span>
+                </div>
+
+                <button type="submit" class="btn-main">Complete Payment</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/cart-storage.js" asp-append-version="true"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            TasteAtDoorCart.renderCheckoutPage(
+                "checkout-summary-stack",
+                "checkout-empty-state",
+                "checkout-total-box",
+                "checkout-total-price",
+                "CartJson"
+            );
+        });
+    </script>
+}

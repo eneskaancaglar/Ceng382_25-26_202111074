@@ -5,7 +5,7 @@ using TasteAtDoor.Data;
 
 namespace TasteAtDoor.Controllers
 {
-    [Authorize(Roles = "User")]
+    [Authorize(Roles = "User,Caretaker,Admin")]
     public class UserController : Controller
     {
         private readonly ApplicationDbContext _context;

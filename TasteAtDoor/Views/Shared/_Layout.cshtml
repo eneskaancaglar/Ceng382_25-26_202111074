@@ -24,19 +24,22 @@
                         @if (User.IsInRole("Caretaker"))
                         {
                             <a asp-controller="Caretaker" asp-action="Index">My Menus</a>
+                            <a asp-controller="User" asp-action="Index">Browse Menus</a>
                         }
 
                         @if (User.IsInRole("User"))
                         {
                             <a asp-controller="User" asp-action="Index">Browse Menus</a>
+                            <a asp-controller="Cart" asp-action="Index">Cart</a>
                         }
 
                         @if (User.IsInRole("Admin"))
                         {
                             <a asp-controller="Admin" asp-action="Index">Admin</a>
+                            <a asp-controller="User" asp-action="Index">Browse Menus</a>
                         }
 
-                        <a asp-controller="Account" asp-action="Index">Account</a>
+                        <a asp-controller="Account" asp-action="Index">My Account</a>
 
                         <form asp-controller="Account" asp-action="Logout" method="post" class="auth-inline-form">
                             <button type="submit" class="auth-link-button">Logout</button>
@@ -64,17 +67,22 @@
                     {
                         <li><a asp-controller="Caretaker" asp-action="Index">My Menu Items</a></li>
                         <li><a asp-controller="Caretaker" asp-action="Create">Create Menu Item</a></li>
+                        <li><a asp-controller="User" asp-action="Index">Browse Menus</a></li>
                     }
 
                     @if (User.IsInRole("User"))
                     {
                         <li><a asp-controller="User" asp-action="Index">Available Menus</a></li>
+                        <li><a asp-controller="Cart" asp-action="Index">My Cart</a></li>
                     }
 
                     @if (User.IsInRole("Admin"))
                     {
                         <li><a asp-controller="Admin" asp-action="Index">Admin Dashboard</a></li>
+                        <li><a asp-controller="User" asp-action="Index">Browse Menus</a></li>
                     }
+
+                    <li><a asp-controller="Account" asp-action="Index">My Account</a></li>
                 }
                 else
                 {
