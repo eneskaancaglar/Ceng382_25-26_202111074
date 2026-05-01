@@ -1,0 +1,172 @@
+@model TasteAtDoor.Models.ViewModels.OrderHistoryPageViewModel
+
+@{
+    ViewData["Title"] = "Order History";
+}
+
+<div class="dashboard-shell">
+    <div class="page-header-row">
+        <div>
+            <h1 class="page-title">Order History</h1>
+            <p class="page-subtitle">Your completed and previous orders.</p>
+        </div>
+    </div>
+
+    @if (TempData["Success"] is string successMessage)
+    {
+        <div class="success-box">@successMessage</div>
+    }
+
+    <div class="table-card">
+        <form method="get" asp-controller="User" asp-action="Orders" class="row g-3">
+            <div class="col-md-5">
+                <label class="form-label">Search</label>
+                <input name="search" value="@Model.Search" class="form-control" placeholder="Order ID or menu item name" />
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-control">
+                    <option value="">All</option>
+
+                    @if (Model.Status == "Completed")
+                    {
+                        <option value="Completed" selected>Completed</option>
+                    }
+                    else
+                    {
+                        <option value="Completed">Completed</option>
+                    }
+
+                    @if (Model.Status == "Pending")
+                    {
+                        <option value="Pending" selected>Pending</option>
+                    }
+                    else
+                    {
+                        <option value="Pending">Pending</option>
+                    }
+                </select>
+            </div>
+
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn-main w-100">Filter</button>
+            </div>
+        </form>
+    </div>
+
+    @if (!Model.Orders.Any())
+    {
+        <div class="empty-box">
+            <h3>No orders found</h3>
+            <p>You have not placed any matching orders yet.</p>
+        </div>
+    }
+    else
+    {
+        <div class="group-stack">
+            @foreach (var order in Model.Orders)
+            {
+                <div class="group-card">
+                    <div class="group-card-header">
+                        <div>
+                            <h3>Order #@order.Id</h3>
+                            <div class="cart-meta">@order.OrderDate</div>
+                            <div class="cart-meta">Status: @order.Status</div>
+                            <div class="cart-meta">Total: @order.TotalPrice.ToString("0.00")</div>
+                        </div>
+
+                        <div class="group-actions">
+                            <a asp-controller="User"
+                               asp-action="Receipt"
+                               asp-route-id="@order.Id"
+                               class="btn-main">
+                                View Receipt
+                            </a>
+                        </div>
+                    </div>
+
+                    @if (order.OrderItems.Any())
+                    {
+                        <div class="option-list">
+                            @foreach (var item in order.OrderItems)
+                            {
+                                var review = item.Reviews.FirstOrDefault();
+
+                                <div class="option-row">
+                                    <div>
+                                        <strong>@(item.MenuItem?.Name ?? "Menu Item")</strong>
+                                        <span class="option-meta">
+                                            Quantity: @item.Quantity |
+                                            Final Unit Price: @item.FinalUnitPrice.ToString("0.00") |
+                                            Line Total: @item.LineTotal.ToString("0.00")
+                                        </span>
+
+                                        @if (review is not null)
+                                        {
+                                            <div class="option-meta">
+                                                Menu Rating: @review.MenuRating / 5 |
+                                                Caterer Rating: @review.CatererRating / 5
+                                            </div>
+
+                                            @if (!string.IsNullOrWhiteSpace(review.Comment))
+                                            {
+                                                <div class="option-meta">
+                                                    Comment: @review.Comment
+                                                </div>
+                                            }
+                                        }
+                                    </div>
+
+                                    <div>
+                                        @if (order.Status == "Completed" && review is null)
+                                        {
+                                            <a asp-controller="OrderReview"
+                                               asp-action="Create"
+                                               asp-route-orderItemId="@item.Id"
+                                               class="btn-secondary-main">
+                                                Rate This Item
+                                            </a>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        <div class="table-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>Page @Model.Page / @Model.TotalPages</div>
+
+                <div class="d-flex gap-2">
+                    @if (Model.Page > 1)
+                    {
+                        <a class="btn-secondary-main"
+                           asp-controller="User"
+                           asp-action="Orders"
+                           asp-route-search="@Model.Search"
+                           asp-route-status="@Model.Status"
+                           asp-route-page="@(Model.Page - 1)">
+                            Previous
+                        </a>
+                    }
+
+                    @if (Model.Page < Model.TotalPages)
+                    {
+                        <a class="btn-secondary-main"
+                           asp-controller="User"
+                           asp-action="Orders"
+                           asp-route-search="@Model.Search"
+                           asp-route-status="@Model.Status"
+                           asp-route-page="@(Model.Page + 1)">
+                            Next
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>

@@ -12,8 +12,13 @@ namespace TasteAtDoor.Models
 
         public int Quantity { get; set; }
 
-        public decimal UnitPrice { get; set; }
+        public decimal BaseUnitPrice { get; set; }
+
+        public decimal FinalUnitPrice { get; set; }
 
         public decimal LineTotal { get; set; }
+
+        public ICollection<OrderItemCustomization> SelectedCustomizations { get; set; } = new List<OrderItemCustomization>();
+        public ICollection<OrderItemReview> Reviews { get; set; } = new List<OrderItemReview>();
     }
 }

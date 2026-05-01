@@ -1,0 +1,75 @@
+@model TasteAtDoor.Models.ViewModels.CaretakerDashboardViewModel
+
+@{
+    ViewData["Title"] = "Caretaker Dashboard";
+}
+
+<div class="dashboard-shell">
+    <div class="page-header-row">
+        <div>
+            <h1 class="page-title">Caretaker Dashboard</h1>
+            <p class="page-subtitle">Overview of your menus and received orders.</p>
+        </div>
+
+        <a asp-controller="Caretaker" asp-action="Index" class="btn-main">Manage Menus</a>
+    </div>
+
+    <div class="menu-grid">
+        <div class="info-card">
+            <h3>Total Menus</h3>
+            <p>@Model.TotalMenus</p>
+        </div>
+
+        <div class="info-card">
+            <h3>Total Received Orders</h3>
+            <p>@Model.TotalReceivedOrders</p>
+        </div>
+
+        <div class="info-card">
+            <h3>Total Revenue</h3>
+            <p>@Model.TotalRevenue.ToString("0.00")</p>
+        </div>
+
+        <div class="info-card">
+            <h3>Average Rating</h3>
+            <p>
+                @(Model.TotalReviewCount > 0
+                    ? $"{Model.AverageCatererRating:0.0} / 5"
+                    : "No ratings yet")
+            </p>
+        </div>
+    </div>
+
+    <div class="table-card">
+        <h3 class="section-title">Recent Ordered Items</h3>
+
+        @if (!Model.RecentOrderItems.Any())
+        {
+            <p>No orders received yet.</p>
+        }
+        else
+        {
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Menu Item</th>
+                        <th>Quantity</th>
+                        <th>Line Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.RecentOrderItems)
+                    {
+                        <tr>
+                            <td>@item.OrderId</td>
+                            <td>@(item.MenuItem?.Name ?? "Menu Item")</td>
+                            <td>@item.Quantity</td>
+                            <td>@item.LineTotal.ToString("0.00")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>

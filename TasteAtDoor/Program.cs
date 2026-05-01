@@ -1,7 +1,10 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using QuestPDF.Infrastructure;
 using TasteAtDoor.Data;
 using TasteAtDoor.Models;
+using TasteAtDoor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,7 +31,12 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.AccessDeniedPath = "/Account/AccessDenied";
 });
 
+builder.Services.AddScoped<IAppLogService, AppLogService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+
 builder.Services.AddControllersWithViews();
+
+QuestPDF.Settings.License = LicenseType.Community;
 
 var app = builder.Build();
 
@@ -40,6 +48,30 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+
+app.Use(async (context, next) =>
+{
+    try
+    {
+        await next();
+    }
+    catch (Exception ex)
+    {
+        var logService = context.RequestServices.GetRequiredService<IAppLogService>();
+        var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userEmail = context.User.Identity?.Name;
+
+        await logService.LogAsync(
+            eventType: "UnhandledException",
+            message: "Unhandled exception occurred.",
+            level: "Error",
+            userId: userId,
+            userEmail: userEmail,
+            details: ex.ToString());
+
+        throw;
+    }
+});
 
 app.UseRouting();
 

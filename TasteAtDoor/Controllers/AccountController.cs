@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using TasteAtDoor.Models;
 using TasteAtDoor.Models.ViewModels.Account;
+using TasteAtDoor.Services;
 
 namespace TasteAtDoor.Controllers
 {
@@ -10,13 +11,16 @@ namespace TasteAtDoor.Controllers
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly IAppLogService _appLogService;
 
         public AccountController(
             UserManager<ApplicationUser> userManager,
-            SignInManager<ApplicationUser> signInManager)
+            SignInManager<ApplicationUser> signInManager,
+            IAppLogService appLogService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
+            _appLogService = appLogService;
         }
 
         [HttpGet]
@@ -53,8 +57,23 @@ namespace TasteAtDoor.Controllers
             {
                 await _userManager.AddToRoleAsync(user, model.Role);
                 await _signInManager.SignInAsync(user, isPersistent: false);
+
+                await _appLogService.LogAsync(
+                    eventType: "RegisterSuccess",
+                    message: "User registered successfully.",
+                    userId: user.Id,
+                    userEmail: user.Email,
+                    details: $"Role: {model.Role}");
+
                 return await RedirectByRole(user);
             }
+
+            await _appLogService.LogAsync(
+                eventType: "RegisterFailure",
+                message: "User registration failed.",
+                level: "Warning",
+                userEmail: model.Email,
+                details: string.Join(" | ", result.Errors.Select(e => e.Description)));
 
             foreach (var error in result.Errors)
             {
@@ -87,6 +106,12 @@ namespace TasteAtDoor.Controllers
 
             if (!result.Succeeded)
             {
+                await _appLogService.LogAsync(
+                    eventType: "LoginFailure",
+                    message: "Failed login attempt.",
+                    level: "Warning",
+                    userEmail: model.Email);
+
                 ModelState.AddModelError(string.Empty, "Invalid login attempt.");
                 return View(model);
             }
@@ -96,9 +121,22 @@ namespace TasteAtDoor.Controllers
             if (user is null)
             {
                 await _signInManager.SignOutAsync();
+
+                await _appLogService.LogAsync(
+                    eventType: "LoginFailure",
+                    message: "Login succeeded but user could not be loaded.",
+                    level: "Error",
+                    userEmail: model.Email);
+
                 ModelState.AddModelError(string.Empty, "User not found.");
                 return View(model);
             }
+
+            await _appLogService.LogAsync(
+                eventType: "LoginSuccess",
+                message: "User logged in successfully.",
+                userId: user.Id,
+                userEmail: user.Email);
 
             return await RedirectByRole(user);
         }
@@ -131,6 +169,17 @@ namespace TasteAtDoor.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
+            var user = await _userManager.GetUserAsync(User);
+
+            if (user is not null)
+            {
+                await _appLogService.LogAsync(
+                    eventType: "Logout",
+                    message: "User logged out.",
+                    userId: user.Id,
+                    userEmail: user.Email);
+            }
+
             await _signInManager.SignOutAsync();
             return RedirectToAction("Index", "Home");
         }
@@ -140,6 +189,17 @@ namespace TasteAtDoor.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SwitchAccount()
         {
+            var user = await _userManager.GetUserAsync(User);
+
+            if (user is not null)
+            {
+                await _appLogService.LogAsync(
+                    eventType: "SwitchAccount",
+                    message: "User switched account.",
+                    userId: user.Id,
+                    userEmail: user.Email);
+            }
+
             await _signInManager.SignOutAsync();
             return RedirectToAction(nameof(Login));
         }

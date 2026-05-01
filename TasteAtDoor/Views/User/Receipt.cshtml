@@ -1,0 +1,82 @@
+@model TasteAtDoor.Models.Order
+
+@{
+    ViewData["Title"] = "Receipt";
+    var items = Model?.OrderItems?.ToList() ?? new List<TasteAtDoor.Models.OrderItem>();
+}
+
+<div class="dashboard-shell">
+    <h1 class="page-title">Receipt</h1>
+    <p class="page-subtitle">Generated dynamically from order data.</p>
+
+    <div style="margin-bottom:20px;">
+        <a asp-controller="User" asp-action="Orders" class="btn-secondary-main">Back to Orders</a>
+        <a asp-controller="OrderDocument"
+           asp-action="AgreementPdf"
+           asp-route-id="@Model.Id"
+           class="btn-secondary-main">
+            Download Agreement PDF
+        </a>
+        <button type="button" class="btn-main" onclick="window.print()">Print Receipt</button>
+    </div>
+
+    <div class="group-card" style="padding:20px; margin-bottom:20px;">
+        <h3>Order Information</h3>
+        <p><strong>Order ID:</strong> @Model.Id</p>
+        <p><strong>Order Date:</strong> @Model.OrderDate</p>
+        <p><strong>Status:</strong> @Model.Status</p>
+        <p><strong>Total Price:</strong> @Model.TotalPrice.ToString("0.00")</p>
+    </div>
+
+    <div class="group-card" style="padding:20px; margin-bottom:20px;">
+        <h3>Customer Information</h3>
+        <p><strong>Name:</strong> @(Model.ApplicationUser?.FullName ?? "Unknown Customer")</p>
+        <p><strong>Email:</strong> @(Model.ApplicationUser?.Email ?? "No email")</p>
+    </div>
+
+    <div class="group-card" style="padding:20px; margin-bottom:20px;">
+        <h3>Ordered Items</h3>
+
+        @if (!items.Any())
+        {
+            <p>No items found for this order.</p>
+        }
+        else
+        {
+            @foreach (var item in items)
+            {
+                var customizations = item.SelectedCustomizations?.ToList() ?? new List<TasteAtDoor.Models.OrderItemCustomization>();
+
+                <div style="border:1px solid #ccc; padding:15px; margin-bottom:15px; border-radius:8px;">
+                    <p><strong>Menu Item:</strong> @(item.MenuItem?.Name ?? "Menu Item")</p>
+                    <p><strong>Quantity:</strong> @item.Quantity</p>
+                    <p><strong>Base Unit Price:</strong> @item.BaseUnitPrice.ToString("0.00")</p>
+                    <p><strong>Final Unit Price:</strong> @item.FinalUnitPrice.ToString("0.00")</p>
+                    <p><strong>Line Total:</strong> @item.LineTotal.ToString("0.00")</p>
+
+                    <p><strong>Customizations:</strong></p>
+
+                    @if (!customizations.Any())
+                    {
+                        <p>No customization selected</p>
+                    }
+                    else
+                    {
+                        <ul>
+                            @foreach (var customization in customizations)
+                            {
+                                <li>
+                                    @customization.GroupTitle: @customization.OptionName
+                                    @if (customization.PriceChange != 0)
+                                    {
+                                        <span> (@customization.PriceChange.ToString("0.00"))</span>
+                                    }
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
+            }
+        }
+    </div>
+</div>

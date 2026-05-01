@@ -24,10 +24,9 @@
 </div>
 
 @section Scripts {
-    <script src="~/js/cart-storage.js" asp-append-version="true"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            TasteAtDoorCart.clearCart();
+            localStorage.removeItem("tasteAtDoorCart");
         });
     </script>
 }

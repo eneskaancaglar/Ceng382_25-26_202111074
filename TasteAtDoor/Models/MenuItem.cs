@@ -7,20 +7,22 @@ namespace TasteAtDoor.Models
         public int Id { get; set; }
 
         [Required]
-        [StringLength(100)]
+        [StringLength(120)]
         public string Name { get; set; } = string.Empty;
 
-        [Required]
-        [Range(0.01, 999999.0)]
+        [Range(0.01, 100000)]
         public decimal Price { get; set; }
 
         [Required]
-        [StringLength(500)]
+        [StringLength(1000)]
         public string Description { get; set; } = string.Empty;
 
         [Required]
-        public string CaretakerId { get; set; } = string.Empty;
+        [StringLength(250)]
+        public string LocationText { get; set; } = string.Empty;
 
+        [Required]
+        public string CaretakerId { get; set; } = string.Empty;
         public ApplicationUser? Caretaker { get; set; }
 
         [Required]

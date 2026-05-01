@@ -1,10 +1,38 @@
+@model TasteAtDoor.Models.ViewModels.AdminDashboardViewModel
+
 @{
     ViewData["Title"] = "Admin Dashboard";
 }
 
-<div class="auth-page">
-    <div class="auth-card">
-        <h1>Admin Dashboard</h1>
-        <p>You are logged in as an Admin.</p>
+<div class="dashboard-shell">
+    <div class="page-header-row">
+        <div>
+            <h1 class="page-title">Admin Dashboard</h1>
+            <p class="page-subtitle">System-wide project summary.</p>
+        </div>
+
+        <a asp-controller="Admin" asp-action="Logs" class="btn-main">Open Logs</a>
+    </div>
+
+    <div class="menu-grid">
+        <div class="info-card">
+            <h3>Total Users</h3>
+            <p>@Model.TotalUsers</p>
+        </div>
+
+        <div class="info-card">
+            <h3>Total Caretakers</h3>
+            <p>@Model.TotalCaretakers</p>
+        </div>
+
+        <div class="info-card">
+            <h3>Total Orders</h3>
+            <p>@Model.TotalOrders</p>
+        </div>
+
+        <div class="info-card">
+            <h3>Total Menu Items</h3>
+            <p>@Model.TotalMenuItems</p>
+        </div>
     </div>
 </div>

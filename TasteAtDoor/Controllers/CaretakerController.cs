@@ -22,7 +22,7 @@ namespace TasteAtDoor.Controllers
             _userManager = userManager;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string search = "", int page = 1)
         {
             var currentUser = await _userManager.GetUserAsync(User);
 
@@ -31,12 +31,86 @@ namespace TasteAtDoor.Controllers
                 return Challenge();
             }
 
-            var menus = await _context.MenuItems
+            const int pageSize = 6;
+
+            var query = _context.MenuItems
                 .Where(m => m.CaretakerId == currentUser.Id)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                query = query.Where(m =>
+                    m.Name.Contains(search) ||
+                    m.Description.Contains(search) ||
+                    m.LocationText.Contains(search));
+            }
+
+            var totalCount = await query.CountAsync();
+            var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+
+            if (totalPages == 0)
+                totalPages = 1;
+
+            if (page < 1)
+                page = 1;
+
+            if (page > totalPages)
+                page = totalPages;
+
+            var menus = await query
                 .OrderByDescending(m => m.Id)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
 
-            return View(menus);
+            var model = new CaretakerMenuListViewModel
+            {
+                MenuItems = menus,
+                Search = search,
+                Page = page,
+                TotalPages = totalPages
+            };
+
+            return View(model);
+        }
+
+        public async Task<IActionResult> Dashboard()
+        {
+            var currentUser = await _userManager.GetUserAsync(User);
+
+            if (currentUser is null)
+            {
+                return Challenge();
+            }
+
+            var ownedMenuIds = await _context.MenuItems
+                .Where(m => m.CaretakerId == currentUser.Id)
+                .Select(m => m.Id)
+                .ToListAsync();
+
+            var relatedOrderItems = await _context.OrderItems
+                .Include(oi => oi.Order)
+                .Include(oi => oi.MenuItem)
+                .Where(oi => ownedMenuIds.Contains(oi.MenuItemId))
+                .OrderByDescending(oi => oi.Order!.OrderDate)
+                .ToListAsync();
+
+            var relatedReviews = await _context.OrderItemReviews
+                .Where(r => r.CatererId == currentUser.Id)
+                .ToListAsync();
+
+            var model = new CaretakerDashboardViewModel
+            {
+                TotalMenus = ownedMenuIds.Count,
+                TotalReceivedOrders = relatedOrderItems.Count,
+                TotalCompletedOrders = relatedOrderItems.Count(oi => oi.Order != null && oi.Order.Status == "Completed"),
+                TotalRevenue = relatedOrderItems.Sum(oi => oi.LineTotal),
+                AverageCatererRating = relatedReviews.Any() ? relatedReviews.Average(r => r.CatererRating) : 0,
+                TotalReviewCount = relatedReviews.Count,
+                RecentOrderItems = relatedOrderItems.Take(8).ToList()
+            };
+
+            return View(model);
         }
 
         [HttpGet]
@@ -79,6 +153,7 @@ namespace TasteAtDoor.Controllers
                 Name = model.Name,
                 Price = model.Price,
                 Description = model.Description,
+                LocationText = model.LocationText,
                 CaretakerId = currentUser.Id,
                 ImageFileName = model.ImageFile.FileName,
                 ImageContentType = model.ImageFile.ContentType,
@@ -116,6 +191,7 @@ namespace TasteAtDoor.Controllers
                 Name = menuItem.Name,
                 Price = menuItem.Price,
                 Description = menuItem.Description,
+                LocationText = menuItem.LocationText,
                 ExistingImageBase64 = Convert.ToBase64String(menuItem.ImageData),
                 ExistingImageContentType = menuItem.ImageContentType
             };
@@ -150,6 +226,7 @@ namespace TasteAtDoor.Controllers
             menuItem.Name = model.Name;
             menuItem.Price = model.Price;
             menuItem.Description = model.Description;
+            menuItem.LocationText = model.LocationText;
 
             if (model.ImageFile is not null && model.ImageFile.Length > 0)
             {

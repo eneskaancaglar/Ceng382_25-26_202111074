@@ -27,10 +27,191 @@
 </div>
 
 @section Scripts {
-    <script src="~/js/cart-storage.js" asp-append-version="true"></script>
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            TasteAtDoorCart.renderCartPage("cart-items-container", "cart-empty-state", "cart-summary-box", "cart-total-price");
-        });
-    </script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const CART_KEY = "tasteAtDoorCart";
+
+        function parseNumber(value, fallback = 0) {
+            const n = Number(value);
+            return Number.isFinite(n) ? n : fallback;
+        }
+
+        function getRawCart() {
+            const json = localStorage.getItem(CART_KEY);
+            if (!json) return [];
+            try {
+                return JSON.parse(json);
+            } catch {
+                return [];
+            }
+        }
+
+        function normalizeOption(raw) {
+            return {
+                groupId: parseNumber(raw?.groupId ?? raw?.GroupId),
+                groupTitle: raw?.groupTitle ?? raw?.GroupTitle ?? "",
+                optionId: parseNumber(raw?.optionId ?? raw?.OptionId),
+                optionName: raw?.optionName ?? raw?.OptionName ?? "",
+                priceChange: parseNumber(raw?.priceChange ?? raw?.PriceChange)
+            };
+        }
+
+        function normalizeItem(raw) {
+            const baseUnitPrice = parseNumber(
+                raw?.baseUnitPrice ?? raw?.BaseUnitPrice ?? raw?.unitPrice ?? raw?.UnitPrice
+            );
+
+            const finalUnitPrice = parseNumber(
+                raw?.finalUnitPrice ?? raw?.FinalUnitPrice ?? raw?.unitPrice ?? raw?.UnitPrice ?? baseUnitPrice
+            );
+
+            const quantity = parseNumber(raw?.quantity ?? raw?.Quantity, 1);
+
+            const selectedOptionsRaw = raw?.selectedOptions ?? raw?.SelectedOptions ?? [];
+
+            const selectedOptions = Array.isArray(selectedOptionsRaw)
+                ? selectedOptionsRaw.map(normalizeOption)
+                : [];
+
+            const signature =
+                raw?.signature ??
+                raw?.Signature ??
+                `${parseNumber(raw?.menuItemId ?? raw?.MenuItemId)}|${selectedOptions.map(x => x.optionId).sort((a, b) => a - b).join("-")}`;
+
+            return {
+                signature: signature,
+                menuItemId: parseNumber(raw?.menuItemId ?? raw?.MenuItemId),
+                name: raw?.name ?? raw?.Name ?? "",
+                baseUnitPrice: baseUnitPrice,
+                finalUnitPrice: finalUnitPrice,
+                quantity: quantity,
+                imageContentType: raw?.imageContentType ?? raw?.ImageContentType ?? "",
+                imageBase64: raw?.imageBase64 ?? raw?.ImageBase64 ?? "",
+                selectedOptions: selectedOptions
+            };
+        }
+
+        function getCart() {
+            return getRawCart()
+                .map(normalizeItem)
+                .filter(x => x.menuItemId > 0 && x.name);
+        }
+
+        function saveCart(cart) {
+            localStorage.setItem(CART_KEY, JSON.stringify(cart));
+        }
+
+        function getTotal(cart) {
+            return cart.reduce((sum, item) => sum + (item.finalUnitPrice * item.quantity), 0);
+        }
+
+        function escapeHtml(value) {
+            return String(value)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function renderSelectedOptions(item) {
+            if (!item.selectedOptions || item.selectedOptions.length === 0) {
+                return `<div class="cart-meta">No customization selected</div>`;
+            }
+
+            const items = item.selectedOptions.map(option => {
+                const priceHtml = option.priceChange !== 0
+                    ? ` <span class="option-price-change">(${option.priceChange.toFixed(2)})</span>`
+                    : "";
+
+                return `<li>${escapeHtml(option.groupTitle)}: ${escapeHtml(option.optionName)}${priceHtml}</li>`;
+            }).join("");
+
+            return `<ul class="user-option-list">${items}</ul>`;
+        }
+
+        function render() {
+            const container = document.getElementById("cart-items-container");
+            const emptyBox = document.getElementById("cart-empty-state");
+            const summaryBox = document.getElementById("cart-summary-box");
+            const totalBox = document.getElementById("cart-total-price");
+
+            const cart = getCart();
+
+            saveCart(cart);
+
+            container.innerHTML = "";
+
+            if (cart.length === 0) {
+                emptyBox.style.display = "block";
+                summaryBox.style.display = "none";
+                return;
+            }
+
+            emptyBox.style.display = "none";
+            summaryBox.style.display = "block";
+
+            cart.forEach(item => {
+                const lineTotal = item.finalUnitPrice * item.quantity;
+
+                const card = document.createElement("div");
+                card.className = "cart-card";
+                card.innerHTML = `
+                    <img src="data:${item.imageContentType};base64,${item.imageBase64}" alt="${escapeHtml(item.name)}" class="cart-image" />
+                    <div class="cart-content">
+                        <div class="cart-title-row">
+                            <h3>${escapeHtml(item.name)}</h3>
+                            <span class="menu-price">${lineTotal.toFixed(2)}</span>
+                        </div>
+                        <div class="cart-meta">Base Price: ${item.baseUnitPrice.toFixed(2)}</div>
+                        <div class="cart-meta">Final Unit Price: ${item.finalUnitPrice.toFixed(2)}</div>
+                        <div class="cart-meta">Quantity: ${item.quantity}</div>
+                        ${renderSelectedOptions(item)}
+                        <div class="cart-actions">
+                            <button class="mini-btn btn-inc">+</button>
+                            <button class="mini-btn btn-dec">-</button>
+                            <button class="delete-link-button btn-remove">Remove</button>
+                        </div>
+                    </div>
+                `;
+
+                card.querySelector(".btn-inc").addEventListener("click", function () {
+                    const current = getCart();
+                    const found = current.find(x => x.signature === item.signature);
+                    if (found) {
+                        found.quantity += 1;
+                        saveCart(current);
+                        render();
+                    }
+                });
+
+                card.querySelector(".btn-dec").addEventListener("click", function () {
+                    const current = getCart();
+                    const found = current.find(x => x.signature === item.signature);
+                    if (found) {
+                        found.quantity -= 1;
+                        if (found.quantity <= 0) {
+                            saveCart(current.filter(x => x.signature !== item.signature));
+                        } else {
+                            saveCart(current);
+                        }
+                        render();
+                    }
+                });
+
+                card.querySelector(".btn-remove").addEventListener("click", function () {
+                    const current = getCart().filter(x => x.signature !== item.signature);
+                    saveCart(current);
+                    render();
+                });
+
+                container.appendChild(card);
+            });
+
+            totalBox.textContent = "Total Price: " + getTotal(cart).toFixed(2);
+        }
+
+        render();
+    });
+</script>
 }

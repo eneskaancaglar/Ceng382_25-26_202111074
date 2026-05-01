@@ -1,0 +1,51 @@
+@model TasteAtDoor.Models.ViewModels.OrderItemReviewCreateViewModel
+
+@{
+    ViewData["Title"] = "Rate Order Item";
+}
+
+<div class="auth-page">
+    <div class="auth-card">
+        <h1>Rate Order Item</h1>
+        <p>Submit a menu rating, a caterer rating, and your comment.</p>
+
+        <div class="order-success-box">
+            <div><strong>Order ID:</strong> @Model.OrderId</div>
+            <div><strong>Menu Item:</strong> @Model.MenuItemName</div>
+            <div><strong>Caterer:</strong> @Model.CatererName</div>
+        </div>
+
+        <form asp-controller="OrderReview" asp-action="Create" method="post">
+            <input asp-for="OrderItemId" type="hidden" />
+            <input asp-for="OrderId" type="hidden" />
+            <input asp-for="MenuItemName" type="hidden" />
+            <input asp-for="CatererName" type="hidden" />
+
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="form-group mb-3">
+                <label asp-for="MenuRating">Menu Rating (1-5)</label>
+                <input asp-for="MenuRating" class="form-control" type="number" min="1" max="5" />
+                <span asp-validation-for="MenuRating" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="CatererRating">Caterer Rating (1-5)</label>
+                <input asp-for="CatererRating" class="form-control" type="number" min="1" max="5" />
+                <span asp-validation-for="CatererRating" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="Comment"></label>
+                <textarea asp-for="Comment" class="form-control" rows="5"></textarea>
+                <span asp-validation-for="Comment" class="text-danger"></span>
+            </div>
+
+            <button type="submit" class="btn-main">Submit Review</button>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

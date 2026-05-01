@@ -31,7 +31,7 @@
         <div class="auth-card">
             <h3 class="section-title">Card Information</h3>
 
-            <form asp-controller="Cart" asp-action="Checkout" method="post" id="checkout-form">
+            <form asp-controller="Cart" asp-action="Checkout" method="post">
                 <input asp-for="CartJson" type="hidden" id="CartJson" />
                 <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
@@ -67,16 +67,129 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script src="~/js/cart-storage.js" asp-append-version="true"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            TasteAtDoorCart.renderCheckoutPage(
-                "checkout-summary-stack",
-                "checkout-empty-state",
-                "checkout-total-box",
-                "checkout-total-price",
-                "CartJson"
-            );
+            const CART_KEY = "tasteAtDoorCart";
+
+            function parseNumber(value, fallback = 0) {
+                const n = Number(value);
+                return Number.isFinite(n) ? n : fallback;
+            }
+
+            function getRawCart() {
+                const json = localStorage.getItem(CART_KEY);
+                if (!json) return [];
+                try {
+                    return JSON.parse(json);
+                } catch {
+                    return [];
+                }
+            }
+
+            function normalizeOption(raw) {
+                return {
+                    groupId: parseNumber(raw?.groupId ?? raw?.GroupId),
+                    groupTitle: raw?.groupTitle ?? raw?.GroupTitle ?? "",
+                    optionId: parseNumber(raw?.optionId ?? raw?.OptionId),
+                    optionName: raw?.optionName ?? raw?.OptionName ?? "",
+                    priceChange: parseNumber(raw?.priceChange ?? raw?.PriceChange)
+                };
+            }
+
+            function normalizeItem(raw) {
+                const baseUnitPrice = parseNumber(
+                    raw?.baseUnitPrice ?? raw?.BaseUnitPrice ?? raw?.unitPrice ?? raw?.UnitPrice
+                );
+
+                const finalUnitPrice = parseNumber(
+                    raw?.finalUnitPrice ?? raw?.FinalUnitPrice ?? raw?.unitPrice ?? raw?.UnitPrice ?? baseUnitPrice
+                );
+
+                const selectedOptionsRaw = raw?.selectedOptions ?? raw?.SelectedOptions ?? [];
+
+                return {
+                    signature: raw?.signature ?? raw?.Signature ?? "",
+                    menuItemId: parseNumber(raw?.menuItemId ?? raw?.MenuItemId),
+                    name: raw?.name ?? raw?.Name ?? "",
+                    baseUnitPrice: baseUnitPrice,
+                    finalUnitPrice: finalUnitPrice,
+                    quantity: parseNumber(raw?.quantity ?? raw?.Quantity, 1),
+                    imageContentType: raw?.imageContentType ?? raw?.ImageContentType ?? "",
+                    imageBase64: raw?.imageBase64 ?? raw?.ImageBase64 ?? "",
+                    selectedOptions: Array.isArray(selectedOptionsRaw) ? selectedOptionsRaw.map(normalizeOption) : []
+                };
+            }
+
+            function getCart() {
+                return getRawCart()
+                    .map(normalizeItem)
+                    .filter(x => x.menuItemId > 0 && x.name);
+            }
+
+            function escapeHtml(value) {
+                return String(value)
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
+
+            function renderSelectedOptions(item) {
+                if (!item.selectedOptions || item.selectedOptions.length === 0) {
+                    return `<div class="cart-meta">No customization selected</div>`;
+                }
+
+                const items = item.selectedOptions.map(option => {
+                    const priceHtml = option.priceChange !== 0
+                        ? ` <span class="option-price-change">(${option.priceChange.toFixed(2)})</span>`
+                        : "";
+
+                    return `<li>${escapeHtml(option.groupTitle)}: ${escapeHtml(option.optionName)}${priceHtml}</li>`;
+                }).join("");
+
+                return `<ul class="user-option-list">${items}</ul>`;
+            }
+
+            const cart = getCart();
+            document.getElementById("CartJson").value = JSON.stringify(cart);
+
+            const emptyBox = document.getElementById("checkout-empty-state");
+            const summaryStack = document.getElementById("checkout-summary-stack");
+            const totalBox = document.getElementById("checkout-total-box");
+            const totalText = document.getElementById("checkout-total-price");
+
+            if (cart.length === 0) {
+                emptyBox.style.display = "block";
+                totalBox.style.display = "none";
+                return;
+            }
+
+            emptyBox.style.display = "none";
+            totalBox.style.display = "block";
+
+            let total = 0;
+
+            cart.forEach(item => {
+                const lineTotal = item.finalUnitPrice * item.quantity;
+                total += lineTotal;
+
+                const row = document.createElement("div");
+                row.className = "checkout-summary-row";
+                row.innerHTML = `
+                    <div>
+                        <strong>${escapeHtml(item.name)}</strong>
+                        <div class="cart-meta">Quantity: ${item.quantity}</div>
+                        <div class="cart-meta">Base Price: ${item.baseUnitPrice.toFixed(2)}</div>
+                        <div class="cart-meta">Final Unit Price: ${item.finalUnitPrice.toFixed(2)}</div>
+                        ${renderSelectedOptions(item)}
+                    </div>
+                    <div class="menu-price">${lineTotal.toFixed(2)}</div>
+                `;
+                summaryStack.appendChild(row);
+            });
+
+            totalText.textContent = total.toFixed(2);
         });
     </script>
 }

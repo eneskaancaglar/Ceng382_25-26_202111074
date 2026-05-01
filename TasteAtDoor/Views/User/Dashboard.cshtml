@@ -1,0 +1,66 @@
+@model TasteAtDoor.Models.ViewModels.UserDashboardViewModel
+
+@{
+    ViewData["Title"] = "User Dashboard";
+}
+
+<div class="dashboard-shell">
+    <div class="page-header-row">
+        <div>
+            <h1 class="page-title">User Dashboard</h1>
+            <p class="page-subtitle">Your purchase summary and recent activity.</p>
+        </div>
+
+        <a asp-controller="User" asp-action="Orders" class="btn-main">View Order History</a>
+    </div>
+
+    <div class="menu-grid">
+        <div class="info-card">
+            <h3>Total Orders</h3>
+            <p>@Model.TotalOrders</p>
+        </div>
+
+        <div class="info-card">
+            <h3>Total Spent</h3>
+            <p>@Model.TotalSpent.ToString("0.00")</p>
+        </div>
+
+        <div class="info-card">
+            <h3>Total Items Purchased</h3>
+            <p>@Model.TotalItemsPurchased</p>
+        </div>
+    </div>
+
+    <div class="table-card">
+        <h3 class="section-title">Recent Orders</h3>
+
+        @if (!Model.RecentOrders.Any())
+        {
+            <p>No orders yet.</p>
+        }
+        else
+        {
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var order in Model.RecentOrders)
+                    {
+                        <tr>
+                            <td>@order.Id</td>
+                            <td>@order.OrderDate</td>
+                            <td>@order.Status</td>
+                            <td>@order.TotalPrice.ToString("0.00")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>

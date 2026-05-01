@@ -1,23 +1,17 @@
 @model TasteAtDoor.Models.ViewModels.MenuEditViewModel
 
 @{
-    ViewData["Title"] = "Edit Menu";
+    ViewData["Title"] = "Edit Menu Item";
 }
 
 <div class="auth-page">
     <div class="auth-card">
         <h1>Edit Menu Item</h1>
-        <p>Update your existing menu item.</p>
-
-        @if (!string.IsNullOrWhiteSpace(Model.ExistingImageBase64))
-        {
-            <div class="existing-image-box">
-                <img src="data:@Model.ExistingImageContentType;base64,@Model.ExistingImageBase64" alt="Current menu image" class="edit-preview-image" />
-            </div>
-        }
+        <p>Update your menu item information.</p>
 
         <form asp-controller="Caretaker" asp-action="Edit" method="post" enctype="multipart/form-data">
             <input asp-for="Id" type="hidden" />
+
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
             <div class="form-group mb-3">
@@ -39,12 +33,30 @@
             </div>
 
             <div class="form-group mb-3">
-                <label asp-for="ImageFile">Replace Image (optional)</label>
-                <input asp-for="ImageFile" type="file" class="form-control" accept="image/*" />
+                <label asp-for="LocationText"></label>
+                <input asp-for="LocationText" class="form-control" placeholder="Example: Kızılay, Ankara" />
+                <span asp-validation-for="LocationText" class="text-danger"></span>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(Model.ExistingImageBase64) && !string.IsNullOrWhiteSpace(Model.ExistingImageContentType))
+            {
+                <div class="form-group mb-3">
+                    <label>Current Image</label>
+                    <div>
+                        <img src="data:@Model.ExistingImageContentType;base64,@Model.ExistingImageBase64"
+                             alt="Current image"
+                             style="max-width:220px; border-radius:12px;" />
+                    </div>
+                </div>
+            }
+
+            <div class="form-group mb-3">
+                <label asp-for="ImageFile"></label>
+                <input asp-for="ImageFile" type="file" class="form-control" />
                 <span asp-validation-for="ImageFile" class="text-danger"></span>
             </div>
 
-            <button type="submit" class="btn-main">Update Menu Item</button>
+            <button type="submit" class="btn-main">Save Changes</button>
         </form>
     </div>
 </div>

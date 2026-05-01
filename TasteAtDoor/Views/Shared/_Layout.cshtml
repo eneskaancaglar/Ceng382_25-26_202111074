@@ -23,19 +23,21 @@
                     {
                         @if (User.IsInRole("Caretaker"))
                         {
+                            <a asp-controller="Caretaker" asp-action="Dashboard">Dashboard</a>
                             <a asp-controller="Caretaker" asp-action="Index">My Menus</a>
                             <a asp-controller="User" asp-action="Index">Browse Menus</a>
                         }
 
                         @if (User.IsInRole("User"))
                         {
+                            <a asp-controller="User" asp-action="Dashboard">Dashboard</a>
                             <a asp-controller="User" asp-action="Index">Browse Menus</a>
                             <a asp-controller="Cart" asp-action="Index">Cart</a>
                         }
 
                         @if (User.IsInRole("Admin"))
                         {
-                            <a asp-controller="Admin" asp-action="Index">Admin</a>
+                            <a asp-controller="Admin" asp-action="Index">Dashboard</a>
                             <a asp-controller="User" asp-action="Index">Browse Menus</a>
                         }
 
@@ -65,6 +67,7 @@
                 {
                     @if (User.IsInRole("Caretaker"))
                     {
+                        <li><a asp-controller="Caretaker" asp-action="Dashboard">Caretaker Dashboard</a></li>
                         <li><a asp-controller="Caretaker" asp-action="Index">My Menu Items</a></li>
                         <li><a asp-controller="Caretaker" asp-action="Create">Create Menu Item</a></li>
                         <li><a asp-controller="User" asp-action="Index">Browse Menus</a></li>
@@ -72,6 +75,8 @@
 
                     @if (User.IsInRole("User"))
                     {
+                        <li><a asp-controller="User" asp-action="Dashboard">User Dashboard</a></li>
+                        <li><a asp-controller="User" asp-action="Orders">Order History</a></li>
                         <li><a asp-controller="User" asp-action="Index">Available Menus</a></li>
                         <li><a asp-controller="Cart" asp-action="Index">My Cart</a></li>
                     }

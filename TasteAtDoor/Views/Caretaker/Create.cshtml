@@ -1,13 +1,13 @@
 @model TasteAtDoor.Models.ViewModels.MenuCreateViewModel
 
 @{
-    ViewData["Title"] = "Create Menu";
+    ViewData["Title"] = "Create Menu Item";
 }
 
 <div class="auth-page">
     <div class="auth-card">
         <h1>Create Menu Item</h1>
-        <p>Add a menu item with an image.</p>
+        <p>Add a new menu item for your restaurant.</p>
 
         <form asp-controller="Caretaker" asp-action="Create" method="post" enctype="multipart/form-data">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
@@ -31,12 +31,18 @@
             </div>
 
             <div class="form-group mb-3">
-                <label asp-for="ImageFile">Menu Image</label>
-                <input asp-for="ImageFile" type="file" class="form-control" accept="image/*" />
+                <label asp-for="LocationText"></label>
+                <input asp-for="LocationText" class="form-control" placeholder="Example: Kızılay, Ankara" />
+                <span asp-validation-for="LocationText" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="ImageFile"></label>
+                <input asp-for="ImageFile" type="file" class="form-control" />
                 <span asp-validation-for="ImageFile" class="text-danger"></span>
             </div>
 
-            <button type="submit" class="btn-main">Save Menu Item</button>
+            <button type="submit" class="btn-main">Create</button>
         </form>
     </div>
 </div>

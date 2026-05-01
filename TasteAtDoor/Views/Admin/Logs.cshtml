@@ -1,0 +1,133 @@
+@model TasteAtDoor.Models.ViewModels.AppLogListViewModel
+
+@{
+    ViewData["Title"] = "System Logs";
+}
+
+<div class="dashboard-shell">
+    <div class="page-header-row">
+        <div>
+            <h1 class="page-title">System Logs</h1>
+            <p class="page-subtitle">Filter and inspect system activity.</p>
+        </div>
+    </div>
+
+    <div class="table-card">
+        <form method="get" asp-controller="Admin" asp-action="Logs" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Search</label>
+                <input name="search" value="@Model.Search" class="form-control" />
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label">Level</label>
+                <select name="level" class="form-control">
+                    <option value="">All</option>
+
+                    @if (Model.Level == "Info")
+                    {
+                        <option value="Info" selected>Info</option>
+                    }
+                    else
+                    {
+                        <option value="Info">Info</option>
+                    }
+
+                    @if (Model.Level == "Warning")
+                    {
+                        <option value="Warning" selected>Warning</option>
+                    }
+                    else
+                    {
+                        <option value="Warning">Warning</option>
+                    }
+
+                    @if (Model.Level == "Error")
+                    {
+                        <option value="Error" selected>Error</option>
+                    }
+                    else
+                    {
+                        <option value="Error">Error</option>
+                    }
+                </select>
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label">Event Type</label>
+                <input name="eventType" value="@Model.EventType" class="form-control" />
+            </div>
+
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn-main w-100">Filter</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-card">
+        @if (!Model.Logs.Any())
+        {
+            <p>No logs found.</p>
+        }
+        else
+        {
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Level</th>
+                        <th>Event</th>
+                        <th>User</th>
+                        <th>Message</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var log in Model.Logs)
+                    {
+                        <tr>
+                            <td>@log.CreatedAt</td>
+                            <td>@log.Level</td>
+                            <td>@log.EventType</td>
+                            <td>@(log.UserEmail ?? "-")</td>
+                            <td>@log.Message</td>
+                            <td>@(string.IsNullOrWhiteSpace(log.Details) ? "-" : log.Details)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+        <div class="d-flex justify-content-between align-items-center mt-3">
+            <div>Page @Model.Page / @Model.TotalPages</div>
+
+            <div class="d-flex gap-2">
+                @if (Model.Page > 1)
+                {
+                    <a class="btn-secondary-main"
+                       asp-controller="Admin"
+                       asp-action="Logs"
+                       asp-route-search="@Model.Search"
+                       asp-route-level="@Model.Level"
+                       asp-route-eventType="@Model.EventType"
+                       asp-route-page="@(Model.Page - 1)">
+                        Previous
+                    </a>
+                }
+
+                @if (Model.Page < Model.TotalPages)
+                {
+                    <a class="btn-secondary-main"
+                       asp-controller="Admin"
+                       asp-action="Logs"
+                       asp-route-search="@Model.Search"
+                       asp-route-level="@Model.Level"
+                       asp-route-eventType="@Model.EventType"
+                       asp-route-page="@(Model.Page + 1)">
+                        Next
+                    </a>
+                }
+            </div>
+        </div>
+    </div>
+</div>
