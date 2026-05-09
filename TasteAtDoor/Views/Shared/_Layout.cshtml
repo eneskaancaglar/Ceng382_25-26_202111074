@@ -34,7 +34,7 @@
 
             if (User.IsInRole("Caretaker"))
             {
-                accountRoleLabel = "Restaurant";
+                accountRoleLabel = "Caterer";
             }
             else if (User.IsInRole("Admin"))
             {
@@ -80,7 +80,7 @@
 
                     <span class="modern-brand-text">
                         <strong>TasteAtDoor</strong>
-                        <small>Fresh meals nearby</small>
+                        <small>Event catering nearby</small>
                     </span>
                 </a>
 
@@ -120,23 +120,23 @@
                         </a>
 
                         <a asp-controller="Caretaker" asp-action="Index" class="modern-sidebar-link">
-                            <span class="modern-sidebar-icon">🍽️</span>
-                            <span>My Menus</span>
+                            <span class="modern-sidebar-icon">🍱</span>
+                            <span>My Catering Packages</span>
                         </a>
 
                         <a asp-controller="Caretaker" asp-action="Create" class="modern-sidebar-link">
                             <span class="modern-sidebar-icon">➕</span>
-                            <span>Add Menu</span>
+                            <span>Add Package</span>
                         </a>
 
                         <a asp-controller="Caretaker" asp-action="RestaurantLocation" class="modern-sidebar-link">
                             <span class="modern-sidebar-icon">📍</span>
-                            <span>Restaurant Location</span>
+                            <span>Caterer Location</span>
                         </a>
 
                         <a asp-controller="Caretaker" asp-action="Profile" class="modern-sidebar-link">
-                            <span class="modern-sidebar-icon">🏪</span>
-                            <span>Restaurant Profile</span>
+                            <span class="modern-sidebar-icon">🏢</span>
+                            <span>Caterer Profile</span>
                         </a>
 
                         <a asp-controller="Caretaker" asp-action="Reviews" class="modern-sidebar-link">
@@ -147,8 +147,8 @@
                     else
                     {
                         <a asp-controller="User" asp-action="Index" class="modern-sidebar-link">
-                            <span class="modern-sidebar-icon">🏪</span>
-                            <span>Restaurants</span>
+                            <span class="modern-sidebar-icon">🏢</span>
+                            <span>Caterers</span>
                         </a>
 
                         <a asp-controller="User" asp-action="MyLocation" class="modern-sidebar-link">
@@ -163,18 +163,18 @@
 
                         <a asp-controller="Cart" asp-action="Index" class="modern-sidebar-link">
                             <span class="modern-sidebar-icon">🛒</span>
-                            <span>Cart</span>
+                            <span>Package Cart</span>
                         </a>
 
                         <a asp-controller="User" asp-action="Orders" class="modern-sidebar-link">
                             <span class="modern-sidebar-icon">📦</span>
-                            <span>My Orders</span>
+                            <span>My Catering Orders</span>
                         </a>
 
                         <a asp-controller="User" asp-action="MyReviews" class="modern-sidebar-link">
                             <span class="modern-sidebar-icon">⭐</span>
                             <span>My Reviews</span>
-</a>
+                        </a>
                     }
                 </nav>
             </aside>
@@ -183,7 +183,7 @@
                 <header class="modern-topbar">
                     <div class="modern-topbar-title">
                         <span>@ViewData["Title"]</span>
-                        <small>TasteAtDoor</small>
+                        <small>TasteAtDoor Catering</small>
                     </div>
 
                     <div class="modern-topbar-actions">

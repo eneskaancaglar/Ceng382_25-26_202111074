@@ -1,17 +1,22 @@
 @model TasteAtDoor.Models.ViewModels.CaretakerMenuListViewModel
 
 @{
-    ViewData["Title"] = "My Menus";
+    ViewData["Title"] = "My Catering Packages";
 }
 
 <div class="dashboard-shell">
     <div class="page-header-row">
         <div>
-            <h1 class="page-title">My Menu Items</h1>
-            <p class="page-subtitle">Create, edit, customize, manage, and inspect reviews for your menu items.</p>
+            <h1 class="page-title">My Catering Packages</h1>
+            <p class="page-subtitle">
+                Create and manage catering packages for weddings, engagements, corporate events,
+                birthdays, meetings, and large organizations.
+            </p>
         </div>
 
-        <a asp-controller="Caretaker" asp-action="Create" class="btn-main">Create Menu Item</a>
+        <a asp-controller="Caretaker" asp-action="Create" class="btn-main">
+            Create Catering Package
+        </a>
     </div>
 
     @if (TempData["Success"] is string successMessage)
@@ -19,14 +24,19 @@
         <div class="success-box">@successMessage</div>
     }
 
+    @if (TempData["Error"] is string errorMessage)
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+
     <div class="table-card">
         <form method="get" asp-controller="Caretaker" asp-action="Index" class="row g-3">
             <div class="col-md-9">
-                <label class="form-label">Search</label>
+                <label class="form-label">Search Packages</label>
                 <input name="search"
                        value="@Model.Search"
                        class="form-control"
-                       placeholder="Menu name, description, or location" />
+                       placeholder="Package name, event type, category, included foods, service details, or location" />
             </div>
 
             <div class="col-md-3 d-flex align-items-end">
@@ -38,8 +48,15 @@
     @if (!Model.MenuItems.Any())
     {
         <div class="empty-box">
-            <h3>No menu items found</h3>
-            <p>You have not created any matching menu items yet.</p>
+            <h3>No catering packages found</h3>
+            <p>
+                You have not created any catering packages yet. Start by creating a package for
+                weddings, corporate events, birthdays, meetings, or similar large organizations.
+            </p>
+
+            <a asp-controller="Caretaker" asp-action="Create" class="btn-main">
+                Create Your First Package
+            </a>
         </div>
     }
     else
@@ -48,20 +65,84 @@
             @foreach (var item in Model.MenuItems)
             {
                 <div class="menu-card">
-                    <img src="data:@item.ImageContentType;base64,@Convert.ToBase64String(item.ImageData)"
-                         alt="@item.Name"
-                         class="menu-card-image" />
+                    @if (item.ImageData.Length > 0 && !string.IsNullOrWhiteSpace(item.ImageContentType))
+                    {
+                        <div class="package-image-frame">
+                            <img src="data:@item.ImageContentType;base64,@Convert.ToBase64String(item.ImageData)"
+                                 alt="@item.Name"
+                                 class="package-image" />
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="package-image-frame package-image-placeholder">
+                            <span>No Image</span>
+                        </div>
+                    }
 
                     <div class="menu-card-header">
                         <h3>@item.Name</h3>
-                        <span class="menu-price">@item.Price.ToString("0.00")</span>
+                        <span class="menu-price">
+                            @item.Price.ToString("0.00") ₺ / person
+                        </span>
+                    </div>
+
+                    <div class="menu-meta mb-2">
+                        <strong>Event Type:</strong> @item.EventType
+                    </div>
+
+                    <div class="menu-meta mb-2">
+                        <strong>Category:</strong> @item.PackageCategory
+                    </div>
+
+                    <div class="menu-meta mb-2">
+                        <strong>Guest Range:</strong>
+                        @item.MinGuestCount - @item.MaxGuestCount guests
                     </div>
 
                     <p class="menu-description">@item.Description</p>
 
-                    <div class="menu-meta">
-                        Location:
-                        <strong>@item.LocationText</strong>
+                    @if (!string.IsNullOrWhiteSpace(item.IncludedItems))
+                    {
+                        <div class="menu-meta mb-2">
+                            <strong>Included Items:</strong>
+                            <div>@item.IncludedItems</div>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(item.ServiceDetails))
+                    {
+                        <div class="menu-meta mb-2">
+                            <strong>Service Details:</strong>
+                            <div>@item.ServiceDetails</div>
+                        </div>
+                    }
+
+                    <div class="menu-meta mb-3">
+                        <strong>Location:</strong>
+                        <div>@item.LocationText</div>
+                    </div>
+
+                    <div class="d-flex flex-wrap gap-2 mb-3">
+                        @if (item.IncludesMainCourse)
+                        {
+                            <span class="badge bg-primary">Main Course</span>
+                        }
+
+                        @if (item.IncludesDessert)
+                        {
+                            <span class="badge bg-success">Dessert</span>
+                        }
+
+                        @if (item.IncludesSnacks)
+                        {
+                            <span class="badge bg-warning text-dark">Snacks</span>
+                        }
+
+                        @if (item.IncludesDrinks)
+                        {
+                            <span class="badge bg-info text-dark">Drinks</span>
+                        }
                     </div>
 
                     <div class="hero-buttons">
@@ -69,30 +150,31 @@
                            asp-action="MenuDetails"
                            asp-route-id="@item.Id"
                            class="btn-secondary-main">
-                            View Public Page
+                            View Public Package
                         </a>
 
                         <a asp-controller="Caretaker"
                            asp-action="Edit"
                            asp-route-id="@item.Id"
                            class="btn-main">
-                            Edit
+                            Edit Package
                         </a>
 
                         <a asp-controller="MenuCustomization"
                            asp-action="Index"
                            asp-route-menuItemId="@item.Id"
                            class="btn-secondary-main">
-                            Customize
+                            Package Options
                         </a>
 
                         <form asp-controller="Caretaker"
                               asp-action="Delete"
                               asp-route-id="@item.Id"
-                              method="post">
+                              method="post"
+                              onsubmit="return confirm('Are you sure you want to delete this catering package?');">
                             @Html.AntiForgeryToken()
                             <button type="submit" class="btn-secondary-main">
-                                Delete
+                                Delete Package
                             </button>
                         </form>
                     </div>

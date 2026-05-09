@@ -50,73 +50,80 @@ namespace TasteAtDoor.Controllers
 
             var caretakers = await _userManager.GetUsersInRoleAsync("Caretaker");
 
-            var restaurantQuery = caretakers
+            var catererQuery = caretakers
                 .Where(c => c.Latitude.HasValue && c.Longitude.HasValue)
                 .AsEnumerable();
 
+            List<string> catererIdsWithMatchingPackages = new();
+
             if (!string.IsNullOrWhiteSpace(search))
             {
-                restaurantQuery = restaurantQuery.Where(c =>
-                    c.FullName.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                catererIdsWithMatchingPackages = await _context.MenuItems
+                    .Where(m =>
+                        m.Name.Contains(search) ||
+                        m.Description.Contains(search) ||
+                        m.LocationText.Contains(search) ||
+                        m.EventType.Contains(search) ||
+                        m.PackageCategory.Contains(search) ||
+                        (m.IncludedItems != null && m.IncludedItems.Contains(search)) ||
+                        (m.ServiceDetails != null && m.ServiceDetails.Contains(search)))
+                    .Select(m => m.CaretakerId)
+                    .Distinct()
+                    .ToListAsync();
+
+                catererQuery = catererQuery.Where(c =>
+                    (!string.IsNullOrWhiteSpace(c.FullName) &&
+                     c.FullName.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
                     (!string.IsNullOrWhiteSpace(c.Email) &&
                      c.Email.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
                     (!string.IsNullOrWhiteSpace(c.Address) &&
                      c.Address.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
                     (!string.IsNullOrWhiteSpace(c.Bio) &&
-                     c.Bio.Contains(search, StringComparison.OrdinalIgnoreCase)));
+                     c.Bio.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                    catererIdsWithMatchingPackages.Contains(c.Id));
             }
 
-            var caretakerIds = restaurantQuery.Select(c => c.Id).ToList();
+            var catererIds = catererQuery.Select(c => c.Id).ToList();
 
-            var menuCountMap = await _context.MenuItems
-                .Where(m => caretakerIds.Contains(m.CaretakerId))
+            var packageCountMap = await _context.MenuItems
+                .Where(m => catererIds.Contains(m.CaretakerId))
                 .GroupBy(m => m.CaretakerId)
-                .Select(g => new { CaretakerId = g.Key, Count = g.Count() })
-                .ToDictionaryAsync(x => x.CaretakerId, x => x.Count);
+                .Select(g => new { CatererId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.CatererId, x => x.Count);
 
-            var restaurants = new List<RestaurantListItemViewModel>();
+            var caterers = new List<RestaurantListItemViewModel>();
 
-            foreach (var caretaker in restaurantQuery)
+            foreach (var caterer in catererQuery)
             {
-                var distanceKm = await _googleMapsService.GetRouteDistanceKmAsync(
+                var distanceKm = await GetVerifiedDistanceKmAsync(
                     currentUser.Latitude.Value,
                     currentUser.Longitude.Value,
-                    caretaker.Latitude!.Value,
-                    caretaker.Longitude!.Value);
+                    caterer.Latitude!.Value,
+                    caterer.Longitude!.Value);
 
-                if (!distanceKm.HasValue)
+                caterers.Add(new RestaurantListItemViewModel
                 {
-                    continue;
-                }
-
-                if (distanceKm.Value > 5)
-                {
-                    continue;
-                }
-
-                restaurants.Add(new RestaurantListItemViewModel
-                {
-                    Id = caretaker.Id,
-                    RestaurantName = caretaker.FullName,
-                    Email = caretaker.Email,
-                    Address = caretaker.Address,
-                    Bio = caretaker.Bio,
-                    LogoImageData = caretaker.ProfileImageData,
-                    LogoImageContentType = caretaker.ProfileImageContentType,
-                    MenuCount = menuCountMap.ContainsKey(caretaker.Id) ? menuCountMap[caretaker.Id] : 0,
-                    DistanceKm = distanceKm.Value
+                    Id = caterer.Id,
+                    RestaurantName = caterer.FullName,
+                    Email = caterer.Email,
+                    Address = caterer.Address,
+                    Bio = caterer.Bio,
+                    LogoImageData = caterer.ProfileImageData,
+                    LogoImageContentType = caterer.ProfileImageContentType,
+                    MenuCount = packageCountMap.ContainsKey(caterer.Id) ? packageCountMap[caterer.Id] : 0,
+                    DistanceKm = distanceKm
                 });
             }
 
-            restaurants = restaurants
-                .OrderBy(r => r.DistanceKm)
+            caterers = caterers
+                .OrderBy(c => c.DistanceKm)
                 .ToList();
 
             var model = new RestaurantListPageViewModel
             {
                 UserLocationSaved = true,
                 Search = search,
-                Restaurants = restaurants
+                Restaurants = caterers
             };
 
             return View(model);
@@ -164,7 +171,10 @@ namespace TasteAtDoor.Controllers
 
             if (!imageResult.Success)
             {
-                ModelState.AddModelError(nameof(model.ProfileImageFile), imageResult.ErrorMessage ?? "Image could not be uploaded.");
+                ModelState.AddModelError(
+                    nameof(model.ProfileImageFile),
+                    imageResult.ErrorMessage ?? "Image could not be uploaded.");
+
                 FillExistingProfileImage(model, currentUser);
                 return View(model);
             }
@@ -266,56 +276,50 @@ namespace TasteAtDoor.Controllers
 
             if (!currentUser.Latitude.HasValue || !currentUser.Longitude.HasValue)
             {
-                TempData["Error"] = "Please save your location before viewing restaurant menus.";
+                TempData["Error"] = "Please save your location before viewing caterer packages.";
                 return RedirectToAction(nameof(MyLocation));
             }
 
-            var restaurant = await _context.Users
+            var caterer = await _context.Users
                 .Include(u => u.MenuItems)
                     .ThenInclude(m => m.CustomizationGroups)
                         .ThenInclude(g => g.Options)
                 .FirstOrDefaultAsync(u => u.Id == id);
 
-            if (restaurant is null)
+            if (caterer is null)
             {
                 return NotFound();
             }
 
-            var isCaretaker = await _userManager.IsInRoleAsync(restaurant, "Caretaker");
+            var isCaterer = await _userManager.IsInRoleAsync(caterer, "Caretaker");
 
-            if (!isCaretaker)
+            if (!isCaterer)
             {
                 return NotFound();
             }
 
-            if (!restaurant.Latitude.HasValue || !restaurant.Longitude.HasValue)
+            if (!caterer.Latitude.HasValue || !caterer.Longitude.HasValue)
             {
-                TempData["Error"] = "This restaurant has not saved its location yet.";
+                TempData["Error"] = "This caterer has not saved its service location yet.";
                 return RedirectToAction(nameof(Index));
             }
 
-            var distanceKm = await _googleMapsService.GetRouteDistanceKmAsync(
+            var distanceKm = await GetVerifiedDistanceKmAsync(
                 currentUser.Latitude.Value,
                 currentUser.Longitude.Value,
-                restaurant.Latitude.Value,
-                restaurant.Longitude.Value);
-
-            if (!distanceKm.HasValue)
-            {
-                TempData["Error"] = "Distance could not be verified with Google Maps. Please try again.";
-                return RedirectToAction(nameof(Index));
-            }
+                caterer.Latitude.Value,
+                caterer.Longitude.Value);
 
             var model = new RestaurantMenuPageViewModel
             {
-                RestaurantId = restaurant.Id,
-                RestaurantName = restaurant.FullName,
-                RestaurantAddress = restaurant.Address,
-                RestaurantBio = restaurant.Bio,
-                RestaurantLogoImageData = restaurant.ProfileImageData,
-                RestaurantLogoImageContentType = restaurant.ProfileImageContentType,
-                DistanceKm = distanceKm.Value,
-                MenuItems = restaurant.MenuItems
+                RestaurantId = caterer.Id,
+                RestaurantName = caterer.FullName,
+                RestaurantAddress = caterer.Address,
+                RestaurantBio = caterer.Bio,
+                RestaurantLogoImageData = caterer.ProfileImageData,
+                RestaurantLogoImageContentType = caterer.ProfileImageContentType,
+                DistanceKm = distanceKm,
+                MenuItems = caterer.MenuItems
                     .OrderByDescending(m => m.Id)
                     .ToList()
             };
@@ -336,7 +340,7 @@ namespace TasteAtDoor.Controllers
 
             if (!currentUser.Latitude.HasValue || !currentUser.Longitude.HasValue)
             {
-                TempData["Error"] = "Please save your location before viewing menu details.";
+                TempData["Error"] = "Please save your location before viewing package details.";
                 return RedirectToAction(nameof(MyLocation));
             }
 
@@ -358,21 +362,15 @@ namespace TasteAtDoor.Controllers
 
             if (!menuItem.Caretaker.Latitude.HasValue || !menuItem.Caretaker.Longitude.HasValue)
             {
-                TempData["Error"] = "This restaurant has not saved its location yet.";
+                TempData["Error"] = "This caterer has not saved its service location yet.";
                 return RedirectToAction(nameof(Index));
             }
 
-            var distanceKm = await _googleMapsService.GetRouteDistanceKmAsync(
+            var distanceKm = await GetVerifiedDistanceKmAsync(
                 currentUser.Latitude.Value,
                 currentUser.Longitude.Value,
                 menuItem.Caretaker.Latitude.Value,
                 menuItem.Caretaker.Longitude.Value);
-
-            if (!distanceKm.HasValue)
-            {
-                TempData["Error"] = "Distance could not be verified with Google Maps. Please try again.";
-                return RedirectToAction(nameof(Index));
-            }
 
             var reviewQuery = _context.OrderItemReviews
                 .Include(r => r.Order)
@@ -406,7 +404,7 @@ namespace TasteAtDoor.Controllers
                     CustomerEmail = r.User != null ? r.User.Email : null,
                     CatererName = r.Caterer != null ? r.Caterer.FullName : "Caterer",
                     CatererEmail = r.Caterer != null ? r.Caterer.Email : null,
-                    MenuItemName = r.MenuItem != null ? r.MenuItem.Name : "Menu Item",
+                    MenuItemName = r.MenuItem != null ? r.MenuItem.Name : "Catering Package",
                     MenuRating = r.MenuRating,
                     CatererRating = r.CatererRating,
                     Comment = r.Comment,
@@ -422,7 +420,7 @@ namespace TasteAtDoor.Controllers
                 MenuItem = menuItem,
                 RestaurantName = menuItem.Caretaker.FullName,
                 RestaurantAddress = menuItem.Caretaker.Address,
-                DistanceKm = distanceKm.Value,
+                DistanceKm = distanceKm,
                 AverageMenuRating = averageMenuRating,
                 AverageCatererRating = averageCatererRating,
                 ReviewCount = reviewCount,
@@ -484,6 +482,8 @@ namespace TasteAtDoor.Controllers
             {
                 query = query.Where(o =>
                     o.Id.ToString().Contains(search) ||
+                    o.EventType.Contains(search) ||
+                    o.EventAddress.Contains(search) ||
                     o.OrderItems.Any(oi =>
                         oi.MenuItem != null &&
                         oi.MenuItem.Name.Contains(search)));
@@ -531,7 +531,11 @@ namespace TasteAtDoor.Controllers
         }
 
         [Authorize(Roles = "User")]
-        public async Task<IActionResult> MyReviews(string search = "", int? menuRating = null, int? catererRating = null, int page = 1)
+        public async Task<IActionResult> MyReviews(
+            string search = "",
+            int? menuRating = null,
+            int? catererRating = null,
+            int page = 1)
         {
             var currentUser = await _userManager.GetUserAsync(User);
 
@@ -602,7 +606,7 @@ namespace TasteAtDoor.Controllers
                     CustomerEmail = r.User != null ? r.User.Email : null,
                     CatererName = r.Caterer != null ? r.Caterer.FullName : "Caterer",
                     CatererEmail = r.Caterer != null ? r.Caterer.Email : null,
-                    MenuItemName = r.MenuItem != null ? r.MenuItem.Name : "Menu Item",
+                    MenuItemName = r.MenuItem != null ? r.MenuItem.Name : "Catering Package",
                     MenuRating = r.MenuRating,
                     CatererRating = r.CatererRating,
                     Comment = r.Comment,
@@ -710,6 +714,59 @@ namespace TasteAtDoor.Controllers
             user.ProfileImageFileName = file.FileName;
 
             return (true, null);
+        }
+
+        private async Task<double> GetVerifiedDistanceKmAsync(
+            double startLatitude,
+            double startLongitude,
+            double endLatitude,
+            double endLongitude)
+        {
+            var googleDistanceKm = await _googleMapsService.GetRouteDistanceKmAsync(
+                startLatitude,
+                startLongitude,
+                endLatitude,
+                endLongitude);
+
+            if (googleDistanceKm.HasValue)
+            {
+                return googleDistanceKm.Value;
+            }
+
+            return CalculateStraightLineDistanceKm(
+                startLatitude,
+                startLongitude,
+                endLatitude,
+                endLongitude);
+        }
+
+        private static double CalculateStraightLineDistanceKm(
+            double startLatitude,
+            double startLongitude,
+            double endLatitude,
+            double endLongitude)
+        {
+            const double earthRadiusKm = 6371;
+
+            double dLat = DegreesToRadians(endLatitude - startLatitude);
+            double dLon = DegreesToRadians(endLongitude - startLongitude);
+
+            double lat1 = DegreesToRadians(startLatitude);
+            double lat2 = DegreesToRadians(endLatitude);
+
+            double a =
+                Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+                Math.Cos(lat1) * Math.Cos(lat2) *
+                Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+
+            double c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+
+            return earthRadiusKm * c;
+        }
+
+        private static double DegreesToRadians(double degrees)
+        {
+            return degrees * Math.PI / 180;
         }
     }
 }

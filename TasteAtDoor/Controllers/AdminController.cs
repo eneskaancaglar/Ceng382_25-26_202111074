@@ -214,7 +214,13 @@ namespace TasteAtDoor.Controllers
 
             return View(model);
         }
-        public async Task<IActionResult> Orders(string search = "", string status = "", int page = 1)
+
+        public async Task<IActionResult> Orders(
+            string search = "",
+            string status = "",
+            DateTime? startDate = null,
+            DateTime? endDate = null,
+            int page = 1)
         {
             const int pageSize = 10;
 
@@ -229,6 +235,9 @@ namespace TasteAtDoor.Controllers
             {
                 query = query.Where(o =>
                     o.Id.ToString().Contains(search) ||
+                    o.EventType.Contains(search) ||
+                    o.EventAddress.Contains(search) ||
+                    (o.EventNote != null && o.EventNote.Contains(search)) ||
                     (o.ApplicationUser != null && o.ApplicationUser.FullName.Contains(search)) ||
                     (o.ApplicationUser != null && o.ApplicationUser.Email != null && o.ApplicationUser.Email.Contains(search)) ||
                     o.OrderItems.Any(oi =>
@@ -243,6 +252,17 @@ namespace TasteAtDoor.Controllers
             if (!string.IsNullOrWhiteSpace(status))
             {
                 query = query.Where(o => o.Status == status);
+            }
+
+            if (startDate.HasValue)
+            {
+                query = query.Where(o => o.OrderDate >= startDate.Value.Date);
+            }
+
+            if (endDate.HasValue)
+            {
+                var exclusiveEndDate = endDate.Value.Date.AddDays(1);
+                query = query.Where(o => o.OrderDate < exclusiveEndDate);
             }
 
             var totalCount = await query.CountAsync();
@@ -274,16 +294,18 @@ namespace TasteAtDoor.Controllers
                 Orders = orders,
                 Search = search,
                 Status = status,
+                StartDate = startDate,
+                EndDate = endDate,
                 Page = page,
                 TotalPages = totalPages
             };
 
             await _appLogService.LogAsync(
                 eventType: "AdminOrdersViewed",
-                message: "Admin viewed orders page.",
+                message: "Admin viewed catering requests page.",
                 userId: _userManager.GetUserId(User),
                 userEmail: User.Identity?.Name,
-                details: $"Search: {search} | Status: {status} | Page: {page}");
+                details: $"Search: {search} | Status: {status} | StartDate: {startDate:yyyy-MM-dd} | EndDate: {endDate:yyyy-MM-dd} | Page: {page}");
 
             return View(model);
         }
@@ -292,6 +314,8 @@ namespace TasteAtDoor.Controllers
             string search = "",
             int? menuRating = null,
             int? catererRating = null,
+            DateTime? startDate = null,
+            DateTime? endDate = null,
             int page = 1)
         {
             const int pageSize = 10;
@@ -326,6 +350,17 @@ namespace TasteAtDoor.Controllers
                 query = query.Where(r => r.CatererRating == catererRating.Value);
             }
 
+            if (startDate.HasValue)
+            {
+                query = query.Where(r => r.CreatedAt >= startDate.Value.Date);
+            }
+
+            if (endDate.HasValue)
+            {
+                var exclusiveEndDate = endDate.Value.Date.AddDays(1);
+                query = query.Where(r => r.CreatedAt < exclusiveEndDate);
+            }
+
             var totalCount = await query.CountAsync();
             var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
 
@@ -357,7 +392,7 @@ namespace TasteAtDoor.Controllers
                     CustomerEmail = r.User != null ? r.User.Email : null,
                     CatererName = r.Caterer != null ? r.Caterer.FullName : "Caterer",
                     CatererEmail = r.Caterer != null ? r.Caterer.Email : null,
-                    MenuItemName = r.MenuItem != null ? r.MenuItem.Name : "Menu Item",
+                    MenuItemName = r.MenuItem != null ? r.MenuItem.Name : "Catering Package",
                     MenuRating = r.MenuRating,
                     CatererRating = r.CatererRating,
                     Comment = r.Comment,
@@ -374,6 +409,8 @@ namespace TasteAtDoor.Controllers
                 Search = search,
                 MenuRating = menuRating,
                 CatererRating = catererRating,
+                StartDate = startDate,
+                EndDate = endDate,
                 Page = page,
                 TotalPages = totalPages,
                 PageTitle = "All Ratings and Comments"
@@ -386,6 +423,8 @@ namespace TasteAtDoor.Controllers
             string search = "",
             string level = "",
             string eventType = "",
+            DateTime? startDate = null,
+            DateTime? endDate = null,
             int page = 1)
         {
             const int pageSize = 15;
@@ -408,6 +447,17 @@ namespace TasteAtDoor.Controllers
             if (!string.IsNullOrWhiteSpace(eventType))
             {
                 query = query.Where(l => l.EventType.Contains(eventType));
+            }
+
+            if (startDate.HasValue)
+            {
+                query = query.Where(l => l.CreatedAt >= startDate.Value.Date);
+            }
+
+            if (endDate.HasValue)
+            {
+                var exclusiveEndDate = endDate.Value.Date.AddDays(1);
+                query = query.Where(l => l.CreatedAt < exclusiveEndDate);
             }
 
             var totalCount = await query.CountAsync();
@@ -440,6 +490,8 @@ namespace TasteAtDoor.Controllers
                 Search = search,
                 Level = level,
                 EventType = eventType,
+                StartDate = startDate,
+                EndDate = endDate,
                 Page = page,
                 TotalPages = totalPages
             };

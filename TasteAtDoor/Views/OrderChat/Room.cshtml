@@ -1,108 +1,160 @@
-@model TasteAtDoor.Models.Order
+@model TasteAtDoor.Models.ViewModels.OrderChatRoomViewModel
 
 @{
-    ViewData["Title"] = $"Order Chat - #{Model.Id}";
-
-    var currentUserId = ViewBag.CurrentUserId as string ?? "";
-    var currentUserName = ViewBag.CurrentUserName as string ?? "User";
-    var currentUserRole = ViewBag.CurrentUserRole as string ?? "User";
-    var restaurantNames = ViewBag.RestaurantNames as string ?? "Restaurant";
+    ViewData["Title"] = $"Request Chat #{Model.OrderId}";
 }
 
 <div class="dashboard-shell">
     <div class="page-header-row">
         <div>
-            <h1 class="page-title">Order Chat</h1>
+            <h1 class="page-title">Request Chat #@Model.OrderId</h1>
             <p class="page-subtitle">
-                Live text communication for Order #@Model.Id.
+                Customer and caterer can communicate about the catering request.
             </p>
         </div>
 
-        <div class="d-flex gap-2 flex-wrap">
-            <a asp-controller="User"
-               asp-action="Receipt"
-               asp-route-id="@Model.Id"
-               class="btn-secondary-main">
-                Back to Receipt
-            </a>
+        <div class="hero-buttons">
+            @if (User.IsInRole("User"))
+            {
+                <a asp-controller="User"
+                   asp-action="Orders"
+                   class="btn-secondary-main">
+                    Back to My Requests
+                </a>
+
+                <a asp-controller="User"
+                   asp-action="Receipt"
+                   asp-route-id="@Model.OrderId"
+                   class="btn-main">
+                    View Receipt
+                </a>
+            }
+            else if (User.IsInRole("Caretaker"))
+            {
+                <a asp-controller="Caretaker"
+                   asp-action="Dashboard"
+                   class="btn-secondary-main">
+                    Back to Dashboard
+                </a>
+            }
+            else if (User.IsInRole("Admin"))
+            {
+                <a asp-controller="Admin"
+                   asp-action="Orders"
+                   class="btn-secondary-main">
+                    Back to Requests
+                </a>
+            }
         </div>
     </div>
 
+    @await Html.PartialAsync("_OrderVoiceCall", Model.OrderId)
+
     <div class="order-chat-info-grid">
         <div class="order-chat-info-card">
-            <span>Order</span>
-            <strong>#@Model.Id</strong>
+            <h3>Request Information</h3>
+            <p><strong>Request ID:</strong> #@Model.OrderId</p>
+            <p><strong>Status:</strong> @Model.OrderStatus</p>
+            <p><strong>Created:</strong> @Model.OrderDate.ToString("dd MMM yyyy HH:mm")</p>
         </div>
 
         <div class="order-chat-info-card">
-            <span>Customer</span>
-            <strong>@(Model.ApplicationUser?.FullName ?? "Customer")</strong>
+            <h3>Customer</h3>
+            <p><strong>Name:</strong> @Model.CustomerName</p>
+
+            @if (!string.IsNullOrWhiteSpace(Model.CustomerEmail))
+            {
+                <p><strong>Email:</strong> @Model.CustomerEmail</p>
+            }
         </div>
 
         <div class="order-chat-info-card">
-            <span>Restaurant</span>
-            <strong>@restaurantNames</strong>
-        </div>
+            <h3>Caterer</h3>
+            <p><strong>Name:</strong> @Model.CatererName</p>
 
-        <div class="order-chat-info-card">
-            <span>You</span>
-            <strong>@currentUserName (@currentUserRole)</strong>
+            @if (!string.IsNullOrWhiteSpace(Model.CatererEmail))
+            {
+                <p><strong>Email:</strong> @Model.CatererEmail</p>
+            }
         </div>
     </div>
 
     <div class="order-chat-card">
         <div class="order-chat-header">
             <div>
-                <h2>Messages</h2>
-                <p>
-                    This chat is available only for completed purchases.
-                    Messages refresh automatically.
+                <h3>Messages</h3>
+                <p class="page-subtitle">
+                    Messages are saved to this catering request.
                 </p>
             </div>
         </div>
 
-        <div id="chatMessages"
-             class="order-chat-messages"
-             data-current-user-id="@currentUserId">
-            <div class="order-chat-loading">Loading messages...</div>
+        <div id="chatMessages" class="order-chat-messages">
+            @if (Model.Messages is null || !Model.Messages.Any())
+            {
+                <div class="order-chat-loading">
+                    No messages yet. Start the conversation.
+                </div>
+            }
+            else
+            {
+                foreach (var message in Model.Messages)
+                {
+                    var isMine = message.SenderId == Model.CurrentUserId;
+
+                    <div class="order-chat-message @(isMine ? "order-chat-message-mine" : "order-chat-message-other")">
+                        <div class="order-chat-bubble">
+                            <div class="order-chat-meta">
+                                <strong>@message.SenderName</strong>
+                                <span>@message.CreatedAt.ToString("dd MMM yyyy HH:mm")</span>
+                            </div>
+
+                            <div class="order-chat-text">
+                                @message.MessageText
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
         </div>
 
         <form id="chatForm" class="order-chat-form">
             @Html.AntiForgeryToken()
 
-            <input type="hidden" id="orderId" value="@Model.Id" />
+            <input type="hidden" id="orderId" value="@Model.OrderId" />
 
             <textarea id="messageInput"
                       class="form-control"
                       rows="2"
                       maxlength="1000"
-                      placeholder="Write a message..."></textarea>
+                      placeholder="Write your message..."></textarea>
 
             <button type="submit" class="btn-main">
                 Send
             </button>
         </form>
-
-        <div id="chatError" class="text-danger mt-2"></div>
     </div>
 </div>
 
 @section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+    <script src="~/js/order-call.js" asp-append-version="true"></script>
+
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            const orderId = document.getElementById("orderId").value;
-            const chatMessages = document.getElementById("chatMessages");
-            const currentUserId = chatMessages.dataset.currentUserId;
-            const chatForm = document.getElementById("chatForm");
-            const messageInput = document.getElementById("messageInput");
-            const chatError = document.getElementById("chatError");
-            const token = document.querySelector("input[name='__RequestVerificationToken']").value;
+            const form = document.getElementById("chatForm");
+            const input = document.getElementById("messageInput");
+            const orderIdInput = document.getElementById("orderId");
+            const messagesContainer = document.getElementById("chatMessages");
 
-            const messagesUrl = "@Url.Action("Messages", "OrderChat")" + "?orderId=" + encodeURIComponent(orderId);
-            const sendUrl = "@Url.Action("Send", "OrderChat")";
+            if (!form || !input || !orderIdInput || !messagesContainer) {
+                return;
+            }
+
+            const orderId = Number.parseInt(orderIdInput.value, 10);
 
             function escapeHtml(value) {
-                return String(value || "")
+                return String(value)
                     .replace(/&/g, "&amp;")
                     .replace(/</g, "&lt;")
                     .replace(/>/g, "&gt;")
@@ -110,83 +162,82 @@
                     .replace(/'/g, "&#039;");
             }
 
-            async function loadMessages() {
+            function appendMessage(senderName, text, createdAt, isMine) {
+                const empty = messagesContainer.querySelector(".order-chat-loading");
+
+                if (empty) {
+                    empty.remove();
+                }
+
+                const wrapper = document.createElement("div");
+                wrapper.className = isMine
+                    ? "order-chat-message order-chat-message-mine"
+                    : "order-chat-message order-chat-message-other";
+
+                wrapper.innerHTML = `
+                    <div class="order-chat-bubble">
+                        <div class="order-chat-meta">
+                            <strong>${escapeHtml(senderName)}</strong>
+                            <span>${escapeHtml(createdAt)}</span>
+                        </div>
+
+                        <div class="order-chat-text">
+                            ${escapeHtml(text)}
+                        </div>
+                    </div>
+                `;
+
+                messagesContainer.appendChild(wrapper);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+            form.addEventListener("submit", async function (event) {
+                event.preventDefault();
+
+                const text = input.value.trim();
+
+                if (!text) {
+                    return;
+                }
+
+                const tokenInput = form.querySelector("input[name='__RequestVerificationToken']");
+                const token = tokenInput ? tokenInput.value : "";
+
                 try {
-                    const response = await fetch(messagesUrl, {
+                    const response = await fetch("/OrderChat/SendMessage", {
+                        method: "POST",
                         headers: {
-                            "Accept": "application/json"
-                        }
+                            "Content-Type": "application/x-www-form-urlencoded",
+                            "RequestVerificationToken": token
+                        },
+                        body: new URLSearchParams({
+                            orderId: orderId,
+                            messageText: text
+                        })
                     });
 
                     if (!response.ok) {
-                        chatMessages.innerHTML = `<div class="order-chat-loading">Messages could not be loaded.</div>`;
+                        alert("Message could not be sent.");
                         return;
                     }
 
-                    const messages = await response.json();
+                    const result = await response.json();
 
-                    if (!messages || messages.length === 0) {
-                        chatMessages.innerHTML = `<div class="order-chat-loading">No messages yet. Start the conversation.</div>`;
-                        return;
-                    }
+                    appendMessage(
+                        result.senderName || "Me",
+                        result.messageText || text,
+                        result.createdAtText || "Now",
+                        true
+                    );
 
-                    chatMessages.innerHTML = messages.map(message => {
-                        const mine = message.senderUserId === currentUserId;
-
-                        return `
-                            <div class="order-chat-message ${mine ? "mine" : "theirs"}">
-                                <div class="order-chat-bubble">
-                                    <div class="order-chat-meta">
-                                        <strong>${escapeHtml(message.senderName)}</strong>
-                                        <span>${escapeHtml(message.senderRole)} · ${escapeHtml(message.sentAt)}</span>
-                                    </div>
-                                    <div class="order-chat-text">
-                                        ${escapeHtml(message.message)}
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    }).join("");
-
-                    chatMessages.scrollTop = chatMessages.scrollHeight;
-                } catch {
-                    chatMessages.innerHTML = `<div class="order-chat-loading">Connection problem.</div>`;
+                    input.value = "";
+                } catch (error) {
+                    console.error(error);
+                    alert("Message could not be sent.");
                 }
-            }
-
-            chatForm.addEventListener("submit", async function (event) {
-                event.preventDefault();
-
-                const message = messageInput.value.trim();
-
-                if (!message) {
-                    chatError.textContent = "Message cannot be empty.";
-                    return;
-                }
-
-                chatError.textContent = "";
-
-                const formData = new FormData();
-                formData.append("__RequestVerificationToken", token);
-                formData.append("orderId", orderId);
-                formData.append("message", message);
-
-                const response = await fetch(sendUrl, {
-                    method: "POST",
-                    body: formData
-                });
-
-                if (!response.ok) {
-                    chatError.textContent = "Message could not be sent.";
-                    return;
-                }
-
-                messageInput.value = "";
-                await loadMessages();
             });
-
-            loadMessages();
-            setInterval(loadMessages, 3000);
         });
     </script>
 }

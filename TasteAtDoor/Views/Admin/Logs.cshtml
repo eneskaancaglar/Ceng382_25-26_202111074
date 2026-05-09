@@ -8,18 +8,23 @@
     <div class="page-header-row">
         <div>
             <h1 class="page-title">System Logs</h1>
-            <p class="page-subtitle">Filter and inspect system activity.</p>
+            <p class="page-subtitle">
+                Filter and inspect system activity by text, level, event type, and date range.
+            </p>
         </div>
     </div>
 
     <div class="table-card">
         <form method="get" asp-controller="Admin" asp-action="Logs" class="row g-3">
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <label class="form-label">Search</label>
-                <input name="search" value="@Model.Search" class="form-control" />
+                <input name="search"
+                       value="@Model.Search"
+                       class="form-control"
+                       placeholder="Message, user email, details..." />
             </div>
 
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label class="form-label">Level</label>
                 <select name="level" class="form-control">
                     <option value="">All</option>
@@ -53,15 +58,42 @@
                 </select>
             </div>
 
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label class="form-label">Event Type</label>
-                <input name="eventType" value="@Model.EventType" class="form-control" />
+                <input name="eventType"
+                       value="@Model.EventType"
+                       class="form-control"
+                       placeholder="PaymentAction" />
             </div>
 
-            <div class="col-md-2 d-flex align-items-end">
+            <div class="col-md-2">
+                <label class="form-label">Start Date</label>
+                <input name="startDate"
+                       type="date"
+                       value="@(Model.StartDate.HasValue ? Model.StartDate.Value.ToString("yyyy-MM-dd") : "")"
+                       class="form-control" />
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label">End Date</label>
+                <input name="endDate"
+                       type="date"
+                       value="@(Model.EndDate.HasValue ? Model.EndDate.Value.ToString("yyyy-MM-dd") : "")"
+                       class="form-control" />
+            </div>
+
+            <div class="col-md-1 d-flex align-items-end">
                 <button type="submit" class="btn-main w-100">Filter</button>
             </div>
         </form>
+
+        <div class="mt-3">
+            <a asp-controller="Admin"
+               asp-action="Logs"
+               class="btn-secondary-main">
+                Clear Filters
+            </a>
+        </div>
     </div>
 
     <div class="table-card">
@@ -82,11 +114,12 @@
                         <th>Details</th>
                     </tr>
                 </thead>
+
                 <tbody>
                     @foreach (var log in Model.Logs)
                     {
                         <tr>
-                            <td>@log.CreatedAt</td>
+                            <td>@log.CreatedAt.ToString("dd MMM yyyy HH:mm")</td>
                             <td>@log.Level</td>
                             <td>@log.EventType</td>
                             <td>@(log.UserEmail ?? "-")</td>
@@ -110,6 +143,8 @@
                        asp-route-search="@Model.Search"
                        asp-route-level="@Model.Level"
                        asp-route-eventType="@Model.EventType"
+                       asp-route-startDate="@(Model.StartDate.HasValue ? Model.StartDate.Value.ToString("yyyy-MM-dd") : null)"
+                       asp-route-endDate="@(Model.EndDate.HasValue ? Model.EndDate.Value.ToString("yyyy-MM-dd") : null)"
                        asp-route-page="@(Model.Page - 1)">
                         Previous
                     </a>
@@ -123,6 +158,8 @@
                        asp-route-search="@Model.Search"
                        asp-route-level="@Model.Level"
                        asp-route-eventType="@Model.EventType"
+                       asp-route-startDate="@(Model.StartDate.HasValue ? Model.StartDate.Value.ToString("yyyy-MM-dd") : null)"
+                       asp-route-endDate="@(Model.EndDate.HasValue ? Model.EndDate.Value.ToString("yyyy-MM-dd") : null)"
                        asp-route-page="@(Model.Page + 1)">
                         Next
                     </a>

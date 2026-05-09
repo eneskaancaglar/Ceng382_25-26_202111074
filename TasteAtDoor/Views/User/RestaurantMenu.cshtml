@@ -1,29 +1,29 @@
 @model TasteAtDoor.Models.ViewModels.RestaurantMenuPageViewModel
 
 @{
-    ViewData["Title"] = $"{Model.RestaurantName} Menu";
+    ViewData["Title"] = $"{Model.RestaurantName} Catering Packages";
 
-    string? restaurantLogoSource = null;
+    string? catererLogoSource = null;
 
     if (Model.RestaurantLogoImageData is not null &&
         Model.RestaurantLogoImageData.Length > 0 &&
         !string.IsNullOrWhiteSpace(Model.RestaurantLogoImageContentType))
     {
-        restaurantLogoSource = $"data:{Model.RestaurantLogoImageContentType};base64,{Convert.ToBase64String(Model.RestaurantLogoImageData)}";
+        catererLogoSource = $"data:{Model.RestaurantLogoImageContentType};base64,{Convert.ToBase64String(Model.RestaurantLogoImageData)}";
     }
 }
 
 <div class="user-page restaurant-menu-page">
     <div class="restaurant-menu-hero">
         <a asp-controller="User" asp-action="Index" class="btn-secondary-main mb-3">
-            Back to Restaurants
+            Back to Caterers
         </a>
 
         <div class="restaurant-menu-hero-content">
             <div class="restaurant-menu-logo-large">
-                @if (!string.IsNullOrWhiteSpace(restaurantLogoSource))
+                @if (!string.IsNullOrWhiteSpace(catererLogoSource))
                 {
-                    <img src="@restaurantLogoSource"
+                    <img src="@catererLogoSource"
                          alt="@Model.RestaurantName"
                          class="restaurant-menu-logo-img" />
                 }
@@ -31,13 +31,14 @@
                 {
                     <div class="restaurant-logo-placeholder restaurant-logo-placeholder-large">
                         @(string.IsNullOrWhiteSpace(Model.RestaurantName)
-                            ? "R"
+                            ? "C"
                             : Model.RestaurantName.Substring(0, 1).ToUpper())
                     </div>
                 }
             </div>
 
             <div>
+                <span class="available-eyebrow">Catering Company</span>
                 <h1>@Model.RestaurantName</h1>
 
                 @if (!string.IsNullOrWhiteSpace(Model.RestaurantBio))
@@ -50,7 +51,7 @@
                 @if (!string.IsNullOrWhiteSpace(Model.RestaurantAddress))
                 {
                     <p>
-                        <strong>Address:</strong> @Model.RestaurantAddress
+                        <strong>Service Area:</strong> @Model.RestaurantAddress
                     </p>
                 }
 
@@ -61,13 +62,13 @@
                 @if (Model.CanOrder)
                 {
                     <div class="success-box">
-                        This restaurant is within 5 km. You can order from this restaurant.
+                        This caterer is within 5 km. You can request catering packages from this company.
                     </div>
                 }
                 else
                 {
                     <div class="text-danger">
-                        This restaurant is outside 5 km. You can view the menu but cannot order.
+                        This caterer is outside 5 km. You can view packages but cannot request an order.
                     </div>
                 }
             </div>
@@ -79,8 +80,8 @@
     @if (Model.MenuItems.Count == 0)
     {
         <div class="auth-card">
-            <h2>No menu items</h2>
-            <p>This restaurant has not added any menu items yet.</p>
+            <h2>No catering packages</h2>
+            <p>This caterer has not added any catering packages yet.</p>
         </div>
     }
     else
@@ -90,46 +91,130 @@
             {
                 string? imageSource = null;
 
-                if (item.ImageData is not null && item.ImageData.Length > 0)
+                if (item.ImageData is not null &&
+                    item.ImageData.Length > 0 &&
+                    !string.IsNullOrWhiteSpace(item.ImageContentType))
                 {
                     imageSource = $"data:{item.ImageContentType};base64,{Convert.ToBase64String(item.ImageData)}";
                 }
 
-                <div class="restaurant-menu-card">
-                    <div class="restaurant-menu-image-wrapper">
+                <div class="restaurant-menu-card catering-package-card" data-package-card>
+                    <div class="package-image-frame">
                         @if (!string.IsNullOrWhiteSpace(imageSource))
                         {
                             <img src="@imageSource"
                                  alt="@item.Name"
-                                 class="restaurant-menu-image" />
+                                 class="package-image" />
                         }
                         else
                         {
-                            <div class="menu-detail-image-placeholder">
-                                No image
+                            <div class="package-image-placeholder">
+                                <span>No Image</span>
                             </div>
                         }
                     </div>
 
                     <div class="restaurant-menu-card-body">
-                        <h3>@item.Name</h3>
+                        <div class="menu-card-header">
+                            <h3>@item.Name</h3>
+                            <span class="menu-price">
+                                @item.Price.ToString("0.00") ₺ / person
+                            </span>
+                        </div>
+
+                        <div class="menu-meta mb-2">
+                            <strong>Event Type:</strong> @item.EventType
+                        </div>
+
+                        <div class="menu-meta mb-2">
+                            <strong>Category:</strong> @item.PackageCategory
+                        </div>
+
+                        <div class="menu-meta mb-2">
+                            <strong>Guest Range:</strong>
+                            @item.MinGuestCount - @item.MaxGuestCount guests
+                        </div>
 
                         <p class="restaurant-menu-description">
                             @item.Description
                         </p>
 
-                        <p>
-                            <strong>Distance:</strong> @Model.DistanceKm.ToString("0.0") km
-                        </p>
+                        @if (!string.IsNullOrWhiteSpace(item.IncludedItems))
+                        {
+                            <div class="menu-meta mb-2">
+                                <strong>Included Items:</strong>
+                                <div>@item.IncludedItems</div>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(item.ServiceDetails))
+                        {
+                            <div class="menu-meta mb-2">
+                                <strong>Service Details:</strong>
+                                <div>@item.ServiceDetails</div>
+                            </div>
+                        }
+
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            @if (item.IncludesMainCourse)
+                            {
+                                <span class="badge bg-primary">Main Course</span>
+                            }
+
+                            @if (item.IncludesDessert)
+                            {
+                                <span class="badge bg-success">Dessert</span>
+                            }
+
+                            @if (item.IncludesSnacks)
+                            {
+                                <span class="badge bg-warning text-dark">Snacks</span>
+                            }
+
+                            @if (item.IncludesDrinks)
+                            {
+                                <span class="badge bg-info text-dark">Drinks</span>
+                            }
+                        </div>
+
+                        <div class="package-guest-box">
+                            <label class="form-label">Guest Count</label>
+
+                            <div class="package-guest-stepper">
+                                <button type="button" class="guest-step-btn js-guest-step" data-step="-100">-100</button>
+                                <button type="button" class="guest-step-btn js-guest-step" data-step="-10">-10</button>
+
+                                <input type="number"
+                                       class="form-control package-guest-input js-package-guest-count"
+                                       min="@item.MinGuestCount"
+                                       max="@item.MaxGuestCount"
+                                       value="@item.MinGuestCount" />
+
+                                <button type="button" class="guest-step-btn js-guest-step" data-step="10">+10</button>
+                                <button type="button" class="guest-step-btn js-guest-step" data-step="100">+100</button>
+                            </div>
+
+                            <small class="text-muted">
+                                You can also type the number manually.
+                            </small>
+
+                            <div class="package-total-preview">
+                                Estimated package total:
+                                <strong class="js-package-estimated-total"
+                                        data-unit-price="@item.Price.ToString(System.Globalization.CultureInfo.InvariantCulture)">
+                                    @((item.Price * item.MinGuestCount).ToString("0.00")) ₺
+                                </strong>
+                            </div>
+                        </div>
 
                         <p>
-                            <strong>Price:</strong> @item.Price.ToString("C")
+                            <strong>Distance:</strong> @Model.DistanceKm.ToString("0.0") km
                         </p>
 
                         @if (!Model.CanOrder)
                         {
                             <div class="text-danger mb-2">
-                                You are outside 5 km. Ordering is disabled.
+                                You are outside 5 km. Package request is disabled.
                             </div>
                         }
 
@@ -138,7 +223,7 @@
                                asp-action="MenuDetails"
                                asp-route-id="@item.Id"
                                class="btn-secondary-main">
-                                View Details
+                                View Package Details
                             </a>
 
                             @if (Model.CanOrder)
@@ -149,9 +234,11 @@
                                         data-name="@item.Name"
                                         data-description="@item.Description"
                                         data-price="@item.Price.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                        data-min-guest-count="@item.MinGuestCount"
+                                        data-max-guest-count="@item.MaxGuestCount"
                                         data-image-content-type="@item.ImageContentType"
                                         data-image-base64="@(item.ImageData is not null ? Convert.ToBase64String(item.ImageData) : "")">
-                                    Add to Cart
+                                    Add Package
                                 </button>
                             }
                             else

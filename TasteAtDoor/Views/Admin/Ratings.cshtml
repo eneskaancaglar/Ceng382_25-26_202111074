@@ -8,7 +8,9 @@
     <div class="page-header-row">
         <div>
             <h1 class="page-title">Ratings and Comments</h1>
-            <p class="page-subtitle">Inspect menu ratings, caterer ratings, comments, and completed-order feedback.</p>
+            <p class="page-subtitle">
+                Inspect package ratings, caterer ratings, comments, and completed-request feedback.
+            </p>
         </div>
 
         <a asp-controller="Admin" asp-action="Dashboard" class="btn-secondary-main">
@@ -18,16 +20,16 @@
 
     <div class="table-card">
         <form method="get" asp-controller="Admin" asp-action="Ratings" class="row g-3">
-            <div class="col-md-5">
+            <div class="col-md-3">
                 <label class="form-label">Search</label>
                 <input name="search"
                        value="@Model.Search"
                        class="form-control"
-                       placeholder="Order, menu, customer, caterer, comment..." />
+                       placeholder="Request, package, customer, caterer, comment..." />
             </div>
 
             <div class="col-md-2">
-                <label class="form-label">Menu Rating</label>
+                <label class="form-label">Package Rating</label>
                 <input name="menuRating"
                        value="@Model.MenuRating"
                        type="number"
@@ -46,10 +48,34 @@
                        class="form-control" />
             </div>
 
-            <div class="col-md-3 d-flex align-items-end">
+            <div class="col-md-2">
+                <label class="form-label">Start Date</label>
+                <input name="startDate"
+                       type="date"
+                       value="@(Model.StartDate.HasValue ? Model.StartDate.Value.ToString("yyyy-MM-dd") : "")"
+                       class="form-control" />
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label">End Date</label>
+                <input name="endDate"
+                       type="date"
+                       value="@(Model.EndDate.HasValue ? Model.EndDate.Value.ToString("yyyy-MM-dd") : "")"
+                       class="form-control" />
+            </div>
+
+            <div class="col-md-1 d-flex align-items-end">
                 <button type="submit" class="btn-main w-100">Filter</button>
             </div>
         </form>
+
+        <div class="mt-3">
+            <a asp-controller="Admin"
+               asp-action="Ratings"
+               class="btn-secondary-main">
+                Clear Filters
+            </a>
+        </div>
     </div>
 
     <div class="table-card">
@@ -62,36 +88,40 @@
             <table class="custom-table">
                 <thead>
                     <tr>
-                        <th>Order</th>
+                        <th>Request</th>
                         <th>Customer</th>
                         <th>Caterer</th>
-                        <th>Menu Item</th>
-                        <th>Menu Rating</th>
+                        <th>Catering Package</th>
+                        <th>Package Rating</th>
                         <th>Caterer Rating</th>
                         <th>Comment</th>
                         <th>Date</th>
                     </tr>
                 </thead>
+
                 <tbody>
                     @foreach (var review in Model.Reviews)
                     {
                         <tr>
                             <td>#@review.OrderId</td>
+
                             <td>
                                 @review.CustomerName
                                 <br />
                                 <small>@(review.CustomerEmail ?? "-")</small>
                             </td>
+
                             <td>
                                 @review.CatererName
                                 <br />
                                 <small>@(review.CatererEmail ?? "-")</small>
                             </td>
+
                             <td>@review.MenuItemName</td>
                             <td>@review.MenuRating / 5</td>
                             <td>@review.CatererRating / 5</td>
                             <td>@(string.IsNullOrWhiteSpace(review.Comment) ? "-" : review.Comment)</td>
-                            <td>@review.CreatedAt</td>
+                            <td>@review.CreatedAt.ToString("dd MMM yyyy HH:mm")</td>
                         </tr>
                     }
                 </tbody>
@@ -110,6 +140,8 @@
                        asp-route-search="@Model.Search"
                        asp-route-menuRating="@Model.MenuRating"
                        asp-route-catererRating="@Model.CatererRating"
+                       asp-route-startDate="@(Model.StartDate.HasValue ? Model.StartDate.Value.ToString("yyyy-MM-dd") : null)"
+                       asp-route-endDate="@(Model.EndDate.HasValue ? Model.EndDate.Value.ToString("yyyy-MM-dd") : null)"
                        asp-route-page="@(Model.Page - 1)">
                         Previous
                     </a>
@@ -123,6 +155,8 @@
                        asp-route-search="@Model.Search"
                        asp-route-menuRating="@Model.MenuRating"
                        asp-route-catererRating="@Model.CatererRating"
+                       asp-route-startDate="@(Model.StartDate.HasValue ? Model.StartDate.Value.ToString("yyyy-MM-dd") : null)"
+                       asp-route-endDate="@(Model.EndDate.HasValue ? Model.EndDate.Value.ToString("yyyy-MM-dd") : null)"
                        asp-route-page="@(Model.Page + 1)">
                         Next
                     </a>

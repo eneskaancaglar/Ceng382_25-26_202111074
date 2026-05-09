@@ -1,0 +1,47 @@
+@model int
+
+<div id="order-call-panel"
+     class="order-call-panel"
+     data-order-id="@Model">
+    <div class="order-call-header">
+        <div>
+            <h3>Live Voice Call</h3>
+            <p>
+                Customer and caterer can join this room from the same catering request chat.
+                Use two different browser sessions for testing.
+            </p>
+        </div>
+
+        <span class="order-call-pill">Audio Only</span>
+    </div>
+
+    <div id="order-call-status" class="order-call-status order-call-status-warning">
+        Voice room is preparing...
+    </div>
+
+    <div class="order-call-actions">
+        <button type="button" id="order-call-join" class="btn-main">
+            Join Voice Room
+        </button>
+
+        <button type="button" id="order-call-start" class="btn-secondary-main" disabled>
+            Start Call
+        </button>
+
+        <button type="button" id="order-call-mute" class="btn-secondary-main" disabled>
+            Mute
+        </button>
+
+        <button type="button" id="order-call-hangup" class="btn-secondary-main" disabled>
+            Hang Up
+        </button>
+    </div>
+
+    <audio id="order-call-remote-audio" autoplay playsinline></audio>
+
+    <div class="order-call-help">
+        Test için bir tarayıcıda customer hesabı, başka tarayıcıda veya gizli sekmede caterer hesabı aç.
+        İkisi de aynı request chat sayfasına girsin. Önce iki taraf da <strong>Join Voice Room</strong>,
+        sonra bir taraf <strong>Start Call</strong> butonuna bassın.
+    </div>
+</div>

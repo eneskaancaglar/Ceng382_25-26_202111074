@@ -1,12 +1,14 @@
 @model TasteAtDoor.Models.ViewModels.MenuDetailsPageViewModel
 
 @{
-    ViewData["Title"] = $"{Model.MenuItem.Name} Details";
+    ViewData["Title"] = $"{Model.MenuItem.Name} Package Details";
     var item = Model.MenuItem;
 
     string? imageSource = null;
 
-    if (item.ImageData is not null && item.ImageData.Length > 0)
+    if (item.ImageData is not null &&
+        item.ImageData.Length > 0 &&
+        !string.IsNullOrWhiteSpace(item.ImageContentType))
     {
         imageSource = $"data:{item.ImageContentType};base64,{Convert.ToBase64String(item.ImageData)}";
     }
@@ -18,19 +20,19 @@
            asp-action="RestaurantMenu"
            asp-route-id="@item.CaretakerId"
            class="btn-secondary-main mb-3">
-            Back to Restaurant Menu
+            Back to Catering Packages
         </a>
 
         <h1>@item.Name</h1>
 
         <p>
-            <strong>Restaurant:</strong> @Model.RestaurantName
+            <strong>Caterer:</strong> @Model.RestaurantName
         </p>
 
         @if (!string.IsNullOrWhiteSpace(Model.RestaurantAddress))
         {
             <p>
-                <strong>Address:</strong> @Model.RestaurantAddress
+                <strong>Service Area:</strong> @Model.RestaurantAddress
             </p>
         }
 
@@ -41,13 +43,13 @@
         @if (Model.CanOrder)
         {
             <div class="success-box">
-                This restaurant is within 5 km. You can order this item.
+                This caterer is within 5 km. You can request this catering package.
             </div>
         }
         else
         {
             <div class="text-danger">
-                This restaurant is outside 5 km. You can view details but cannot order.
+                This caterer is outside 5 km. You can view details but cannot request this package.
             </div>
         }
     </div>
@@ -70,20 +72,71 @@
             }
         </div>
 
-        <div class="menu-detail-info-panel">
+        <div class="menu-detail-info-panel" data-package-card>
             <h2>@item.Name</h2>
 
             <p>
                 @item.Description
             </p>
 
+            <div class="menu-meta mb-2">
+                <strong>Event Type:</strong> @item.EventType
+            </div>
+
+            <div class="menu-meta mb-2">
+                <strong>Category:</strong> @item.PackageCategory
+            </div>
+
+            <div class="menu-meta mb-2">
+                <strong>Guest Range:</strong>
+                @item.MinGuestCount - @item.MaxGuestCount guests
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(item.IncludedItems))
+            {
+                <div class="menu-meta mb-2">
+                    <strong>Included Items:</strong>
+                    <div>@item.IncludedItems</div>
+                </div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(item.ServiceDetails))
+            {
+                <div class="menu-meta mb-2">
+                    <strong>Service Details:</strong>
+                    <div>@item.ServiceDetails</div>
+                </div>
+            }
+
+            <div class="d-flex flex-wrap gap-2 mb-3">
+                @if (item.IncludesMainCourse)
+                {
+                    <span class="badge bg-primary">Main Course</span>
+                }
+
+                @if (item.IncludesDessert)
+                {
+                    <span class="badge bg-success">Dessert</span>
+                }
+
+                @if (item.IncludesSnacks)
+                {
+                    <span class="badge bg-warning text-dark">Snacks</span>
+                }
+
+                @if (item.IncludesDrinks)
+                {
+                    <span class="badge bg-info text-dark">Drinks</span>
+                }
+            </div>
+
             <p>
-                <strong>Base Price:</strong> @item.Price.ToString("C")
+                <strong>Price Per Person:</strong> @item.Price.ToString("0.00") ₺
             </p>
 
             <div class="menu-rating-summary">
                 <div class="menu-rating-card">
-                    <span>Menu Rating</span>
+                    <span>Package Rating</span>
 
                     @if (Model.ReviewCount > 0)
                     {
@@ -96,7 +149,7 @@
                 </div>
 
                 <div class="menu-rating-card">
-                    <span>Restaurant Rating</span>
+                    <span>Caterer Rating</span>
 
                     @if (Model.ReviewCount > 0)
                     {
@@ -116,12 +169,12 @@
 
             <hr />
 
-            <h3>Choose Your Options</h3>
+            <h3>Choose Package Options</h3>
 
             @if (item.CustomizationGroups is null || !item.CustomizationGroups.Any())
             {
                 <p class="text-muted">
-                    This menu item has no customization options.
+                    This catering package has no additional options.
                 </p>
             }
             else
@@ -155,11 +208,11 @@
 
                                             @if (option.PriceChange > 0)
                                             {
-                                                <small>+ @option.PriceChange.ToString("C")</small>
+                                                <small>+ @option.PriceChange.ToString("0.00") ₺ / person</small>
                                             }
                                             else if (option.PriceChange < 0)
                                             {
-                                                <small>@option.PriceChange.ToString("C")</small>
+                                                <small>@option.PriceChange.ToString("0.00") ₺ / person</small>
                                             }
                                             else
                                             {
@@ -174,11 +227,41 @@
                 }
             }
 
+            <div class="package-guest-box">
+                <label class="form-label">Guest Count</label>
+
+                <div class="package-guest-stepper">
+                    <button type="button" class="guest-step-btn js-guest-step" data-step="-100">-100</button>
+                    <button type="button" class="guest-step-btn js-guest-step" data-step="-10">-10</button>
+
+                    <input type="number"
+                           class="form-control package-guest-input js-package-guest-count"
+                           min="@item.MinGuestCount"
+                           max="@item.MaxGuestCount"
+                           value="@item.MinGuestCount" />
+
+                    <button type="button" class="guest-step-btn js-guest-step" data-step="10">+10</button>
+                    <button type="button" class="guest-step-btn js-guest-step" data-step="100">+100</button>
+                </div>
+
+                <small class="text-muted">
+                    You can also type the guest count manually.
+                </small>
+            </div>
+
             <div class="menu-detail-price-box">
-                <span>Estimated Item Price</span>
+                <span>Price Per Person With Options</span>
                 <strong id="detail-total-price"
-                        data-base-price="@item.Price.ToString(System.Globalization.CultureInfo.InvariantCulture)">
-                    @item.Price.ToString("C")
+                        data-base-price="@item.Price.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                        data-current-price="@item.Price.ToString(System.Globalization.CultureInfo.InvariantCulture)">
+                    @item.Price.ToString("0.00") ₺
+                </strong>
+            </div>
+
+            <div class="menu-detail-price-box">
+                <span>Estimated Package Total</span>
+                <strong id="detail-package-total">
+                    @((item.Price * item.MinGuestCount).ToString("0.00")) ₺
                 </strong>
             </div>
 
@@ -191,9 +274,11 @@
                             data-name="@item.Name"
                             data-description="@item.Description"
                             data-price="@item.Price.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                            data-min-guest-count="@item.MinGuestCount"
+                            data-max-guest-count="@item.MaxGuestCount"
                             data-image-content-type="@item.ImageContentType"
                             data-image-base64="@(item.ImageData is not null ? Convert.ToBase64String(item.ImageData) : "")">
-                        Add Selected Item to Cart
+                        Add Package to Cart
                     </button>
                 }
                 else
@@ -211,7 +296,7 @@
             <div>
                 <h2 class="page-title">Customer Reviews</h2>
                 <p class="page-subtitle">
-                    Reviews are shown only from completed orders for this menu item.
+                    Reviews are shown only from completed orders for this catering package.
                 </p>
             </div>
         </div>
@@ -220,7 +305,7 @@
         {
             <div class="empty-state-card">
                 <h3>No reviews yet</h3>
-                <p>This menu item has not received any completed-order reviews yet.</p>
+                <p>This catering package has not received any completed-order reviews yet.</p>
             </div>
         }
         else
@@ -238,8 +323,8 @@
                             </div>
 
                             <div class="menu-review-ratings">
-                                <span>Menu: ⭐ @review.MenuRating / 5</span>
-                                <span>Restaurant: ⭐ @review.CatererRating / 5</span>
+                                <span>Package: ⭐ @review.MenuRating / 5</span>
+                                <span>Caterer: ⭐ @review.CatererRating / 5</span>
                             </div>
                         </div>
 
@@ -257,9 +342,9 @@
                         </div>
 
                         <div class="menu-review-footer">
-                            <span>Item: @review.MenuItemName</span>
-                            <span>Quantity: @review.Quantity</span>
-                            <span>Line Total: @review.LineTotal.ToString("0.00")</span>
+                            <span>Package: @review.MenuItemName</span>
+                            <span>Guest Count: @review.Quantity</span>
+                            <span>Line Total: @review.LineTotal.ToString("0.00") ₺</span>
                         </div>
                     </div>
                 }

@@ -1,22 +1,31 @@
 @model TasteAtDoor.Models.Order
 
 @{
-    ViewData["Title"] = "Receipt";
+    ViewData["Title"] = "Catering Receipt";
     var items = Model?.OrderItems?.ToList() ?? new List<TasteAtDoor.Models.OrderItem>();
 }
 
 <div class="dashboard-shell">
     <div class="page-header-row">
         <div>
-            <h1 class="page-title">Receipt</h1>
-            <p class="page-subtitle">Generated dynamically from order data.</p>
+            <h1 class="page-title">Catering Receipt</h1>
+            <p class="page-subtitle">
+                Generated dynamically from your catering request data.
+            </p>
         </div>
 
         <div class="d-flex gap-2 flex-wrap">
             <a asp-controller="User"
                asp-action="Orders"
                class="btn-secondary-main">
-                Back to Orders
+                Back to Requests
+            </a>
+
+            <a asp-controller="OrderChat"
+               asp-action="Room"
+               asp-route-id="@Model.Id"
+               class="btn-main">
+                Open Chat / Live Call
             </a>
 
             <a asp-controller="OrderDocument"
@@ -33,13 +42,6 @@
                 Download Agreement PDF
             </a>
 
-            <a asp-controller="OrderChat"
-               asp-action="Room"
-               asp-route-orderId="@Model.Id"
-               class="btn-main">
-                Open Order Chat
-            </a>
-
             <button type="button"
                     class="btn-secondary-main"
                     onclick="window.print()">
@@ -50,11 +52,33 @@
 
     <div class="receipt-grid">
         <div class="table-card">
-            <h3>Order Information</h3>
-            <p><strong>Order ID:</strong> @Model.Id</p>
-            <p><strong>Order Date:</strong> @Model.OrderDate</p>
+            <h3>Request Information</h3>
+            <p><strong>Request ID:</strong> #@Model.Id</p>
+            <p><strong>Request Date:</strong> @Model.OrderDate.ToString("dd MMM yyyy HH:mm")</p>
             <p><strong>Status:</strong> @Model.Status</p>
-            <p><strong>Total Price:</strong> @Model.TotalPrice.ToString("0.00")</p>
+            <p><strong>Total Estimated Price:</strong> @Model.TotalPrice.ToString("0.00") ₺</p>
+        </div>
+
+        <div class="table-card">
+            <h3>Event Information</h3>
+            <p><strong>Event Type:</strong> @Model.EventType</p>
+
+            @if (Model.EventDate.HasValue)
+            {
+                <p><strong>Event Date:</strong> @Model.EventDate.Value.ToString("dd MMM yyyy HH:mm")</p>
+            }
+            else
+            {
+                <p><strong>Event Date:</strong> Not specified</p>
+            }
+
+            <p><strong>Total Guest Count:</strong> @Model.GuestCount</p>
+            <p><strong>Event Address:</strong> @Model.EventAddress</p>
+
+            @if (!string.IsNullOrWhiteSpace(Model.EventNote))
+            {
+                <p><strong>Event Note:</strong> @Model.EventNote</p>
+            }
         </div>
 
         <div class="table-card">
@@ -65,23 +89,23 @@
     </div>
 
     <div class="table-card">
-        <h3>Ordered Items</h3>
+        <h3>Selected Catering Packages</h3>
 
         @if (!items.Any())
         {
-            <p>No items found for this order.</p>
+            <p>No packages found for this request.</p>
         }
         else
         {
             <table class="custom-table">
                 <thead>
                     <tr>
-                        <th>Menu Item</th>
-                        <th>Restaurant</th>
-                        <th>Quantity</th>
-                        <th>Base Price</th>
-                        <th>Final Price</th>
-                        <th>Line Total</th>
+                        <th>Catering Package</th>
+                        <th>Caterer</th>
+                        <th>Guest Count</th>
+                        <th>Base Price / Person</th>
+                        <th>Final Price / Person</th>
+                        <th>Package Total</th>
                     </tr>
                 </thead>
 
@@ -93,7 +117,7 @@
 
                         <tr>
                             <td>
-                                <strong>@(item.MenuItem?.Name ?? "Menu Item")</strong>
+                                <strong>@(item.MenuItem?.Name ?? "Catering Package")</strong>
 
                                 @if (customizations.Any())
                                 {
@@ -105,7 +129,9 @@
 
                                                 @if (customization.PriceChange != 0)
                                                 {
-                                                    <span> (@customization.PriceChange.ToString("0.00"))</span>
+                                                    <span>
+                                                        (@customization.PriceChange.ToString("0.00") ₺ / person)
+                                                    </span>
                                                 }
                                             </li>
                                         }
@@ -113,15 +139,15 @@
                                 }
                                 else
                                 {
-                                    <div class="cart-meta">No customization selected</div>
+                                    <div class="cart-meta">No extra package option selected</div>
                                 }
                             </td>
 
-                            <td>@(item.MenuItem?.Caretaker?.FullName ?? "-")</td>
+                            <td>@(item.MenuItem?.Caretaker?.FullName ?? "Caterer")</td>
                             <td>@item.Quantity</td>
-                            <td>@item.BaseUnitPrice.ToString("0.00")</td>
-                            <td>@item.FinalUnitPrice.ToString("0.00")</td>
-                            <td>@item.LineTotal.ToString("0.00")</td>
+                            <td>@item.BaseUnitPrice.ToString("0.00") ₺</td>
+                            <td>@item.FinalUnitPrice.ToString("0.00") ₺</td>
+                            <td>@item.LineTotal.ToString("0.00") ₺</td>
                         </tr>
                     }
                 </tbody>

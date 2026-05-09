@@ -1,41 +1,44 @@
 @model TasteAtDoor.Models.ViewModels.CheckoutViewModel
 
 @{
-    ViewData["Title"] = "Checkout";
+    ViewData["Title"] = "Event Checkout";
 }
 
 <div class="dashboard-shell">
     <div class="page-header-row">
         <div>
-            <h1 class="page-title">Payment</h1>
-            <p class="page-subtitle">Complete your order with a simulated payment.</p>
+            <h1 class="page-title">Event Checkout</h1>
+            <p class="page-subtitle">
+                Confirm your catering packages, event details, guest count, and simulated payment.
+            </p>
         </div>
 
         <a asp-controller="Cart" asp-action="Index" class="btn-secondary-main">
-            Back to Cart
+            Back to Package Cart
         </a>
     </div>
 
     <div class="checkout-layout">
         <div class="table-card">
-            <h3 class="section-title">Order Summary</h3>
+            <h3 class="section-title">Catering Request Summary</h3>
 
             <div id="checkout-empty-state" class="empty-box" style="display:none;">
                 <h3>Your cart is empty</h3>
-                <p>Please go back and add items before checkout.</p>
+                <p>Please go back and add catering packages before checkout.</p>
             </div>
 
             <div id="checkout-summary-stack" class="checkout-summary-stack"></div>
 
             <div id="checkout-total-box" class="checkout-total-box" style="display:none;">
-                Total Price: <strong id="checkout-total-price">0.00</strong>
+                <div>Total Estimated Price: <strong id="checkout-total-price">0.00</strong></div>
+                <div>Total Guest Count: <strong id="checkout-total-guests">0</strong></div>
             </div>
         </div>
 
         <div class="auth-card">
-            <h3 class="section-title">Card Information</h3>
+            <h3 class="section-title">Event Information</h3>
             <p class="page-subtitle">
-                This is a simulation only. Do not enter a real card number.
+                These details will be sent to the selected caterer after payment simulation.
             </p>
 
             <form asp-controller="Cart" asp-action="Checkout" method="post">
@@ -46,7 +49,68 @@
                 <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
                 <div class="form-group mb-3">
-                    <label asp-for="CardHolderName">Card Holder Name</label>
+                    <label asp-for="EventType"></label>
+                    <select asp-for="EventType" class="form-control">
+                        <option value="Wedding">Wedding</option>
+                        <option value="Engagement">Engagement</option>
+                        <option value="Corporate Event">Corporate Event</option>
+                        <option value="Birthday">Birthday</option>
+                        <option value="Graduation">Graduation</option>
+                        <option value="Meeting">Meeting</option>
+                        <option value="General Event">General Event</option>
+                    </select>
+                    <span asp-validation-for="EventType" class="text-danger"></span>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label asp-for="EventDate"></label>
+                    <input asp-for="EventDate"
+                           type="datetime-local"
+                           class="form-control" />
+                    <span asp-validation-for="EventDate" class="text-danger"></span>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label asp-for="GuestCount"></label>
+                    <input asp-for="GuestCount"
+                           id="GuestCount"
+                           type="number"
+                           min="1"
+                           max="100000"
+                           class="form-control" />
+                    <span asp-validation-for="GuestCount" class="text-danger"></span>
+                    <small class="text-muted">
+                        This will be filled from your cart automatically. You can still edit it if needed.
+                    </small>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label asp-for="EventAddress"></label>
+                    <textarea asp-for="EventAddress"
+                              class="form-control"
+                              rows="3"
+                              placeholder="Full event address, venue name, floor, hall name, etc."></textarea>
+                    <span asp-validation-for="EventAddress" class="text-danger"></span>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label asp-for="EventNote"></label>
+                    <textarea asp-for="EventNote"
+                              class="form-control"
+                              rows="3"
+                              placeholder="Example: delivery time, setup instructions, vegetarian options, service staff request..."></textarea>
+                    <span asp-validation-for="EventNote" class="text-danger"></span>
+                </div>
+
+                <hr />
+
+                <h3 class="section-title">Simulated Payment</h3>
+                <p class="page-subtitle">
+                    This is a simulation only. Do not enter a real card number.
+                </p>
+
+                <div class="form-group mb-3">
+                    <label asp-for="CardHolderName"></label>
                     <input asp-for="CardHolderName"
                            class="form-control"
                            placeholder="Demo User" />
@@ -54,7 +118,7 @@
                 </div>
 
                 <div class="form-group mb-3">
-                    <label asp-for="CardNumber">Card Number</label>
+                    <label asp-for="CardNumber"></label>
                     <input asp-for="CardNumber"
                            class="form-control"
                            placeholder="4111111111111111" />
@@ -65,7 +129,7 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group mb-3">
-                            <label asp-for="ExpiryDate">Expiry Date</label>
+                            <label asp-for="ExpiryDate"></label>
                             <input asp-for="ExpiryDate"
                                    class="form-control"
                                    placeholder="12/30" />
@@ -75,7 +139,7 @@
 
                     <div class="col-md-6">
                         <div class="form-group mb-3">
-                            <label asp-for="CVV">CVV</label>
+                            <label asp-for="CVV"></label>
                             <input asp-for="CVV"
                                    class="form-control"
                                    placeholder="123" />
@@ -85,7 +149,7 @@
                 </div>
 
                 <button type="submit" class="btn-main w-100">
-                    Complete Simulated Payment
+                    Complete Catering Request
                 </button>
             </form>
         </div>
@@ -95,81 +159,19 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 
+    <script src="~/js/cart-storage.js" asp-append-version="true"></script>
+
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            const CART_KEY = "tasteAtDoorCart";
-
-            function parseNumber(value, fallback = 0) {
-                const n = Number(value);
-                return Number.isFinite(n) ? n : fallback;
+            if (!window.TasteAtDoorCart) {
+                return;
             }
 
-            function getRawCart() {
-                const json = localStorage.getItem(CART_KEY);
-
-                if (!json) {
-                    return [];
-                }
-
-                try {
-                    return JSON.parse(json);
-                } catch {
-                    return [];
-                }
-            }
-
-            function normalizeOption(raw) {
-                return {
-                    groupId: parseNumber(raw?.groupId ?? raw?.GroupId),
-                    groupTitle: raw?.groupTitle ?? raw?.GroupTitle ?? "",
-                    optionId: parseNumber(raw?.optionId ?? raw?.OptionId),
-                    optionName: raw?.optionName ?? raw?.OptionName ?? "",
-                    priceChange: parseNumber(raw?.priceChange ?? raw?.PriceChange)
-                };
-            }
-
-            function normalizeItem(raw) {
-                const baseUnitPrice = parseNumber(
-                    raw?.baseUnitPrice ??
-                    raw?.BaseUnitPrice ??
-                    raw?.price ??
-                    raw?.Price ??
-                    raw?.unitPrice ??
-                    raw?.UnitPrice
-                );
-
-                const finalUnitPrice = parseNumber(
-                    raw?.finalUnitPrice ??
-                    raw?.FinalUnitPrice ??
-                    raw?.price ??
-                    raw?.Price ??
-                    raw?.unitPrice ??
-                    raw?.UnitPrice ??
-                    baseUnitPrice
-                );
-
-                const selectedOptionsRaw = raw?.selectedOptions ?? raw?.SelectedOptions ?? [];
-
-                return {
-                    signature: raw?.signature ?? raw?.Signature ?? "",
-                    menuItemId: parseNumber(raw?.menuItemId ?? raw?.MenuItemId),
-                    name: raw?.name ?? raw?.Name ?? "",
-                    description: raw?.description ?? raw?.Description ?? "",
-                    baseUnitPrice: baseUnitPrice,
-                    finalUnitPrice: finalUnitPrice,
-                    quantity: parseNumber(raw?.quantity ?? raw?.Quantity, 1),
-                    imageContentType: raw?.imageContentType ?? raw?.ImageContentType ?? "",
-                    imageBase64: raw?.imageBase64 ?? raw?.ImageBase64 ?? "",
-                    selectedOptions: Array.isArray(selectedOptionsRaw)
-                        ? selectedOptionsRaw.map(normalizeOption)
-                        : []
-                };
-            }
-
-            function getCart() {
-                return getRawCart()
-                    .map(normalizeItem)
-                    .filter(x => x.menuItemId > 0 && x.name);
+            function formatMoney(value) {
+                return new Intl.NumberFormat("tr-TR", {
+                    style: "currency",
+                    currency: "TRY"
+                }).format(value);
             }
 
             function escapeHtml(value) {
@@ -183,12 +185,12 @@
 
             function renderSelectedOptions(item) {
                 if (!item.selectedOptions || item.selectedOptions.length === 0) {
-                    return `<div class="cart-meta">No customization selected</div>`;
+                    return `<div class="cart-meta">No extra package option selected</div>`;
                 }
 
                 const items = item.selectedOptions.map(option => {
                     const priceHtml = option.priceChange !== 0
-                        ? ` <span class="option-price-change">(${option.priceChange.toFixed(2)})</span>`
+                        ? ` <span class="option-price-change">(${formatMoney(option.priceChange)} / person)</span>`
                         : "";
 
                     return `<li>${escapeHtml(option.groupTitle)}: ${escapeHtml(option.optionName)}${priceHtml}</li>`;
@@ -197,7 +199,7 @@
                 return `<ul class="user-option-list">${items}</ul>`;
             }
 
-            const cart = getCart();
+            const cart = window.TasteAtDoorCart.getCart();
             const cartJsonInput = document.getElementById("CartJson");
 
             if (cartJsonInput) {
@@ -208,6 +210,8 @@
             const summaryStack = document.getElementById("checkout-summary-stack");
             const totalBox = document.getElementById("checkout-total-box");
             const totalText = document.getElementById("checkout-total-price");
+            const totalGuestsText = document.getElementById("checkout-total-guests");
+            const guestCountInput = document.getElementById("GuestCount");
 
             if (cart.length === 0) {
                 emptyBox.style.display = "block";
@@ -219,28 +223,46 @@
             totalBox.style.display = "block";
 
             let total = 0;
+            let totalGuests = 0;
 
             cart.forEach(item => {
-                const lineTotal = item.finalUnitPrice * item.quantity;
+                const guestCount = Number.parseInt(item.quantity || "0", 10);
+                const lineTotal = item.finalUnitPrice * guestCount;
+
                 total += lineTotal;
+                totalGuests += guestCount;
 
                 const row = document.createElement("div");
                 row.className = "checkout-summary-row";
+
                 row.innerHTML = `
                     <div>
                         <strong>${escapeHtml(item.name)}</strong>
-                        <div class="cart-meta">Quantity: ${item.quantity}</div>
-                        <div class="cart-meta">Base Price: ${item.baseUnitPrice.toFixed(2)}</div>
-                        <div class="cart-meta">Final Unit Price: ${item.finalUnitPrice.toFixed(2)}</div>
+                        <div class="cart-meta">Guest Count: ${guestCount}</div>
+                        <div class="cart-meta">Price Per Person: ${formatMoney(item.finalUnitPrice)}</div>
+                        <div class="cart-meta">Guest Range: ${item.minGuestCount || 1} - ${item.maxGuestCount || 100000}</div>
                         ${renderSelectedOptions(item)}
                     </div>
-                    <div class="menu-price">${lineTotal.toFixed(2)}</div>
+                    <div class="menu-price">${formatMoney(lineTotal)}</div>
                 `;
 
                 summaryStack.appendChild(row);
             });
 
-            totalText.textContent = total.toFixed(2);
+            totalText.textContent = formatMoney(total);
+            totalGuestsText.textContent = totalGuests.toString();
+
+            if (guestCountInput && totalGuests > 0) {
+                guestCountInput.value = totalGuests;
+            }
+
+            document.querySelectorAll("form").forEach(form => {
+                form.addEventListener("submit", function () {
+                    if (cartJsonInput) {
+                        cartJsonInput.value = JSON.stringify(window.TasteAtDoorCart.getCart());
+                    }
+                });
+            });
         });
     </script>
 }

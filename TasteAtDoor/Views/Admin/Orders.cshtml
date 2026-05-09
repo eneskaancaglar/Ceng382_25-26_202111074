@@ -1,14 +1,16 @@
 @model TasteAtDoor.Models.ViewModels.AdminOrderListPageViewModel
 
 @{
-    ViewData["Title"] = "Orders";
+    ViewData["Title"] = "Catering Requests";
 }
 
 <div class="dashboard-shell">
     <div class="page-header-row">
         <div>
-            <h1 class="page-title">Orders</h1>
-            <p class="page-subtitle">Inspect all customer orders, order items, restaurants, documents, and chats.</p>
+            <h1 class="page-title">Catering Requests</h1>
+            <p class="page-subtitle">
+                Inspect all customer catering requests, event details, selected packages, caterers, documents, and chats.
+            </p>
         </div>
 
         <a asp-controller="Admin" asp-action="Dashboard" class="btn-secondary-main">
@@ -18,18 +20,27 @@
 
     <div class="table-card">
         <form method="get" asp-controller="Admin" asp-action="Orders" class="row g-3">
-            <div class="col-md-5">
+            <div class="col-md-3">
                 <label class="form-label">Search</label>
                 <input name="search"
                        value="@Model.Search"
                        class="form-control"
-                       placeholder="Order ID, customer, restaurant, menu item..." />
+                       placeholder="Request ID, customer, caterer, package, event..." />
             </div>
 
-            <div class="col-md-4">
+            <div class="col-md-2">
                 <label class="form-label">Status</label>
                 <select name="status" class="form-control">
                     <option value="">All Statuses</option>
+
+                    @if (Model.Status == "Pending")
+                    {
+                        <option value="Pending" selected>Pending</option>
+                    }
+                    else
+                    {
+                        <option value="Pending">Pending</option>
+                    }
 
                     @if (Model.Status == "Completed")
                     {
@@ -40,21 +51,43 @@
                         <option value="Completed">Completed</option>
                     }
 
-                    @if (Model.Status == "Pending")
+                    @if (Model.Status == "Cancelled")
                     {
-                        <option value="Pending" selected>Pending</option>
+                        <option value="Cancelled" selected>Cancelled</option>
                     }
                     else
                     {
-                        <option value="Pending">Pending</option>
+                        <option value="Cancelled">Cancelled</option>
                     }
                 </select>
             </div>
 
-            <div class="col-md-3 d-flex align-items-end">
+            <div class="col-md-2">
+                <label class="form-label">Start Date</label>
+                <input name="startDate"
+                       type="date"
+                       value="@(Model.StartDate.HasValue ? Model.StartDate.Value.ToString("yyyy-MM-dd") : "")"
+                       class="form-control" />
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label">End Date</label>
+                <input name="endDate"
+                       type="date"
+                       value="@(Model.EndDate.HasValue ? Model.EndDate.Value.ToString("yyyy-MM-dd") : "")"
+                       class="form-control" />
+            </div>
+
+            <div class="col-md-3 d-flex align-items-end gap-2">
                 <button type="submit" class="btn-main w-100">
                     Filter
                 </button>
+
+                <a asp-controller="Admin"
+                   asp-action="Orders"
+                   class="btn-secondary-main w-100">
+                    Clear
+                </a>
             </div>
         </form>
     </div>
@@ -62,20 +95,21 @@
     <div class="table-card">
         @if (!Model.Orders.Any())
         {
-            <p>No orders found.</p>
+            <p>No catering requests found.</p>
         }
         else
         {
             <table class="custom-table">
                 <thead>
                     <tr>
-                        <th>Order</th>
+                        <th>Request</th>
                         <th>Customer</th>
-                        <th>Items</th>
-                        <th>Restaurants</th>
+                        <th>Event</th>
+                        <th>Packages</th>
+                        <th>Caterers</th>
                         <th>Status</th>
                         <th>Total</th>
-                        <th>Date</th>
+                        <th>Request Date</th>
                         <th>Documents</th>
                         <th>Chat</th>
                     </tr>
@@ -84,12 +118,12 @@
                 <tbody>
                     @foreach (var order in Model.Orders)
                     {
-                        var itemNames = order.OrderItems
+                        var packageNames = order.OrderItems
                             .Where(i => i.MenuItem != null)
-                            .Select(i => $"{i.MenuItem!.Name} x{i.Quantity}")
+                            .Select(i => $"{i.MenuItem!.Name} ({i.Quantity} guests)")
                             .ToList();
 
-                        var restaurants = order.OrderItems
+                        var caterers = order.OrderItems
                             .Where(i => i.MenuItem?.Caretaker != null)
                             .Select(i => i.MenuItem!.Caretaker!.FullName)
                             .Distinct()
@@ -99,18 +133,37 @@
                             <td>#@order.Id</td>
 
                             <td>
-                                @(order.ApplicationUser?.FullName ?? "Unknown")
+                                @(order.ApplicationUser?.FullName ?? "Customer")
                                 <br />
                                 <small>@(order.ApplicationUser?.Email ?? "-")</small>
                             </td>
 
                             <td>
-                                @if (itemNames.Any())
+                                <strong>@order.EventType</strong>
+                                <br />
+
+                                @if (order.EventDate.HasValue)
+                                {
+                                    <small>@order.EventDate.Value.ToString("dd MMM yyyy HH:mm")</small>
+                                    <br />
+                                }
+
+                                <small>@order.GuestCount guests</small>
+                                <br />
+
+                                @if (!string.IsNullOrWhiteSpace(order.EventAddress))
+                                {
+                                    <small>@order.EventAddress</small>
+                                }
+                            </td>
+
+                            <td>
+                                @if (packageNames.Any())
                                 {
                                     <ul class="user-option-list">
-                                        @foreach (var itemName in itemNames)
+                                        @foreach (var name in packageNames)
                                         {
-                                            <li>@itemName</li>
+                                            <li>@name</li>
                                         }
                                     </ul>
                                 }
@@ -121,9 +174,14 @@
                             </td>
 
                             <td>
-                                @if (restaurants.Any())
+                                @if (caterers.Any())
                                 {
-                                    <span>@string.Join(", ", restaurants)</span>
+                                    <ul class="user-option-list">
+                                        @foreach (var caterer in caterers)
+                                        {
+                                            <li>@caterer</li>
+                                        }
+                                    </ul>
                                 }
                                 else
                                 {
@@ -132,13 +190,11 @@
                             </td>
 
                             <td>@order.Status</td>
-
-                            <td>@order.TotalPrice.ToString("0.00")</td>
-
-                            <td>@order.OrderDate</td>
+                            <td>@order.TotalPrice.ToString("0.00") ₺</td>
+                            <td>@order.OrderDate.ToString("dd MMM yyyy HH:mm")</td>
 
                             <td>
-                                <div class="d-flex gap-2 flex-wrap">
+                                <div class="d-flex flex-column gap-2">
                                     <a asp-controller="OrderDocument"
                                        asp-action="ReceiptPdf"
                                        asp-route-id="@order.Id"
@@ -156,19 +212,12 @@
                             </td>
 
                             <td>
-                                @if (order.Status == "Completed")
-                                {
-                                    <a asp-controller="OrderChat"
-                                       asp-action="Room"
-                                       asp-route-orderId="@order.Id"
-                                       class="btn-secondary-main">
-                                        Chat
-                                    </a>
-                                }
-                                else
-                                {
-                                    <span>-</span>
-                                }
+                                <a asp-controller="OrderChat"
+                                   asp-action="Room"
+                                   asp-route-id="@order.Id"
+                                   class="btn-main">
+                                    Open Chat / Live Call
+                                </a>
                             </td>
                         </tr>
                     }
@@ -187,6 +236,8 @@
                        asp-action="Orders"
                        asp-route-search="@Model.Search"
                        asp-route-status="@Model.Status"
+                       asp-route-startDate="@(Model.StartDate.HasValue ? Model.StartDate.Value.ToString("yyyy-MM-dd") : null)"
+                       asp-route-endDate="@(Model.EndDate.HasValue ? Model.EndDate.Value.ToString("yyyy-MM-dd") : null)"
                        asp-route-page="@(Model.Page - 1)">
                         Previous
                     </a>
@@ -199,6 +250,8 @@
                        asp-action="Orders"
                        asp-route-search="@Model.Search"
                        asp-route-status="@Model.Status"
+                       asp-route-startDate="@(Model.StartDate.HasValue ? Model.StartDate.Value.ToString("yyyy-MM-dd") : null)"
+                       asp-route-endDate="@(Model.EndDate.HasValue ? Model.EndDate.Value.ToString("yyyy-MM-dd") : null)"
                        asp-route-page="@(Model.Page + 1)">
                         Next
                     </a>

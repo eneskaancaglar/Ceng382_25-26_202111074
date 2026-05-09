@@ -1,16 +1,29 @@
 @model TasteAtDoor.Models.ViewModels.OrderHistoryPageViewModel
 
 @{
-    ViewData["Title"] = "Order History";
+    ViewData["Title"] = "My Catering Requests";
 }
 
 <div class="dashboard-shell">
     <div class="page-header-row">
         <div>
-            <h1 class="page-title">Order History</h1>
-            <p class="page-subtitle">Your completed and previous orders.</p>
+            <h1 class="page-title">My Catering Requests</h1>
+            <p class="page-subtitle">
+                Track your catering requests, event details, selected packages, chat, receipts, and reviews.
+            </p>
         </div>
+
+        <a asp-controller="User"
+           asp-action="Index"
+           class="btn-main">
+            Browse Caterers
+        </a>
     </div>
+
+    @if (TempData["Error"] is string errorMessage)
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
 
     @if (TempData["Success"] is string successMessage)
     {
@@ -21,13 +34,25 @@
         <form method="get" asp-controller="User" asp-action="Orders" class="row g-3">
             <div class="col-md-5">
                 <label class="form-label">Search</label>
-                <input name="search" value="@Model.Search" class="form-control" placeholder="Order ID or menu item name" />
+                <input name="search"
+                       value="@Model.Search"
+                       class="form-control"
+                       placeholder="Request ID, event type, address, or package name" />
             </div>
 
             <div class="col-md-4">
                 <label class="form-label">Status</label>
                 <select name="status" class="form-control">
                     <option value="">All</option>
+
+                    @if (Model.Status == "Pending")
+                    {
+                        <option value="Pending" selected>Pending</option>
+                    }
+                    else
+                    {
+                        <option value="Pending">Pending</option>
+                    }
 
                     @if (Model.Status == "Completed")
                     {
@@ -38,13 +63,13 @@
                         <option value="Completed">Completed</option>
                     }
 
-                    @if (Model.Status == "Pending")
+                    @if (Model.Status == "Cancelled")
                     {
-                        <option value="Pending" selected>Pending</option>
+                        <option value="Cancelled" selected>Cancelled</option>
                     }
                     else
                     {
-                        <option value="Pending">Pending</option>
+                        <option value="Cancelled">Cancelled</option>
                     }
                 </select>
             </div>
@@ -58,8 +83,12 @@
     @if (!Model.Orders.Any())
     {
         <div class="empty-box">
-            <h3>No orders found</h3>
-            <p>You have not placed any matching orders yet.</p>
+            <h3>No catering requests found</h3>
+            <p>You have not placed any matching catering requests yet.</p>
+
+            <a asp-controller="User" asp-action="Index" class="btn-main">
+                Browse Caterers
+            </a>
         </div>
     }
     else
@@ -70,30 +99,78 @@
                 <div class="group-card">
                     <div class="group-card-header">
                         <div>
-                            <h3>Order #@order.Id</h3>
-                            <div class="cart-meta">@order.OrderDate</div>
-                            <div class="cart-meta">Status: @order.Status</div>
-                            <div class="cart-meta">Total: @order.TotalPrice.ToString("0.00")</div>
+                            <h3>Catering Request #@order.Id</h3>
+
+                            <div class="cart-meta">
+                                <strong>Request Date:</strong> @order.OrderDate.ToString("dd MMM yyyy HH:mm")
+                            </div>
+
+                            <div class="cart-meta">
+                                <strong>Status:</strong> @order.Status
+                            </div>
+
+                            <div class="cart-meta">
+                                <strong>Event Type:</strong> @order.EventType
+                            </div>
+
+                            @if (order.EventDate.HasValue)
+                            {
+                                <div class="cart-meta">
+                                    <strong>Event Date:</strong> @order.EventDate.Value.ToString("dd MMM yyyy HH:mm")
+                                </div>
+                            }
+
+                            <div class="cart-meta">
+                                <strong>Total Guest Count:</strong> @order.GuestCount
+                            </div>
+
+                            @if (!string.IsNullOrWhiteSpace(order.EventAddress))
+                            {
+                                <div class="cart-meta">
+                                    <strong>Event Address:</strong> @order.EventAddress
+                                </div>
+                            }
+
+                            @if (!string.IsNullOrWhiteSpace(order.EventNote))
+                            {
+                                <div class="cart-meta">
+                                    <strong>Event Note:</strong> @order.EventNote
+                                </div>
+                            }
+
+                            <div class="cart-meta">
+                                <strong>Total Estimated Price:</strong> @order.TotalPrice.ToString("0.00") ₺
+                            </div>
                         </div>
 
                         <div class="group-actions">
+                            <a asp-controller="OrderChat"
+                               asp-action="Room"
+                               asp-route-id="@order.Id"
+                               class="btn-main">
+                                Open Chat / Live Call
+                            </a>
+
                             <a asp-controller="User"
                                asp-action="Receipt"
                                asp-route-id="@order.Id"
-                               class="btn-main">
+                               class="btn-secondary-main">
                                 View Receipt
                             </a>
 
-                            @if (order.Status == "Completed")
-                            {
-                                <a asp-controller="OrderChat"
-                                   asp-action="Room"
-                                   asp-route-orderId="@order.Id"
-                                   class="btn-secondary-main">
-                                    Chat
-                                </a>
-                            }
-                           
+                            <a asp-controller="OrderDocument"
+                               asp-action="ReceiptPdf"
+                               asp-route-id="@order.Id"
+                               class="btn-secondary-main">
+                                Receipt PDF
+                            </a>
+
+                            <a asp-controller="OrderDocument"
+                               asp-action="AgreementPdf"
+                               asp-route-id="@order.Id"
+                               class="btn-secondary-main">
+                                Agreement PDF
+                            </a>
                         </div>
                     </div>
 
@@ -106,17 +183,50 @@
 
                                 <div class="option-row">
                                     <div>
-                                        <strong>@(item.MenuItem?.Name ?? "Menu Item")</strong>
+                                        <strong>@(item.MenuItem?.Name ?? "Catering Package")</strong>
+
                                         <span class="option-meta">
-                                            Quantity: @item.Quantity |
-                                            Final Unit Price: @item.FinalUnitPrice.ToString("0.00") |
-                                            Line Total: @item.LineTotal.ToString("0.00")
+                                            Guest Count: @item.Quantity |
+                                            Price Per Person: @item.FinalUnitPrice.ToString("0.00") ₺ |
+                                            Package Total: @item.LineTotal.ToString("0.00") ₺
                                         </span>
+
+                                        @if (item.MenuItem?.Caretaker is not null)
+                                        {
+                                            <span class="option-meta">
+                                                Caterer: @item.MenuItem.Caretaker.FullName
+                                            </span>
+                                        }
+
+                                        @if (item.SelectedCustomizations.Any())
+                                        {
+                                            <ul class="user-option-list mt-2">
+                                                @foreach (var customization in item.SelectedCustomizations)
+                                                {
+                                                    <li>
+                                                        @customization.GroupTitle: @customization.OptionName
+
+                                                        @if (customization.PriceChange != 0)
+                                                        {
+                                                            <span>
+                                                                (@customization.PriceChange.ToString("0.00") ₺ / person)
+                                                            </span>
+                                                        }
+                                                    </li>
+                                                }
+                                            </ul>
+                                        }
+                                        else
+                                        {
+                                            <div class="option-meta">
+                                                No extra package option selected.
+                                            </div>
+                                        }
 
                                         @if (review is not null)
                                         {
                                             <div class="option-meta">
-                                                Menu Rating: @review.MenuRating / 5 |
+                                                Package Rating: @review.MenuRating / 5 |
                                                 Caterer Rating: @review.CatererRating / 5
                                             </div>
 
@@ -136,7 +246,7 @@
                                                asp-action="Create"
                                                asp-route-orderItemId="@item.Id"
                                                class="btn-secondary-main">
-                                                Rate This Item
+                                                Rate Package
                                             </a>
                                         }
                                     </div>

@@ -1,15 +1,11 @@
-using Microsoft.AspNetCore.DataProtection;
-using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using QuestPDF.Infrastructure;
 using TasteAtDoor.Data;
+using TasteAtDoor.Hubs;
 using TasteAtDoor.Models;
 using TasteAtDoor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddDataProtection()
-    .UseEphemeralDataProtectionProvider();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
@@ -17,39 +13,50 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 
-builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
-{
-    options.Password.RequireDigit = true;
-    options.Password.RequiredLength = 6;
-    options.Password.RequireNonAlphanumeric = false;
-    options.Password.RequireUppercase = false;
-    options.Password.RequireLowercase = false;
-})
-.AddEntityFrameworkStores<ApplicationDbContext>()
-.AddDefaultTokenProviders();
+builder.Services
+    .AddIdentity<ApplicationUser, IdentityRole>(options =>
+    {
+        options.SignIn.RequireConfirmedAccount = false;
+
+        options.Password.RequireDigit = true;
+        options.Password.RequireLowercase = true;
+        options.Password.RequireUppercase = true;
+        options.Password.RequireNonAlphanumeric = false;
+        options.Password.RequiredLength = 6;
+    })
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddDefaultTokenProviders();
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.LoginPath = "/Account/Login";
+    options.LogoutPath = "/Account/Logout";
     options.AccessDeniedPath = "/Account/AccessDenied";
 });
 
-builder.Services.AddScoped<IAppLogService, AppLogService>();
-builder.Services.AddScoped<IEmailService, EmailService>();
-builder.Services.AddScoped<IGoogleMapsService, GoogleMapsService>();
+builder.Services.AddControllersWithViews();
+builder.Services.AddRazorPages();
+
+builder.Services.AddDistributedMemoryCache();
 
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromMinutes(15);
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
 });
 
-builder.Services.AddControllersWithViews();
+builder.Services.AddHttpClient();
 
-QuestPDF.Settings.License = LicenseType.Community;
+builder.Services.AddScoped<IGoogleMapsService, GoogleMapsService>();
+builder.Services.AddScoped<IAppLogService, AppLogService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+
+builder.Services.AddSignalR();
 
 var app = builder.Build();
+
+await SeedRolesAndAdminAsync(app);
 
 if (!app.Environment.IsDevelopment())
 {
@@ -58,31 +65,8 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseStaticFiles();
 
-app.Use(async (context, next) =>
-{
-    try
-    {
-        await next();
-    }
-    catch (Exception ex)
-    {
-        var logService = context.RequestServices.GetRequiredService<IAppLogService>();
-        var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var userEmail = context.User.Identity?.Name;
-
-        await logService.LogAsync(
-            eventType: "UnhandledException",
-            message: "Unhandled exception occurred.",
-            level: "Error",
-            userId: userId,
-            userEmail: userEmail,
-            details: ex.ToString());
-
-        throw;
-    }
-});
+app.MapStaticAssets();
 
 app.UseRouting();
 
@@ -92,44 +76,70 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Account}/{action=Login}/{id?}");
+        name: "default",
+        pattern: "{controller=Home}/{action=Index}/{id?}")
+    .WithStaticAssets();
 
-using (var scope = app.Services.CreateScope())
+app.MapRazorPages()
+    .WithStaticAssets();
+
+app.MapHub<OrderCallHub>("/orderCallHub");
+
+app.Run();
+
+static async Task SeedRolesAndAdminAsync(WebApplication app)
 {
-    var services = scope.ServiceProvider;
-    var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-    var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+    using var scope = app.Services.CreateScope();
 
-    string[] roles = { "Admin", "Caretaker", "User" };
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+
+    string[] roles =
+    {
+        "Admin",
+        "User",
+        "Caretaker"
+    };
 
     foreach (var role in roles)
     {
-        if (!await roleManager.RoleExistsAsync(role))
+        var roleExists = await roleManager.RoleExistsAsync(role);
+
+        if (!roleExists)
         {
             await roleManager.CreateAsync(new IdentityRole(role));
         }
     }
 
-    var adminEmail = "admin@tasteatdoor.com";
+    const string adminEmail = "admin@tasteatdoor.com";
+    const string adminPassword = "Admin123";
+
     var adminUser = await userManager.FindByEmailAsync(adminEmail);
 
     if (adminUser is null)
     {
-        var user = new ApplicationUser
+        adminUser = new ApplicationUser
         {
             UserName = adminEmail,
             Email = adminEmail,
+            EmailConfirmed = true,
             FullName = "System Admin"
         };
 
-        var result = await userManager.CreateAsync(user, "Admin123");
+        var createResult = await userManager.CreateAsync(adminUser, adminPassword);
 
-        if (result.Succeeded)
+        if (createResult.Succeeded)
         {
-            await userManager.AddToRoleAsync(user, "Admin");
+            await userManager.AddToRoleAsync(adminUser, "Admin");
+        }
+    }
+    else
+    {
+        var isAdmin = await userManager.IsInRoleAsync(adminUser, "Admin");
+
+        if (!isAdmin)
+        {
+            await userManager.AddToRoleAsync(adminUser, "Admin");
         }
     }
 }
-
-app.Run();

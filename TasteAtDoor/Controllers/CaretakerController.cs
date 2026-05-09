@@ -49,7 +49,11 @@ namespace TasteAtDoor.Controllers
                 query = query.Where(m =>
                     m.Name.Contains(search) ||
                     m.Description.Contains(search) ||
-                    m.LocationText.Contains(search));
+                    m.LocationText.Contains(search) ||
+                    m.EventType.Contains(search) ||
+                    m.PackageCategory.Contains(search) ||
+                    (m.IncludedItems != null && m.IncludedItems.Contains(search)) ||
+                    (m.ServiceDetails != null && m.ServiceDetails.Contains(search)));
             }
 
             var totalCount = await query.CountAsync();
@@ -169,7 +173,10 @@ namespace TasteAtDoor.Controllers
 
             if (!imageResult.Success)
             {
-                ModelState.AddModelError(nameof(model.ProfileImageFile), imageResult.ErrorMessage ?? "Image could not be uploaded.");
+                ModelState.AddModelError(
+                    nameof(model.ProfileImageFile),
+                    imageResult.ErrorMessage ?? "Image could not be uploaded.");
+
                 FillExistingProfileImage(model, currentUser);
                 return View(model);
             }
@@ -187,12 +194,16 @@ namespace TasteAtDoor.Controllers
                 return View(model);
             }
 
-            TempData["Success"] = "Restaurant profile updated successfully.";
+            TempData["Success"] = "Caterer profile updated successfully.";
             return RedirectToAction(nameof(Profile));
         }
 
         [HttpGet]
-        public async Task<IActionResult> Reviews(string search = "", int? menuRating = null, int? catererRating = null, int page = 1)
+        public async Task<IActionResult> Reviews(
+            string search = "",
+            int? menuRating = null,
+            int? catererRating = null,
+            int page = 1)
         {
             var currentUser = await _userManager.GetUserAsync(User);
 
@@ -264,7 +275,7 @@ namespace TasteAtDoor.Controllers
                     CustomerEmail = r.User != null ? r.User.Email : null,
                     CatererName = r.Caterer != null ? r.Caterer.FullName : "Caterer",
                     CatererEmail = r.Caterer != null ? r.Caterer.Email : null,
-                    MenuItemName = r.MenuItem != null ? r.MenuItem.Name : "Menu Item",
+                    MenuItemName = r.MenuItem != null ? r.MenuItem.Name : "Package",
                     MenuRating = r.MenuRating,
                     CatererRating = r.CatererRating,
                     Comment = r.Comment,
@@ -345,7 +356,7 @@ namespace TasteAtDoor.Controllers
                 return View(model);
             }
 
-            TempData["Success"] = "Restaurant location saved successfully.";
+            TempData["Success"] = "Caterer location saved successfully.";
             return RedirectToAction(nameof(RestaurantLocation));
         }
 
@@ -361,13 +372,18 @@ namespace TasteAtDoor.Controllers
 
             if (!currentUser.Latitude.HasValue || !currentUser.Longitude.HasValue)
             {
-                TempData["Error"] = "Please save your restaurant location before creating menu items.";
+                TempData["Error"] = "Please save your caterer location before creating catering packages.";
                 return RedirectToAction(nameof(RestaurantLocation));
             }
 
             return View(new MenuCreateViewModel
             {
-                LocationText = currentUser.Address
+                LocationText = currentUser.Address,
+                EventType = "Wedding",
+                PackageCategory = "Standard",
+                MinGuestCount = 10,
+                MaxGuestCount = 500,
+                IncludesMainCourse = true
             });
         }
 
@@ -375,11 +391,6 @@ namespace TasteAtDoor.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(MenuCreateViewModel model)
         {
-            if (!ModelState.IsValid)
-            {
-                return View(model);
-            }
-
             var currentUser = await _userManager.GetUserAsync(User);
 
             if (currentUser is null)
@@ -387,18 +398,22 @@ namespace TasteAtDoor.Controllers
                 return Challenge();
             }
 
+            ValidateGuestRange(model.MinGuestCount, model.MaxGuestCount);
+
             if (!currentUser.Latitude.HasValue || !currentUser.Longitude.HasValue)
             {
                 ModelState.AddModelError(
                     nameof(model.LocationText),
-                    "Please save your restaurant location first.");
-
-                return View(model);
+                    "Please save your caterer location first.");
             }
 
             if (model.ImageFile is null || model.ImageFile.Length == 0)
             {
-                ModelState.AddModelError(nameof(model.ImageFile), "Image is required.");
+                ModelState.AddModelError(nameof(model.ImageFile), "Package image is required.");
+            }
+
+            if (!ModelState.IsValid)
+            {
                 return View(model);
             }
 
@@ -408,11 +423,11 @@ namespace TasteAtDoor.Controllers
 
             if (string.IsNullOrWhiteSpace(finalLocationText))
             {
-                finalLocationText = "Restaurant saved location";
+                finalLocationText = "Caterer saved location";
             }
 
-            double latitude = currentUser.Latitude.Value;
-            double longitude = currentUser.Longitude.Value;
+            double latitude = currentUser.Latitude!.Value;
+            double longitude = currentUser.Longitude!.Value;
 
             if (!string.IsNullOrWhiteSpace(model.LocationText))
             {
@@ -425,32 +440,45 @@ namespace TasteAtDoor.Controllers
                 }
             }
 
-            byte[] imageBytes;
+            var imageResult = await ConvertImageFileToBytesAsync(model.ImageFile);
 
-            using (var memoryStream = new MemoryStream())
+            if (!imageResult.Success)
             {
-                await model.ImageFile.CopyToAsync(memoryStream);
-                imageBytes = memoryStream.ToArray();
+                ModelState.AddModelError(
+                    nameof(model.ImageFile),
+                    imageResult.ErrorMessage ?? "Package image could not be uploaded.");
+
+                return View(model);
             }
 
             var menuItem = new MenuItem
             {
-                Name = model.Name,
+                Name = model.Name.Trim(),
                 Price = model.Price,
-                Description = model.Description,
+                Description = model.Description.Trim(),
+                EventType = model.EventType.Trim(),
+                PackageCategory = model.PackageCategory.Trim(),
+                MinGuestCount = model.MinGuestCount,
+                MaxGuestCount = model.MaxGuestCount,
+                IncludesMainCourse = model.IncludesMainCourse,
+                IncludesDessert = model.IncludesDessert,
+                IncludesSnacks = model.IncludesSnacks,
+                IncludesDrinks = model.IncludesDrinks,
+                IncludedItems = model.IncludedItems?.Trim(),
+                ServiceDetails = model.ServiceDetails?.Trim(),
                 LocationText = finalLocationText,
                 Latitude = latitude,
                 Longitude = longitude,
                 CaretakerId = currentUser.Id,
-                ImageFileName = model.ImageFile.FileName,
+                ImageFileName = model.ImageFile!.FileName,
                 ImageContentType = model.ImageFile.ContentType,
-                ImageData = imageBytes
+                ImageData = imageResult.ImageBytes!
             };
 
             _context.MenuItems.Add(menuItem);
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = "Menu item created successfully.";
+            TempData["Success"] = "Catering package created successfully.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -478,6 +506,16 @@ namespace TasteAtDoor.Controllers
                 Name = menuItem.Name,
                 Price = menuItem.Price,
                 Description = menuItem.Description,
+                EventType = menuItem.EventType,
+                PackageCategory = menuItem.PackageCategory,
+                MinGuestCount = menuItem.MinGuestCount,
+                MaxGuestCount = menuItem.MaxGuestCount,
+                IncludesMainCourse = menuItem.IncludesMainCourse,
+                IncludesDessert = menuItem.IncludesDessert,
+                IncludesSnacks = menuItem.IncludesSnacks,
+                IncludesDrinks = menuItem.IncludesDrinks,
+                IncludedItems = menuItem.IncludedItems,
+                ServiceDetails = menuItem.ServiceDetails,
                 LocationText = menuItem.LocationText,
                 ExistingImageBase64 = Convert.ToBase64String(menuItem.ImageData),
                 ExistingImageContentType = menuItem.ImageContentType
@@ -490,11 +528,6 @@ namespace TasteAtDoor.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(MenuEditViewModel model)
         {
-            if (!ModelState.IsValid)
-            {
-                return View(model);
-            }
-
             var currentUser = await _userManager.GetUserAsync(User);
 
             if (currentUser is null)
@@ -508,6 +541,14 @@ namespace TasteAtDoor.Controllers
             if (menuItem is null)
             {
                 return NotFound();
+            }
+
+            ValidateGuestRange(model.MinGuestCount, model.MaxGuestCount);
+
+            if (!ModelState.IsValid)
+            {
+                FillExistingPackageImage(model, menuItem);
+                return View(model);
             }
 
             var finalLocationText = !string.IsNullOrWhiteSpace(model.LocationText)
@@ -541,26 +582,45 @@ namespace TasteAtDoor.Controllers
                 longitude = currentUser.Longitude.Value;
             }
 
-            menuItem.Name = model.Name;
+            menuItem.Name = model.Name.Trim();
             menuItem.Price = model.Price;
-            menuItem.Description = model.Description;
+            menuItem.Description = model.Description.Trim();
+            menuItem.EventType = model.EventType.Trim();
+            menuItem.PackageCategory = model.PackageCategory.Trim();
+            menuItem.MinGuestCount = model.MinGuestCount;
+            menuItem.MaxGuestCount = model.MaxGuestCount;
+            menuItem.IncludesMainCourse = model.IncludesMainCourse;
+            menuItem.IncludesDessert = model.IncludesDessert;
+            menuItem.IncludesSnacks = model.IncludesSnacks;
+            menuItem.IncludesDrinks = model.IncludesDrinks;
+            menuItem.IncludedItems = model.IncludedItems?.Trim();
+            menuItem.ServiceDetails = model.ServiceDetails?.Trim();
             menuItem.LocationText = finalLocationText;
             menuItem.Latitude = latitude;
             menuItem.Longitude = longitude;
 
             if (model.ImageFile is not null && model.ImageFile.Length > 0)
             {
-                using var memoryStream = new MemoryStream();
-                await model.ImageFile.CopyToAsync(memoryStream);
+                var imageResult = await ConvertImageFileToBytesAsync(model.ImageFile);
 
-                menuItem.ImageData = memoryStream.ToArray();
+                if (!imageResult.Success)
+                {
+                    ModelState.AddModelError(
+                        nameof(model.ImageFile),
+                        imageResult.ErrorMessage ?? "Package image could not be uploaded.");
+
+                    FillExistingPackageImage(model, menuItem);
+                    return View(model);
+                }
+
+                menuItem.ImageData = imageResult.ImageBytes!;
                 menuItem.ImageFileName = model.ImageFile.FileName;
                 menuItem.ImageContentType = model.ImageFile.ContentType;
             }
 
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = "Menu item updated successfully.";
+            TempData["Success"] = "Catering package updated successfully.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -586,7 +646,7 @@ namespace TasteAtDoor.Controllers
             _context.MenuItems.Remove(menuItem);
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = "Menu item deleted successfully.";
+            TempData["Success"] = "Catering package deleted successfully.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -615,6 +675,51 @@ namespace TasteAtDoor.Controllers
                 model.ExistingImageBase64 = Convert.ToBase64String(user.ProfileImageData);
                 model.ExistingImageContentType = user.ProfileImageContentType;
             }
+        }
+
+        private void FillExistingPackageImage(MenuEditViewModel model, MenuItem menuItem)
+        {
+            if (menuItem.ImageData.Length > 0)
+            {
+                model.ExistingImageBase64 = Convert.ToBase64String(menuItem.ImageData);
+                model.ExistingImageContentType = menuItem.ImageContentType;
+            }
+        }
+
+        private void ValidateGuestRange(int minGuestCount, int maxGuestCount)
+        {
+            if (maxGuestCount < minGuestCount)
+            {
+                ModelState.AddModelError(
+                    "MaxGuestCount",
+                    "Maximum guest count cannot be smaller than minimum guest count.");
+            }
+        }
+
+        private async Task<(bool Success, byte[]? ImageBytes, string? ErrorMessage)> ConvertImageFileToBytesAsync(
+            IFormFile? file)
+        {
+            if (file is null || file.Length == 0)
+            {
+                return (false, null, "Please upload a package image.");
+            }
+
+            if (!file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+            {
+                return (false, null, "Please upload a valid image file.");
+            }
+
+            const long maxFileSize = 4 * 1024 * 1024;
+
+            if (file.Length > maxFileSize)
+            {
+                return (false, null, "Image size must be smaller than 4 MB.");
+            }
+
+            using var memoryStream = new MemoryStream();
+            await file.CopyToAsync(memoryStream);
+
+            return (true, memoryStream.ToArray(), null);
         }
 
         private async Task<(bool Success, string? ErrorMessage)> TryUpdateProfileImageAsync(

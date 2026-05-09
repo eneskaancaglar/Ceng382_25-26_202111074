@@ -1,18 +1,20 @@
 @{
-    ViewData["Title"] = "Cart";
+    ViewData["Title"] = "Package Cart";
 }
 
 <div class="dashboard-shell">
     <div class="page-header-row">
         <div>
-            <h1 class="page-title">Your Cart</h1>
-            <p class="page-subtitle">Review your selected items before payment.</p>
+            <h1 class="page-title">Package Cart</h1>
+            <p class="page-subtitle">
+                Review selected catering packages and update guest counts before payment.
+            </p>
         </div>
     </div>
 
     <div id="cart-empty-state" class="empty-box" style="display:none;">
         <h3>Your cart is empty</h3>
-        <p>Add menu items from the user page.</p>
+        <p>Add catering packages from the caterer package page.</p>
     </div>
 
     <div id="cart-items-container" class="cart-stack"></div>
@@ -27,191 +29,218 @@
 </div>
 
 @section Scripts {
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const CART_KEY = "tasteAtDoorCart";
+    <script src="~/js/cart-storage.js" asp-append-version="true"></script>
 
-        function parseNumber(value, fallback = 0) {
-            const n = Number(value);
-            return Number.isFinite(n) ? n : fallback;
-        }
-
-        function getRawCart() {
-            const json = localStorage.getItem(CART_KEY);
-            if (!json) return [];
-            try {
-                return JSON.parse(json);
-            } catch {
-                return [];
-            }
-        }
-
-        function normalizeOption(raw) {
-            return {
-                groupId: parseNumber(raw?.groupId ?? raw?.GroupId),
-                groupTitle: raw?.groupTitle ?? raw?.GroupTitle ?? "",
-                optionId: parseNumber(raw?.optionId ?? raw?.OptionId),
-                optionName: raw?.optionName ?? raw?.OptionName ?? "",
-                priceChange: parseNumber(raw?.priceChange ?? raw?.PriceChange)
-            };
-        }
-
-        function normalizeItem(raw) {
-            const baseUnitPrice = parseNumber(
-                raw?.baseUnitPrice ?? raw?.BaseUnitPrice ?? raw?.unitPrice ?? raw?.UnitPrice
-            );
-
-            const finalUnitPrice = parseNumber(
-                raw?.finalUnitPrice ?? raw?.FinalUnitPrice ?? raw?.unitPrice ?? raw?.UnitPrice ?? baseUnitPrice
-            );
-
-            const quantity = parseNumber(raw?.quantity ?? raw?.Quantity, 1);
-
-            const selectedOptionsRaw = raw?.selectedOptions ?? raw?.SelectedOptions ?? [];
-
-            const selectedOptions = Array.isArray(selectedOptionsRaw)
-                ? selectedOptionsRaw.map(normalizeOption)
-                : [];
-
-            const signature =
-                raw?.signature ??
-                raw?.Signature ??
-                `${parseNumber(raw?.menuItemId ?? raw?.MenuItemId)}|${selectedOptions.map(x => x.optionId).sort((a, b) => a - b).join("-")}`;
-
-            return {
-                signature: signature,
-                menuItemId: parseNumber(raw?.menuItemId ?? raw?.MenuItemId),
-                name: raw?.name ?? raw?.Name ?? "",
-                baseUnitPrice: baseUnitPrice,
-                finalUnitPrice: finalUnitPrice,
-                quantity: quantity,
-                imageContentType: raw?.imageContentType ?? raw?.ImageContentType ?? "",
-                imageBase64: raw?.imageBase64 ?? raw?.ImageBase64 ?? "",
-                selectedOptions: selectedOptions
-            };
-        }
-
-        function getCart() {
-            return getRawCart()
-                .map(normalizeItem)
-                .filter(x => x.menuItemId > 0 && x.name);
-        }
-
-        function saveCart(cart) {
-            localStorage.setItem(CART_KEY, JSON.stringify(cart));
-        }
-
-        function getTotal(cart) {
-            return cart.reduce((sum, item) => sum + (item.finalUnitPrice * item.quantity), 0);
-        }
-
-        function escapeHtml(value) {
-            return String(value)
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#039;");
-        }
-
-        function renderSelectedOptions(item) {
-            if (!item.selectedOptions || item.selectedOptions.length === 0) {
-                return `<div class="cart-meta">No customization selected</div>`;
-            }
-
-            const items = item.selectedOptions.map(option => {
-                const priceHtml = option.priceChange !== 0
-                    ? ` <span class="option-price-change">(${option.priceChange.toFixed(2)})</span>`
-                    : "";
-
-                return `<li>${escapeHtml(option.groupTitle)}: ${escapeHtml(option.optionName)}${priceHtml}</li>`;
-            }).join("");
-
-            return `<ul class="user-option-list">${items}</ul>`;
-        }
-
-        function render() {
-            const container = document.getElementById("cart-items-container");
-            const emptyBox = document.getElementById("cart-empty-state");
-            const summaryBox = document.getElementById("cart-summary-box");
-            const totalBox = document.getElementById("cart-total-price");
-
-            const cart = getCart();
-
-            saveCart(cart);
-
-            container.innerHTML = "";
-
-            if (cart.length === 0) {
-                emptyBox.style.display = "block";
-                summaryBox.style.display = "none";
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            if (!window.TasteAtDoorCart) {
                 return;
             }
 
-            emptyBox.style.display = "none";
-            summaryBox.style.display = "block";
+            function formatMoney(value) {
+                return new Intl.NumberFormat("tr-TR", {
+                    style: "currency",
+                    currency: "TRY"
+                }).format(value);
+            }
 
-            cart.forEach(item => {
-                const lineTotal = item.finalUnitPrice * item.quantity;
+            function escapeHtml(value) {
+                return String(value)
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
 
-                const card = document.createElement("div");
-                card.className = "cart-card";
-                card.innerHTML = `
-                    <img src="data:${item.imageContentType};base64,${item.imageBase64}" alt="${escapeHtml(item.name)}" class="cart-image" />
-                    <div class="cart-content">
-                        <div class="cart-title-row">
-                            <h3>${escapeHtml(item.name)}</h3>
-                            <span class="menu-price">${lineTotal.toFixed(2)}</span>
+            function clampQuantity(value, minGuestCount, maxGuestCount) {
+                return window.TasteAtDoorCart.clampQuantity(value, minGuestCount, maxGuestCount);
+            }
+
+            function getTotal(cart) {
+                return cart.reduce((sum, item) => sum + (item.finalUnitPrice * item.quantity), 0);
+            }
+
+            function renderSelectedOptions(item) {
+                if (!item.selectedOptions || item.selectedOptions.length === 0) {
+                    return `<div class="cart-meta">No extra package option selected</div>`;
+                }
+
+                const items = item.selectedOptions.map(option => {
+                    const priceHtml = option.priceChange !== 0
+                        ? ` <span class="option-price-change">(${formatMoney(option.priceChange)} / person)</span>`
+                        : "";
+
+                    return `<li>${escapeHtml(option.groupTitle)}: ${escapeHtml(option.optionName)}${priceHtml}</li>`;
+                }).join("");
+
+                return `<ul class="user-option-list">${items}</ul>`;
+            }
+
+            function updateQuantity(signature, newQuantity) {
+                const cart = window.TasteAtDoorCart.getCart();
+
+                const found = cart.find(item => item.signature === signature);
+
+                if (!found) {
+                    return;
+                }
+
+                found.quantity = clampQuantity(
+                    newQuantity,
+                    found.minGuestCount || 1,
+                    found.maxGuestCount || 100000
+                );
+
+                window.TasteAtDoorCart.saveCart(cart);
+                render();
+            }
+
+            function changeQuantity(signature, delta) {
+                const cart = window.TasteAtDoorCart.getCart();
+
+                const found = cart.find(item => item.signature === signature);
+
+                if (!found) {
+                    return;
+                }
+
+                const nextQuantity = (found.quantity || found.minGuestCount || 1) + delta;
+
+                found.quantity = clampQuantity(
+                    nextQuantity,
+                    found.minGuestCount || 1,
+                    found.maxGuestCount || 100000
+                );
+
+                window.TasteAtDoorCart.saveCart(cart);
+                render();
+            }
+
+            function removeItem(signature) {
+                const cart = window.TasteAtDoorCart
+                    .getCart()
+                    .filter(item => item.signature !== signature);
+
+                window.TasteAtDoorCart.saveCart(cart);
+                render();
+            }
+
+            function render() {
+                const container = document.getElementById("cart-items-container");
+                const emptyBox = document.getElementById("cart-empty-state");
+                const summaryBox = document.getElementById("cart-summary-box");
+                const totalBox = document.getElementById("cart-total-price");
+
+                const cart = window.TasteAtDoorCart.getCart();
+
+                container.innerHTML = "";
+
+                if (cart.length === 0) {
+                    emptyBox.style.display = "block";
+                    summaryBox.style.display = "none";
+                    return;
+                }
+
+                emptyBox.style.display = "none";
+                summaryBox.style.display = "block";
+
+                cart.forEach(item => {
+                    const minGuestCount = item.minGuestCount || 1;
+                    const maxGuestCount = item.maxGuestCount || 100000;
+                    const lineTotal = item.finalUnitPrice * item.quantity;
+
+                    const card = document.createElement("div");
+                    card.className = "cart-card cart-package-card";
+
+                    const imageHtml = item.imageBase64 && item.imageContentType
+                        ? `<img src="data:${item.imageContentType};base64,${item.imageBase64}" alt="${escapeHtml(item.name)}" class="cart-image" />`
+                        : `<div class="cart-image cart-image-placeholder">No Image</div>`;
+
+                    card.innerHTML = `
+                        ${imageHtml}
+
+                        <div class="cart-content">
+                            <div class="cart-title-row">
+                                <h3>${escapeHtml(item.name)}</h3>
+                                <span class="menu-price">${formatMoney(lineTotal)}</span>
+                            </div>
+
+                            <div class="cart-meta">
+                                Price Per Person: ${formatMoney(item.finalUnitPrice)}
+                            </div>
+
+                            <div class="cart-meta">
+                                Guest Range: ${minGuestCount} - ${maxGuestCount}
+                            </div>
+
+                            ${renderSelectedOptions(item)}
+
+                            <div class="cart-guest-editor">
+                                <label>Guest Count</label>
+
+                                <div class="package-guest-stepper">
+                                    <button type="button" class="guest-step-btn" data-step="-100">-100</button>
+                                    <button type="button" class="guest-step-btn" data-step="-10">-10</button>
+
+                                    <input type="number"
+                                           class="form-control package-guest-input cart-guest-input"
+                                           min="${minGuestCount}"
+                                           max="${maxGuestCount}"
+                                           value="${item.quantity}" />
+
+                                    <button type="button" class="guest-step-btn" data-step="10">+10</button>
+                                    <button type="button" class="guest-step-btn" data-step="100">+100</button>
+                                </div>
+
+                                <small class="text-muted">
+                                    You can also type the guest count manually.
+                                </small>
+                            </div>
+
+                            <div class="cart-meta">
+                                Package Total: <strong>${formatMoney(lineTotal)}</strong>
+                            </div>
+
+                            <div class="cart-actions">
+                                <button class="delete-link-button btn-remove" type="button">
+                                    Remove Package
+                                </button>
+                            </div>
                         </div>
-                        <div class="cart-meta">Base Price: ${item.baseUnitPrice.toFixed(2)}</div>
-                        <div class="cart-meta">Final Unit Price: ${item.finalUnitPrice.toFixed(2)}</div>
-                        <div class="cart-meta">Quantity: ${item.quantity}</div>
-                        ${renderSelectedOptions(item)}
-                        <div class="cart-actions">
-                            <button class="mini-btn btn-inc">+</button>
-                            <button class="mini-btn btn-dec">-</button>
-                            <button class="delete-link-button btn-remove">Remove</button>
-                        </div>
-                    </div>
-                `;
+                    `;
 
-                card.querySelector(".btn-inc").addEventListener("click", function () {
-                    const current = getCart();
-                    const found = current.find(x => x.signature === item.signature);
-                    if (found) {
-                        found.quantity += 1;
-                        saveCart(current);
-                        render();
-                    }
-                });
+                    card.querySelectorAll("[data-step]").forEach(button => {
+                        button.addEventListener("click", function () {
+                            const step = Number.parseInt(button.dataset.step || "0", 10);
+                            changeQuantity(item.signature, step);
+                        });
+                    });
 
-                card.querySelector(".btn-dec").addEventListener("click", function () {
-                    const current = getCart();
-                    const found = current.find(x => x.signature === item.signature);
-                    if (found) {
-                        found.quantity -= 1;
-                        if (found.quantity <= 0) {
-                            saveCart(current.filter(x => x.signature !== item.signature));
-                        } else {
-                            saveCart(current);
+                    const input = card.querySelector(".cart-guest-input");
+
+                    input.addEventListener("change", function () {
+                        updateQuantity(item.signature, input.value);
+                    });
+
+                    input.addEventListener("keydown", function (event) {
+                        if (event.key === "Enter") {
+                            event.preventDefault();
+                            updateQuantity(item.signature, input.value);
                         }
-                        render();
-                    }
+                    });
+
+                    card.querySelector(".btn-remove").addEventListener("click", function () {
+                        removeItem(item.signature);
+                    });
+
+                    container.appendChild(card);
                 });
 
-                card.querySelector(".btn-remove").addEventListener("click", function () {
-                    const current = getCart().filter(x => x.signature !== item.signature);
-                    saveCart(current);
-                    render();
-                });
+                totalBox.textContent = "Total Price: " + formatMoney(getTotal(cart));
+            }
 
-                container.appendChild(card);
-            });
-
-            totalBox.textContent = "Total Price: " + getTotal(cart).toFixed(2);
-        }
-
-        render();
-    });
-</script>
+            render();
+        });
+    </script>
 }

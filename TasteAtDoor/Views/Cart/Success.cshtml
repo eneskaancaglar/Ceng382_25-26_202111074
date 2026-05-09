@@ -1,27 +1,46 @@
 @model TasteAtDoor.Models.ViewModels.OrderSuccessViewModel
 
 @{
-    ViewData["Title"] = "Order Completed";
+    ViewData["Title"] = "Catering Request Created";
 }
 
 <div class="auth-page">
     <div class="auth-card">
-        <h1>Order Completed</h1>
-        <p>Your payment has been processed successfully.</p>
+        <h1>Catering Request Created</h1>
+        <p>
+            Your simulated payment has been processed successfully and your catering request
+            has been sent to the selected caterer.
+        </p>
 
         <div class="order-success-box">
-            <div><strong>Order ID:</strong> @Model.OrderId</div>
-            <div><strong>Order Date:</strong> @Model.OrderDate</div>
+            <div><strong>Request ID:</strong> #@Model.OrderId</div>
+            <div><strong>Request Date:</strong> @Model.OrderDate.ToString("dd MMM yyyy HH:mm")</div>
             <div><strong>Status:</strong> @Model.Status</div>
-            <div><strong>Total Price:</strong> @Model.TotalPrice.ToString("0.00")</div>
+            <div><strong>Event Type:</strong> @Model.EventType</div>
+
+            @if (Model.EventDate.HasValue)
+            {
+                <div><strong>Event Date:</strong> @Model.EventDate.Value.ToString("dd MMM yyyy HH:mm")</div>
+            }
+
+            <div><strong>Total Guest Count:</strong> @Model.GuestCount</div>
+            <div><strong>Event Address:</strong> @Model.EventAddress</div>
+            <div><strong>Total Estimated Price:</strong> @Model.TotalPrice.ToString("0.00") ₺</div>
         </div>
 
         <div class="hero-buttons">
+            <a asp-controller="OrderChat"
+               asp-action="Room"
+               asp-route-id="@Model.OrderId"
+               class="btn-main">
+                Open Chat / Live Call
+            </a>
+
             <a asp-controller="User"
                asp-action="Receipt"
                asp-route-id="@Model.OrderId"
-               class="btn-main">
-                View Receipt
+               class="btn-secondary-main">
+                View Catering Receipt
             </a>
 
             <a asp-controller="OrderDocument"
@@ -38,17 +57,10 @@
                 Download Agreement PDF
             </a>
 
-            <a asp-controller="OrderChat"
-               asp-action="Room"
-               asp-route-orderId="@Model.OrderId"
-               class="btn-main">
-                Open Order Chat
-            </a>
-
             <a asp-controller="User"
                asp-action="Index"
                class="btn-secondary-main">
-                Back to Restaurants
+                Back to Caterers
             </a>
         </div>
     </div>
