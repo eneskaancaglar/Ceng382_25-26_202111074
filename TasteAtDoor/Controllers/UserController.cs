@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using TasteAtDoor.Data;
 using TasteAtDoor.Models;
 using TasteAtDoor.Models.ViewModels;
+using TasteAtDoor.Services;
 
 namespace TasteAtDoor.Controllers
 {
@@ -13,98 +14,419 @@ namespace TasteAtDoor.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IGoogleMapsService _googleMapsService;
+        private readonly IConfiguration _configuration;
 
         public UserController(
             ApplicationDbContext context,
-            UserManager<ApplicationUser> userManager)
+            UserManager<ApplicationUser> userManager,
+            IGoogleMapsService googleMapsService,
+            IConfiguration configuration)
         {
             _context = context;
             _userManager = userManager;
+            _googleMapsService = googleMapsService;
+            _configuration = configuration;
         }
 
         [Authorize(Roles = "User,Caretaker,Admin")]
-        public async Task<IActionResult> Index(string search = "", int page = 1)
+        public async Task<IActionResult> Index(string search = "")
         {
-            const int pageSize = 6;
+            var currentUser = await _userManager.GetUserAsync(User);
 
-            var query = _context.MenuItems
-                .Include(m => m.Caretaker)
-                .Include(m => m.CustomizationGroups)
-                    .ThenInclude(g => g.Options)
-                .AsQueryable();
+            if (currentUser is null)
+            {
+                return Challenge();
+            }
+
+            if (!currentUser.Latitude.HasValue || !currentUser.Longitude.HasValue)
+            {
+                return View(new RestaurantListPageViewModel
+                {
+                    UserLocationSaved = false,
+                    Search = search
+                });
+            }
+
+            var caretakers = await _userManager.GetUsersInRoleAsync("Caretaker");
+
+            var restaurantQuery = caretakers
+                .Where(c => c.Latitude.HasValue && c.Longitude.HasValue)
+                .AsEnumerable();
 
             if (!string.IsNullOrWhiteSpace(search))
             {
-                query = query.Where(m =>
-                    m.Name.Contains(search) ||
-                    m.Description.Contains(search) ||
-                    (m.Caretaker != null &&
-                     ((m.Caretaker.FullName != null && m.Caretaker.FullName.Contains(search)) ||
-                      (m.Caretaker.Email != null && m.Caretaker.Email.Contains(search)))));
+                restaurantQuery = restaurantQuery.Where(c =>
+                    c.FullName.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                    (!string.IsNullOrWhiteSpace(c.Email) &&
+                     c.Email.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrWhiteSpace(c.Address) &&
+                     c.Address.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrWhiteSpace(c.Bio) &&
+                     c.Bio.Contains(search, StringComparison.OrdinalIgnoreCase)));
             }
 
-            var totalCount = await query.CountAsync();
-            var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+            var caretakerIds = restaurantQuery.Select(c => c.Id).ToList();
 
-            if (totalPages == 0)
-                totalPages = 1;
+            var menuCountMap = await _context.MenuItems
+                .Where(m => caretakerIds.Contains(m.CaretakerId))
+                .GroupBy(m => m.CaretakerId)
+                .Select(g => new { CaretakerId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.CaretakerId, x => x.Count);
 
-            if (page < 1)
-                page = 1;
+            var restaurants = new List<RestaurantListItemViewModel>();
 
-            if (page > totalPages)
-                page = totalPages;
-
-            var menus = await query
-                .OrderByDescending(m => m.Id)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
-
-            var menuIds = menus.Select(m => m.Id).ToList();
-            var catererIds = menus.Select(m => m.CaretakerId).Distinct().ToList();
-
-            var allReviews = await _context.OrderItemReviews
-                .Where(r => menuIds.Contains(r.MenuItemId) || catererIds.Contains(r.CatererId))
-                .ToListAsync();
-
-            var menuRatingMap = allReviews
-                .Where(r => menuIds.Contains(r.MenuItemId))
-                .GroupBy(r => r.MenuItemId)
-                .ToDictionary(
-                    g => g.Key,
-                    g => new
-                    {
-                        Average = g.Average(x => x.MenuRating),
-                        Count = g.Count()
-                    });
-
-            var catererRatingMap = allReviews
-                .Where(r => catererIds.Contains(r.CatererId))
-                .GroupBy(r => r.CatererId)
-                .ToDictionary(
-                    g => g.Key,
-                    g => new
-                    {
-                        Average = g.Average(x => x.CatererRating),
-                        Count = g.Count()
-                    });
-
-            var items = menus.Select(m => new BrowseMenuItemViewModel
+            foreach (var caretaker in restaurantQuery)
             {
-                MenuItem = m,
-                AverageMenuRating = menuRatingMap.ContainsKey(m.Id) ? menuRatingMap[m.Id].Average : 0,
-                MenuReviewCount = menuRatingMap.ContainsKey(m.Id) ? menuRatingMap[m.Id].Count : 0,
-                AverageCatererRating = catererRatingMap.ContainsKey(m.CaretakerId) ? catererRatingMap[m.CaretakerId].Average : 0,
-                CatererReviewCount = catererRatingMap.ContainsKey(m.CaretakerId) ? catererRatingMap[m.CaretakerId].Count : 0
-            }).ToList();
+                var distanceKm = await _googleMapsService.GetRouteDistanceKmAsync(
+                    currentUser.Latitude.Value,
+                    currentUser.Longitude.Value,
+                    caretaker.Latitude!.Value,
+                    caretaker.Longitude!.Value);
 
-            var model = new BrowseMenusPageViewModel
+                if (!distanceKm.HasValue)
+                {
+                    continue;
+                }
+
+                if (distanceKm.Value > 5)
+                {
+                    continue;
+                }
+
+                restaurants.Add(new RestaurantListItemViewModel
+                {
+                    Id = caretaker.Id,
+                    RestaurantName = caretaker.FullName,
+                    Email = caretaker.Email,
+                    Address = caretaker.Address,
+                    Bio = caretaker.Bio,
+                    LogoImageData = caretaker.ProfileImageData,
+                    LogoImageContentType = caretaker.ProfileImageContentType,
+                    MenuCount = menuCountMap.ContainsKey(caretaker.Id) ? menuCountMap[caretaker.Id] : 0,
+                    DistanceKm = distanceKm.Value
+                });
+            }
+
+            restaurants = restaurants
+                .OrderBy(r => r.DistanceKm)
+                .ToList();
+
+            var model = new RestaurantListPageViewModel
             {
-                Items = items,
+                UserLocationSaved = true,
                 Search = search,
-                Page = page,
-                TotalPages = totalPages
+                Restaurants = restaurants
+            };
+
+            return View(model);
+        }
+
+        [Authorize(Roles = "User,Caretaker,Admin")]
+        [HttpGet]
+        public async Task<IActionResult> Profile()
+        {
+            var currentUser = await _userManager.GetUserAsync(User);
+
+            if (currentUser is null)
+            {
+                return Challenge();
+            }
+
+            var model = BuildProfileViewModel(currentUser);
+
+            return View(model);
+        }
+
+        [Authorize(Roles = "User,Caretaker,Admin")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Profile(ProfileViewModel model)
+        {
+            var currentUser = await _userManager.GetUserAsync(User);
+
+            if (currentUser is null)
+            {
+                return Challenge();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                FillExistingProfileImage(model, currentUser);
+                return View(model);
+            }
+
+            currentUser.FullName = model.FullName;
+            currentUser.PhoneNumber = model.PhoneNumber;
+            currentUser.Bio = model.Bio;
+
+            var imageResult = await TryUpdateProfileImageAsync(currentUser, model.ProfileImageFile);
+
+            if (!imageResult.Success)
+            {
+                ModelState.AddModelError(nameof(model.ProfileImageFile), imageResult.ErrorMessage ?? "Image could not be uploaded.");
+                FillExistingProfileImage(model, currentUser);
+                return View(model);
+            }
+
+            var result = await _userManager.UpdateAsync(currentUser);
+
+            if (!result.Succeeded)
+            {
+                foreach (var error in result.Errors)
+                {
+                    ModelState.AddModelError(string.Empty, error.Description);
+                }
+
+                FillExistingProfileImage(model, currentUser);
+                return View(model);
+            }
+
+            TempData["Success"] = "Profile updated successfully.";
+            return RedirectToAction(nameof(Profile));
+        }
+
+        [Authorize(Roles = "User,Caretaker,Admin")]
+        [HttpGet]
+        public async Task<IActionResult> MyLocation()
+        {
+            var currentUser = await _userManager.GetUserAsync(User);
+
+            if (currentUser is null)
+            {
+                return Challenge();
+            }
+
+            ViewBag.GoogleMapsApiKey = _configuration["GoogleMaps:ApiKey"] ?? string.Empty;
+
+            var model = new LocationInputViewModel
+            {
+                Latitude = currentUser.Latitude,
+                Longitude = currentUser.Longitude,
+                Address = currentUser.Address
+            };
+
+            return View(model);
+        }
+
+        [Authorize(Roles = "User,Caretaker,Admin")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MyLocation(LocationInputViewModel model)
+        {
+            ViewBag.GoogleMapsApiKey = _configuration["GoogleMaps:ApiKey"] ?? string.Empty;
+
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var currentUser = await _userManager.GetUserAsync(User);
+
+            if (currentUser is null)
+            {
+                return Challenge();
+            }
+
+            currentUser.Latitude = model.Latitude;
+            currentUser.Longitude = model.Longitude;
+            currentUser.Address = model.Address;
+
+            var result = await _userManager.UpdateAsync(currentUser);
+
+            if (!result.Succeeded)
+            {
+                foreach (var error in result.Errors)
+                {
+                    ModelState.AddModelError(string.Empty, error.Description);
+                }
+
+                return View(model);
+            }
+
+            TempData["Success"] = "Your location was saved successfully.";
+            return RedirectToAction(nameof(MyLocation));
+        }
+
+        [Authorize(Roles = "User,Caretaker,Admin")]
+        [HttpGet]
+        public async Task<IActionResult> RestaurantMenu(string id)
+        {
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                return NotFound();
+            }
+
+            var currentUser = await _userManager.GetUserAsync(User);
+
+            if (currentUser is null)
+            {
+                return Challenge();
+            }
+
+            if (!currentUser.Latitude.HasValue || !currentUser.Longitude.HasValue)
+            {
+                TempData["Error"] = "Please save your location before viewing restaurant menus.";
+                return RedirectToAction(nameof(MyLocation));
+            }
+
+            var restaurant = await _context.Users
+                .Include(u => u.MenuItems)
+                    .ThenInclude(m => m.CustomizationGroups)
+                        .ThenInclude(g => g.Options)
+                .FirstOrDefaultAsync(u => u.Id == id);
+
+            if (restaurant is null)
+            {
+                return NotFound();
+            }
+
+            var isCaretaker = await _userManager.IsInRoleAsync(restaurant, "Caretaker");
+
+            if (!isCaretaker)
+            {
+                return NotFound();
+            }
+
+            if (!restaurant.Latitude.HasValue || !restaurant.Longitude.HasValue)
+            {
+                TempData["Error"] = "This restaurant has not saved its location yet.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var distanceKm = await _googleMapsService.GetRouteDistanceKmAsync(
+                currentUser.Latitude.Value,
+                currentUser.Longitude.Value,
+                restaurant.Latitude.Value,
+                restaurant.Longitude.Value);
+
+            if (!distanceKm.HasValue)
+            {
+                TempData["Error"] = "Distance could not be verified with Google Maps. Please try again.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var model = new RestaurantMenuPageViewModel
+            {
+                RestaurantId = restaurant.Id,
+                RestaurantName = restaurant.FullName,
+                RestaurantAddress = restaurant.Address,
+                RestaurantBio = restaurant.Bio,
+                RestaurantLogoImageData = restaurant.ProfileImageData,
+                RestaurantLogoImageContentType = restaurant.ProfileImageContentType,
+                DistanceKm = distanceKm.Value,
+                MenuItems = restaurant.MenuItems
+                    .OrderByDescending(m => m.Id)
+                    .ToList()
+            };
+
+            return View(model);
+        }
+
+        [Authorize(Roles = "User,Caretaker,Admin")]
+        [HttpGet]
+        public async Task<IActionResult> MenuDetails(int id)
+        {
+            var currentUser = await _userManager.GetUserAsync(User);
+
+            if (currentUser is null)
+            {
+                return Challenge();
+            }
+
+            if (!currentUser.Latitude.HasValue || !currentUser.Longitude.HasValue)
+            {
+                TempData["Error"] = "Please save your location before viewing menu details.";
+                return RedirectToAction(nameof(MyLocation));
+            }
+
+            var menuItem = await _context.MenuItems
+                .Include(m => m.Caretaker)
+                .Include(m => m.CustomizationGroups)
+                    .ThenInclude(g => g.Options)
+                .FirstOrDefaultAsync(m => m.Id == id);
+
+            if (menuItem is null)
+            {
+                return NotFound();
+            }
+
+            if (menuItem.Caretaker is null)
+            {
+                return NotFound();
+            }
+
+            if (!menuItem.Caretaker.Latitude.HasValue || !menuItem.Caretaker.Longitude.HasValue)
+            {
+                TempData["Error"] = "This restaurant has not saved its location yet.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var distanceKm = await _googleMapsService.GetRouteDistanceKmAsync(
+                currentUser.Latitude.Value,
+                currentUser.Longitude.Value,
+                menuItem.Caretaker.Latitude.Value,
+                menuItem.Caretaker.Longitude.Value);
+
+            if (!distanceKm.HasValue)
+            {
+                TempData["Error"] = "Distance could not be verified with Google Maps. Please try again.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var reviewQuery = _context.OrderItemReviews
+                .Include(r => r.Order)
+                .Include(r => r.OrderItem)
+                .Include(r => r.MenuItem)
+                .Include(r => r.User)
+                .Include(r => r.Caterer)
+                .Where(r =>
+                    r.MenuItemId == id &&
+                    r.Order != null &&
+                    r.Order.Status == "Completed");
+
+            var reviewCount = await reviewQuery.CountAsync();
+
+            var averageMenuRating = reviewCount > 0
+                ? await reviewQuery.AverageAsync(r => r.MenuRating)
+                : 0;
+
+            var averageCatererRating = reviewCount > 0
+                ? await reviewQuery.AverageAsync(r => r.CatererRating)
+                : 0;
+
+            var reviews = await reviewQuery
+                .OrderByDescending(r => r.CreatedAt)
+                .Select(r => new ReviewListItemViewModel
+                {
+                    ReviewId = r.Id,
+                    OrderId = r.OrderId,
+                    OrderItemId = r.OrderItemId,
+                    CustomerName = r.User != null ? r.User.FullName : "Customer",
+                    CustomerEmail = r.User != null ? r.User.Email : null,
+                    CatererName = r.Caterer != null ? r.Caterer.FullName : "Caterer",
+                    CatererEmail = r.Caterer != null ? r.Caterer.Email : null,
+                    MenuItemName = r.MenuItem != null ? r.MenuItem.Name : "Menu Item",
+                    MenuRating = r.MenuRating,
+                    CatererRating = r.CatererRating,
+                    Comment = r.Comment,
+                    CreatedAt = r.CreatedAt,
+                    OrderStatus = r.Order != null ? r.Order.Status : "",
+                    Quantity = r.OrderItem != null ? r.OrderItem.Quantity : 0,
+                    LineTotal = r.OrderItem != null ? r.OrderItem.LineTotal : 0
+                })
+                .ToListAsync();
+
+            var model = new MenuDetailsPageViewModel
+            {
+                MenuItem = menuItem,
+                RestaurantName = menuItem.Caretaker.FullName,
+                RestaurantAddress = menuItem.Caretaker.Address,
+                DistanceKm = distanceKm.Value,
+                AverageMenuRating = averageMenuRating,
+                AverageCatererRating = averageCatererRating,
+                ReviewCount = reviewCount,
+                Reviews = reviews
             };
 
             return View(model);
@@ -116,7 +438,9 @@ namespace TasteAtDoor.Controllers
             var currentUser = await _userManager.GetUserAsync(User);
 
             if (currentUser is null)
+            {
                 return Challenge();
+            }
 
             var orders = await _context.Orders
                 .Include(o => o.OrderItems)
@@ -142,7 +466,9 @@ namespace TasteAtDoor.Controllers
             var currentUser = await _userManager.GetUserAsync(User);
 
             if (currentUser is null)
+            {
                 return Challenge();
+            }
 
             const int pageSize = 5;
 
@@ -158,7 +484,9 @@ namespace TasteAtDoor.Controllers
             {
                 query = query.Where(o =>
                     o.Id.ToString().Contains(search) ||
-                    o.OrderItems.Any(oi => oi.MenuItem != null && oi.MenuItem.Name.Contains(search)));
+                    o.OrderItems.Any(oi =>
+                        oi.MenuItem != null &&
+                        oi.MenuItem.Name.Contains(search)));
             }
 
             if (!string.IsNullOrWhiteSpace(status))
@@ -170,13 +498,19 @@ namespace TasteAtDoor.Controllers
             var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
 
             if (totalPages == 0)
+            {
                 totalPages = 1;
+            }
 
             if (page < 1)
+            {
                 page = 1;
+            }
 
             if (page > totalPages)
+            {
                 page = totalPages;
+            }
 
             var orders = await query
                 .OrderByDescending(o => o.OrderDate)
@@ -197,25 +531,185 @@ namespace TasteAtDoor.Controllers
         }
 
         [Authorize(Roles = "User")]
+        public async Task<IActionResult> MyReviews(string search = "", int? menuRating = null, int? catererRating = null, int page = 1)
+        {
+            var currentUser = await _userManager.GetUserAsync(User);
+
+            if (currentUser is null)
+            {
+                return Challenge();
+            }
+
+            const int pageSize = 10;
+
+            var query = _context.OrderItemReviews
+                .Include(r => r.Order)
+                .Include(r => r.OrderItem)
+                .Include(r => r.MenuItem)
+                .Include(r => r.User)
+                .Include(r => r.Caterer)
+                .Where(r => r.UserId == currentUser.Id)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                query = query.Where(r =>
+                    r.OrderId.ToString().Contains(search) ||
+                    r.Comment.Contains(search) ||
+                    (r.MenuItem != null && r.MenuItem.Name.Contains(search)) ||
+                    (r.Caterer != null && r.Caterer.FullName.Contains(search)) ||
+                    (r.Caterer != null && r.Caterer.Email != null && r.Caterer.Email.Contains(search)));
+            }
+
+            if (menuRating.HasValue)
+            {
+                query = query.Where(r => r.MenuRating == menuRating.Value);
+            }
+
+            if (catererRating.HasValue)
+            {
+                query = query.Where(r => r.CatererRating == catererRating.Value);
+            }
+
+            var totalCount = await query.CountAsync();
+            var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+
+            if (totalPages == 0)
+            {
+                totalPages = 1;
+            }
+
+            if (page < 1)
+            {
+                page = 1;
+            }
+
+            if (page > totalPages)
+            {
+                page = totalPages;
+            }
+
+            var reviews = await query
+                .OrderByDescending(r => r.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(r => new ReviewListItemViewModel
+                {
+                    ReviewId = r.Id,
+                    OrderId = r.OrderId,
+                    OrderItemId = r.OrderItemId,
+                    CustomerName = r.User != null ? r.User.FullName : "Customer",
+                    CustomerEmail = r.User != null ? r.User.Email : null,
+                    CatererName = r.Caterer != null ? r.Caterer.FullName : "Caterer",
+                    CatererEmail = r.Caterer != null ? r.Caterer.Email : null,
+                    MenuItemName = r.MenuItem != null ? r.MenuItem.Name : "Menu Item",
+                    MenuRating = r.MenuRating,
+                    CatererRating = r.CatererRating,
+                    Comment = r.Comment,
+                    CreatedAt = r.CreatedAt,
+                    OrderStatus = r.Order != null ? r.Order.Status : "",
+                    Quantity = r.OrderItem != null ? r.OrderItem.Quantity : 0,
+                    LineTotal = r.OrderItem != null ? r.OrderItem.LineTotal : 0
+                })
+                .ToListAsync();
+
+            var model = new ReviewListPageViewModel
+            {
+                Reviews = reviews,
+                Search = search,
+                MenuRating = menuRating,
+                CatererRating = catererRating,
+                Page = page,
+                TotalPages = totalPages,
+                PageTitle = "My Reviews"
+            };
+
+            return View(model);
+        }
+
+        [Authorize(Roles = "User")]
         public async Task<IActionResult> Receipt(int id)
         {
             var currentUser = await _userManager.GetUserAsync(User);
 
             if (currentUser is null)
+            {
                 return Challenge();
+            }
 
             var order = await _context.Orders
                 .Include(o => o.ApplicationUser)
                 .Include(o => o.OrderItems)
                     .ThenInclude(oi => oi.MenuItem)
+                        .ThenInclude(m => m!.Caretaker)
                 .Include(o => o.OrderItems)
                     .ThenInclude(oi => oi.SelectedCustomizations)
                 .FirstOrDefaultAsync(o => o.Id == id && o.ApplicationUserId == currentUser.Id);
 
             if (order is null)
+            {
                 return NotFound();
+            }
 
             return View(order);
+        }
+
+        private ProfileViewModel BuildProfileViewModel(ApplicationUser user)
+        {
+            var model = new ProfileViewModel
+            {
+                FullName = user.FullName,
+                Email = user.Email,
+                PhoneNumber = user.PhoneNumber,
+                Bio = user.Bio,
+                Address = user.Address,
+                Latitude = user.Latitude,
+                Longitude = user.Longitude
+            };
+
+            FillExistingProfileImage(model, user);
+
+            return model;
+        }
+
+        private void FillExistingProfileImage(ProfileViewModel model, ApplicationUser user)
+        {
+            if (user.ProfileImageData is not null && user.ProfileImageData.Length > 0)
+            {
+                model.ExistingImageBase64 = Convert.ToBase64String(user.ProfileImageData);
+                model.ExistingImageContentType = user.ProfileImageContentType;
+            }
+        }
+
+        private async Task<(bool Success, string? ErrorMessage)> TryUpdateProfileImageAsync(
+            ApplicationUser user,
+            IFormFile? file)
+        {
+            if (file is null || file.Length == 0)
+            {
+                return (true, null);
+            }
+
+            if (!file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+            {
+                return (false, "Please upload a valid image file.");
+            }
+
+            const long maxFileSize = 2 * 1024 * 1024;
+
+            if (file.Length > maxFileSize)
+            {
+                return (false, "Image size must be smaller than 2 MB.");
+            }
+
+            using var memoryStream = new MemoryStream();
+            await file.CopyToAsync(memoryStream);
+
+            user.ProfileImageData = memoryStream.ToArray();
+            user.ProfileImageContentType = file.ContentType;
+            user.ProfileImageFileName = file.FileName;
+
+            return (true, null);
         }
     }
 }

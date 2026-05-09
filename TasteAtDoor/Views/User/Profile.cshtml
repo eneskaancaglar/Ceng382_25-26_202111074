@@ -1,0 +1,100 @@
+@model TasteAtDoor.Models.ViewModels.ProfileViewModel
+
+@{
+    ViewData["Title"] = "My Profile";
+}
+
+<div class="profile-page">
+    <div class="profile-shell">
+        <div class="profile-preview-card">
+            <div class="profile-avatar-wrap">
+                @if (Model.HasExistingImage)
+                {
+                    <img src="data:@Model.ExistingImageContentType;base64,@Model.ExistingImageBase64"
+                         alt="@Model.FullName"
+                         class="profile-avatar-img" />
+                }
+                else
+                {
+                    <div class="profile-avatar-placeholder">
+                        @(string.IsNullOrWhiteSpace(Model.FullName) ? "U" : Model.FullName.Substring(0, 1).ToUpper())
+                    </div>
+                }
+            </div>
+
+            <h2>@Model.FullName</h2>
+            <p class="profile-muted">@Model.Email</p>
+
+            @if (!string.IsNullOrWhiteSpace(Model.Bio))
+            {
+                <p class="profile-bio">@Model.Bio</p>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(Model.Address))
+            {
+                <p class="profile-muted">
+                    <strong>Saved location:</strong> @Model.Address
+                </p>
+            }
+
+            <a asp-controller="User" asp-action="MyLocation" class="btn-secondary-main w-100">
+                Update My Location
+            </a>
+        </div>
+
+        <div class="profile-form-card">
+            <h1>My Profile</h1>
+            <p>Update your personal information and profile photo.</p>
+
+            @if (TempData["Success"] is string success)
+            {
+                <div class="success-box">@success</div>
+            }
+
+            <form asp-controller="User" asp-action="Profile" method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                <div class="form-group mb-3">
+                    <label asp-for="FullName">Full Name</label>
+                    <input asp-for="FullName" class="form-control" />
+                    <span asp-validation-for="FullName" class="text-danger"></span>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label>Email</label>
+                    <input value="@Model.Email" class="form-control" disabled />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label asp-for="PhoneNumber">Phone Number</label>
+                    <input asp-for="PhoneNumber" class="form-control" />
+                    <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label asp-for="Bio">About Me</label>
+                    <textarea asp-for="Bio" class="form-control" rows="4"
+                              placeholder="Write a short note about yourself..."></textarea>
+                    <span asp-validation-for="Bio" class="text-danger"></span>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label asp-for="ProfileImageFile">Profile Photo</label>
+                    <input asp-for="ProfileImageFile" class="form-control" type="file" accept="image/*" />
+                    <span asp-validation-for="ProfileImageFile" class="text-danger"></span>
+                    <small class="profile-muted">Maximum image size: 2 MB.</small>
+                </div>
+
+                <button type="submit" class="btn-main">
+                    Save Profile
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

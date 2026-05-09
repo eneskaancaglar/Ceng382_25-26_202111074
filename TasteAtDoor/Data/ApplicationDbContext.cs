@@ -20,6 +20,7 @@ namespace TasteAtDoor.Data
         public DbSet<OrderItemCustomization> OrderItemCustomizations { get; set; }
         public DbSet<OrderItemReview> OrderItemReviews { get; set; }
         public DbSet<AppLog> AppLogs { get; set; }
+        public DbSet<OrderChatMessage> OrderChatMessages { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -109,6 +110,21 @@ namespace TasteAtDoor.Data
 
             builder.Entity<AppLog>()
                 .HasIndex(l => l.CreatedAt);
+
+            builder.Entity<OrderChatMessage>()
+                .HasOne(m => m.Order)
+                .WithMany()
+                .HasForeignKey(m => m.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<OrderChatMessage>()
+                .HasOne(m => m.SenderUser)
+                .WithMany()
+                .HasForeignKey(m => m.SenderUserId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            builder.Entity<OrderChatMessage>()
+                .HasIndex(m => new { m.OrderId, m.SentAt });
         }
     }
 }

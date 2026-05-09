@@ -1,0 +1,209 @@
+@model TasteAtDoor.Models.ViewModels.AdminOrderListPageViewModel
+
+@{
+    ViewData["Title"] = "Orders";
+}
+
+<div class="dashboard-shell">
+    <div class="page-header-row">
+        <div>
+            <h1 class="page-title">Orders</h1>
+            <p class="page-subtitle">Inspect all customer orders, order items, restaurants, documents, and chats.</p>
+        </div>
+
+        <a asp-controller="Admin" asp-action="Dashboard" class="btn-secondary-main">
+            Back to Dashboard
+        </a>
+    </div>
+
+    <div class="table-card">
+        <form method="get" asp-controller="Admin" asp-action="Orders" class="row g-3">
+            <div class="col-md-5">
+                <label class="form-label">Search</label>
+                <input name="search"
+                       value="@Model.Search"
+                       class="form-control"
+                       placeholder="Order ID, customer, restaurant, menu item..." />
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-control">
+                    <option value="">All Statuses</option>
+
+                    @if (Model.Status == "Completed")
+                    {
+                        <option value="Completed" selected>Completed</option>
+                    }
+                    else
+                    {
+                        <option value="Completed">Completed</option>
+                    }
+
+                    @if (Model.Status == "Pending")
+                    {
+                        <option value="Pending" selected>Pending</option>
+                    }
+                    else
+                    {
+                        <option value="Pending">Pending</option>
+                    }
+                </select>
+            </div>
+
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn-main w-100">
+                    Filter
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-card">
+        @if (!Model.Orders.Any())
+        {
+            <p>No orders found.</p>
+        }
+        else
+        {
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th>Order</th>
+                        <th>Customer</th>
+                        <th>Items</th>
+                        <th>Restaurants</th>
+                        <th>Status</th>
+                        <th>Total</th>
+                        <th>Date</th>
+                        <th>Documents</th>
+                        <th>Chat</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach (var order in Model.Orders)
+                    {
+                        var itemNames = order.OrderItems
+                            .Where(i => i.MenuItem != null)
+                            .Select(i => $"{i.MenuItem!.Name} x{i.Quantity}")
+                            .ToList();
+
+                        var restaurants = order.OrderItems
+                            .Where(i => i.MenuItem?.Caretaker != null)
+                            .Select(i => i.MenuItem!.Caretaker!.FullName)
+                            .Distinct()
+                            .ToList();
+
+                        <tr>
+                            <td>#@order.Id</td>
+
+                            <td>
+                                @(order.ApplicationUser?.FullName ?? "Unknown")
+                                <br />
+                                <small>@(order.ApplicationUser?.Email ?? "-")</small>
+                            </td>
+
+                            <td>
+                                @if (itemNames.Any())
+                                {
+                                    <ul class="user-option-list">
+                                        @foreach (var itemName in itemNames)
+                                        {
+                                            <li>@itemName</li>
+                                        }
+                                    </ul>
+                                }
+                                else
+                                {
+                                    <span>-</span>
+                                }
+                            </td>
+
+                            <td>
+                                @if (restaurants.Any())
+                                {
+                                    <span>@string.Join(", ", restaurants)</span>
+                                }
+                                else
+                                {
+                                    <span>-</span>
+                                }
+                            </td>
+
+                            <td>@order.Status</td>
+
+                            <td>@order.TotalPrice.ToString("0.00")</td>
+
+                            <td>@order.OrderDate</td>
+
+                            <td>
+                                <div class="d-flex gap-2 flex-wrap">
+                                    <a asp-controller="OrderDocument"
+                                       asp-action="ReceiptPdf"
+                                       asp-route-id="@order.Id"
+                                       class="btn-secondary-main">
+                                        Receipt
+                                    </a>
+
+                                    <a asp-controller="OrderDocument"
+                                       asp-action="AgreementPdf"
+                                       asp-route-id="@order.Id"
+                                       class="btn-secondary-main">
+                                        Agreement
+                                    </a>
+                                </div>
+                            </td>
+
+                            <td>
+                                @if (order.Status == "Completed")
+                                {
+                                    <a asp-controller="OrderChat"
+                                       asp-action="Room"
+                                       asp-route-orderId="@order.Id"
+                                       class="btn-secondary-main">
+                                        Chat
+                                    </a>
+                                }
+                                else
+                                {
+                                    <span>-</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+        <div class="d-flex justify-content-between align-items-center mt-3">
+            <div>Page @Model.Page / @Model.TotalPages</div>
+
+            <div class="d-flex gap-2">
+                @if (Model.Page > 1)
+                {
+                    <a class="btn-secondary-main"
+                       asp-controller="Admin"
+                       asp-action="Orders"
+                       asp-route-search="@Model.Search"
+                       asp-route-status="@Model.Status"
+                       asp-route-page="@(Model.Page - 1)">
+                        Previous
+                    </a>
+                }
+
+                @if (Model.Page < Model.TotalPages)
+                {
+                    <a class="btn-secondary-main"
+                       asp-controller="Admin"
+                       asp-action="Orders"
+                       asp-route-search="@Model.Search"
+                       asp-route-status="@Model.Status"
+                       asp-route-page="@(Model.Page + 1)">
+                        Next
+                    </a>
+                }
+            </div>
+        </div>
+    </div>
+</div>

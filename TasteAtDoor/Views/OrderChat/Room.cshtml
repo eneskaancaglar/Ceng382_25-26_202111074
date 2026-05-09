@@ -1,0 +1,192 @@
+@model TasteAtDoor.Models.Order
+
+@{
+    ViewData["Title"] = $"Order Chat - #{Model.Id}";
+
+    var currentUserId = ViewBag.CurrentUserId as string ?? "";
+    var currentUserName = ViewBag.CurrentUserName as string ?? "User";
+    var currentUserRole = ViewBag.CurrentUserRole as string ?? "User";
+    var restaurantNames = ViewBag.RestaurantNames as string ?? "Restaurant";
+}
+
+<div class="dashboard-shell">
+    <div class="page-header-row">
+        <div>
+            <h1 class="page-title">Order Chat</h1>
+            <p class="page-subtitle">
+                Live text communication for Order #@Model.Id.
+            </p>
+        </div>
+
+        <div class="d-flex gap-2 flex-wrap">
+            <a asp-controller="User"
+               asp-action="Receipt"
+               asp-route-id="@Model.Id"
+               class="btn-secondary-main">
+                Back to Receipt
+            </a>
+        </div>
+    </div>
+
+    <div class="order-chat-info-grid">
+        <div class="order-chat-info-card">
+            <span>Order</span>
+            <strong>#@Model.Id</strong>
+        </div>
+
+        <div class="order-chat-info-card">
+            <span>Customer</span>
+            <strong>@(Model.ApplicationUser?.FullName ?? "Customer")</strong>
+        </div>
+
+        <div class="order-chat-info-card">
+            <span>Restaurant</span>
+            <strong>@restaurantNames</strong>
+        </div>
+
+        <div class="order-chat-info-card">
+            <span>You</span>
+            <strong>@currentUserName (@currentUserRole)</strong>
+        </div>
+    </div>
+
+    <div class="order-chat-card">
+        <div class="order-chat-header">
+            <div>
+                <h2>Messages</h2>
+                <p>
+                    This chat is available only for completed purchases.
+                    Messages refresh automatically.
+                </p>
+            </div>
+        </div>
+
+        <div id="chatMessages"
+             class="order-chat-messages"
+             data-current-user-id="@currentUserId">
+            <div class="order-chat-loading">Loading messages...</div>
+        </div>
+
+        <form id="chatForm" class="order-chat-form">
+            @Html.AntiForgeryToken()
+
+            <input type="hidden" id="orderId" value="@Model.Id" />
+
+            <textarea id="messageInput"
+                      class="form-control"
+                      rows="2"
+                      maxlength="1000"
+                      placeholder="Write a message..."></textarea>
+
+            <button type="submit" class="btn-main">
+                Send
+            </button>
+        </form>
+
+        <div id="chatError" class="text-danger mt-2"></div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const orderId = document.getElementById("orderId").value;
+            const chatMessages = document.getElementById("chatMessages");
+            const currentUserId = chatMessages.dataset.currentUserId;
+            const chatForm = document.getElementById("chatForm");
+            const messageInput = document.getElementById("messageInput");
+            const chatError = document.getElementById("chatError");
+            const token = document.querySelector("input[name='__RequestVerificationToken']").value;
+
+            const messagesUrl = "@Url.Action("Messages", "OrderChat")" + "?orderId=" + encodeURIComponent(orderId);
+            const sendUrl = "@Url.Action("Send", "OrderChat")";
+
+            function escapeHtml(value) {
+                return String(value || "")
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
+
+            async function loadMessages() {
+                try {
+                    const response = await fetch(messagesUrl, {
+                        headers: {
+                            "Accept": "application/json"
+                        }
+                    });
+
+                    if (!response.ok) {
+                        chatMessages.innerHTML = `<div class="order-chat-loading">Messages could not be loaded.</div>`;
+                        return;
+                    }
+
+                    const messages = await response.json();
+
+                    if (!messages || messages.length === 0) {
+                        chatMessages.innerHTML = `<div class="order-chat-loading">No messages yet. Start the conversation.</div>`;
+                        return;
+                    }
+
+                    chatMessages.innerHTML = messages.map(message => {
+                        const mine = message.senderUserId === currentUserId;
+
+                        return `
+                            <div class="order-chat-message ${mine ? "mine" : "theirs"}">
+                                <div class="order-chat-bubble">
+                                    <div class="order-chat-meta">
+                                        <strong>${escapeHtml(message.senderName)}</strong>
+                                        <span>${escapeHtml(message.senderRole)} · ${escapeHtml(message.sentAt)}</span>
+                                    </div>
+                                    <div class="order-chat-text">
+                                        ${escapeHtml(message.message)}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join("");
+
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                } catch {
+                    chatMessages.innerHTML = `<div class="order-chat-loading">Connection problem.</div>`;
+                }
+            }
+
+            chatForm.addEventListener("submit", async function (event) {
+                event.preventDefault();
+
+                const message = messageInput.value.trim();
+
+                if (!message) {
+                    chatError.textContent = "Message cannot be empty.";
+                    return;
+                }
+
+                chatError.textContent = "";
+
+                const formData = new FormData();
+                formData.append("__RequestVerificationToken", token);
+                formData.append("orderId", orderId);
+                formData.append("message", message);
+
+                const response = await fetch(sendUrl, {
+                    method: "POST",
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    chatError.textContent = "Message could not be sent.";
+                    return;
+                }
+
+                messageInput.value = "";
+                await loadMessages();
+            });
+
+            loadMessages();
+            setInterval(loadMessages, 3000);
+        });
+    </script>
+}

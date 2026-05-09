@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.DataProtection;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -7,6 +8,8 @@ using TasteAtDoor.Models;
 using TasteAtDoor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddDataProtection()
+    .UseEphemeralDataProtectionProvider();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
@@ -33,6 +36,14 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 builder.Services.AddScoped<IAppLogService, AppLogService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IGoogleMapsService, GoogleMapsService>();
+
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(15);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
 
 builder.Services.AddControllersWithViews();
 
@@ -75,12 +86,14 @@ app.Use(async (context, next) =>
 
 app.UseRouting();
 
+app.UseSession();
+
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=Account}/{action=Login}/{id?}");
 
 using (var scope = app.Services.CreateScope())
 {

@@ -83,6 +83,17 @@
                                class="btn-main">
                                 View Receipt
                             </a>
+
+                            @if (order.Status == "Completed")
+                            {
+                                <a asp-controller="OrderChat"
+                                   asp-action="Room"
+                                   asp-route-orderId="@order.Id"
+                                   class="btn-secondary-main">
+                                    Chat
+                                </a>
+                            }
+                           
                         </div>
                     </div>
 

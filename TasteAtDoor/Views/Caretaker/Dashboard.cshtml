@@ -8,10 +8,13 @@
     <div class="page-header-row">
         <div>
             <h1 class="page-title">Caretaker Dashboard</h1>
-            <p class="page-subtitle">Overview of your menus and received orders.</p>
+            <p class="page-subtitle">Overview of your menus, received orders, reviews, and customer chats.</p>
         </div>
 
-        <a asp-controller="Caretaker" asp-action="Index" class="btn-main">Manage Menus</a>
+        <div class="d-flex gap-2 flex-wrap">
+            <a asp-controller="Caretaker" asp-action="Index" class="btn-main">Manage Menus</a>
+            <a asp-controller="Caretaker" asp-action="Reviews" class="btn-secondary-main">Reviews</a>
+        </div>
     </div>
 
     <div class="menu-grid">
@@ -26,6 +29,11 @@
         </div>
 
         <div class="info-card">
+            <h3>Completed Orders</h3>
+            <p>@Model.TotalCompletedOrders</p>
+        </div>
+
+        <div class="info-card">
             <h3>Total Revenue</h3>
             <p>@Model.TotalRevenue.ToString("0.00")</p>
         </div>
@@ -37,6 +45,11 @@
                     ? $"{Model.AverageCatererRating:0.0} / 5"
                     : "No ratings yet")
             </p>
+        </div>
+
+        <div class="info-card">
+            <h3>Total Reviews</h3>
+            <p>@Model.TotalReviewCount</p>
         </div>
     </div>
 
@@ -56,16 +69,33 @@
                         <th>Menu Item</th>
                         <th>Quantity</th>
                         <th>Line Total</th>
+                        <th>Chat</th>
                     </tr>
                 </thead>
+
                 <tbody>
                     @foreach (var item in Model.RecentOrderItems)
                     {
                         <tr>
-                            <td>@item.OrderId</td>
+                            <td>#@item.OrderId</td>
                             <td>@(item.MenuItem?.Name ?? "Menu Item")</td>
                             <td>@item.Quantity</td>
                             <td>@item.LineTotal.ToString("0.00")</td>
+                            <td>
+                                @if (item.Order != null && item.Order.Status == "Completed")
+                                {
+                                    <a asp-controller="OrderChat"
+                                       asp-action="Room"
+                                       asp-route-orderId="@item.OrderId"
+                                       class="btn-secondary-main">
+                                        Open Chat
+                                    </a>
+                                }
+                                else
+                                {
+                                    <span>-</span>
+                                }
+                            </td>
                         </tr>
                     }
                 </tbody>

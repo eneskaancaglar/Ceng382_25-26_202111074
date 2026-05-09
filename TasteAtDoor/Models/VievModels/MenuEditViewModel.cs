@@ -18,15 +18,15 @@ namespace TasteAtDoor.Models.ViewModels
         [StringLength(1000)]
         public string Description { get; set; } = string.Empty;
 
-        [Required]
         [StringLength(250)]
-        [Display(Name = "Restaurant Address / Location")]
-        public string LocationText { get; set; } = string.Empty;
+        [Display(Name = "Menu Location / Address")]
+        public string? LocationText { get; set; }
 
         [Display(Name = "New Menu Image")]
         public IFormFile? ImageFile { get; set; }
 
         public string? ExistingImageBase64 { get; set; }
+
         public string? ExistingImageContentType { get; set; }
     }
 }

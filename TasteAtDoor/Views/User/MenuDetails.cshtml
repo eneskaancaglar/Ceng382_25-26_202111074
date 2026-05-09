@@ -1,0 +1,282 @@
+@model TasteAtDoor.Models.ViewModels.MenuDetailsPageViewModel
+
+@{
+    ViewData["Title"] = $"{Model.MenuItem.Name} Details";
+    var item = Model.MenuItem;
+
+    string? imageSource = null;
+
+    if (item.ImageData is not null && item.ImageData.Length > 0)
+    {
+        imageSource = $"data:{item.ImageContentType};base64,{Convert.ToBase64String(item.ImageData)}";
+    }
+}
+
+<div class="user-page menu-details-page">
+    <div class="page-heading">
+        <a asp-controller="User"
+           asp-action="RestaurantMenu"
+           asp-route-id="@item.CaretakerId"
+           class="btn-secondary-main mb-3">
+            Back to Restaurant Menu
+        </a>
+
+        <h1>@item.Name</h1>
+
+        <p>
+            <strong>Restaurant:</strong> @Model.RestaurantName
+        </p>
+
+        @if (!string.IsNullOrWhiteSpace(Model.RestaurantAddress))
+        {
+            <p>
+                <strong>Address:</strong> @Model.RestaurantAddress
+            </p>
+        }
+
+        <p>
+            <strong>Distance:</strong> @Model.DistanceKm.ToString("0.0") km
+        </p>
+
+        @if (Model.CanOrder)
+        {
+            <div class="success-box">
+                This restaurant is within 5 km. You can order this item.
+            </div>
+        }
+        else
+        {
+            <div class="text-danger">
+                This restaurant is outside 5 km. You can view details but cannot order.
+            </div>
+        }
+    </div>
+
+    <div id="cart-client-message" class="mb-3"></div>
+
+    <div class="menu-detail-layout">
+        <div class="menu-detail-image-panel">
+            @if (!string.IsNullOrWhiteSpace(imageSource))
+            {
+                <img src="@imageSource"
+                     alt="@item.Name"
+                     class="menu-detail-image" />
+            }
+            else
+            {
+                <div class="menu-detail-image-placeholder">
+                    No image
+                </div>
+            }
+        </div>
+
+        <div class="menu-detail-info-panel">
+            <h2>@item.Name</h2>
+
+            <p>
+                @item.Description
+            </p>
+
+            <p>
+                <strong>Base Price:</strong> @item.Price.ToString("C")
+            </p>
+
+            <div class="menu-rating-summary">
+                <div class="menu-rating-card">
+                    <span>Menu Rating</span>
+
+                    @if (Model.ReviewCount > 0)
+                    {
+                        <strong>⭐ @Model.AverageMenuRating.ToString("0.0") / 5</strong>
+                    }
+                    else
+                    {
+                        <strong>No rating yet</strong>
+                    }
+                </div>
+
+                <div class="menu-rating-card">
+                    <span>Restaurant Rating</span>
+
+                    @if (Model.ReviewCount > 0)
+                    {
+                        <strong>⭐ @Model.AverageCatererRating.ToString("0.0") / 5</strong>
+                    }
+                    else
+                    {
+                        <strong>No rating yet</strong>
+                    }
+                </div>
+
+                <div class="menu-rating-card">
+                    <span>Total Reviews</span>
+                    <strong>@Model.ReviewCount</strong>
+                </div>
+            </div>
+
+            <hr />
+
+            <h3>Choose Your Options</h3>
+
+            @if (item.CustomizationGroups is null || !item.CustomizationGroups.Any())
+            {
+                <p class="text-muted">
+                    This menu item has no customization options.
+                </p>
+            }
+            else
+            {
+                foreach (var group in item.CustomizationGroups.OrderBy(g => g.Id))
+                {
+                    <div class="customization-select-group">
+                        <h4>@group.Title</h4>
+
+                        @if (group.Options is null || !group.Options.Any())
+                        {
+                            <p class="text-muted">
+                                No options in this group.
+                            </p>
+                        }
+                        else
+                        {
+                            <div class="customization-choice-list">
+                                @foreach (var option in group.Options.OrderBy(o => o.Id))
+                                {
+                                    <label class="customization-choice">
+                                        <input type="checkbox"
+                                               class="js-customization-option"
+                                               data-option-id="@option.Id"
+                                               data-group-title="@group.Title"
+                                               data-option-name="@option.Name"
+                                               data-price-change="@option.PriceChange.ToString(System.Globalization.CultureInfo.InvariantCulture)" />
+
+                                        <span class="customization-choice-text">
+                                            <strong>@option.Name</strong>
+
+                                            @if (option.PriceChange > 0)
+                                            {
+                                                <small>+ @option.PriceChange.ToString("C")</small>
+                                            }
+                                            else if (option.PriceChange < 0)
+                                            {
+                                                <small>@option.PriceChange.ToString("C")</small>
+                                            }
+                                            else
+                                            {
+                                                <small>No extra charge</small>
+                                            }
+                                        </span>
+                                    </label>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            }
+
+            <div class="menu-detail-price-box">
+                <span>Estimated Item Price</span>
+                <strong id="detail-total-price"
+                        data-base-price="@item.Price.ToString(System.Globalization.CultureInfo.InvariantCulture)">
+                    @item.Price.ToString("C")
+                </strong>
+            </div>
+
+            <div class="menu-detail-actions">
+                @if (Model.CanOrder)
+                {
+                    <button type="button"
+                            class="btn-main js-add-to-cart"
+                            data-menu-id="@item.Id"
+                            data-name="@item.Name"
+                            data-description="@item.Description"
+                            data-price="@item.Price.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                            data-image-content-type="@item.ImageContentType"
+                            data-image-base64="@(item.ImageData is not null ? Convert.ToBase64String(item.ImageData) : "")">
+                        Add Selected Item to Cart
+                    </button>
+                }
+                else
+                {
+                    <button class="btn-secondary-main" disabled>
+                        Outside 5 km
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="menu-reviews-section">
+        <div class="page-header-row">
+            <div>
+                <h2 class="page-title">Customer Reviews</h2>
+                <p class="page-subtitle">
+                    Reviews are shown only from completed orders for this menu item.
+                </p>
+            </div>
+        </div>
+
+        @if (!Model.Reviews.Any())
+        {
+            <div class="empty-state-card">
+                <h3>No reviews yet</h3>
+                <p>This menu item has not received any completed-order reviews yet.</p>
+            </div>
+        }
+        else
+        {
+            <div class="menu-review-list">
+                @foreach (var review in Model.Reviews)
+                {
+                    <div class="menu-review-card">
+                        <div class="menu-review-header">
+                            <div>
+                                <h3>@review.CustomerName</h3>
+                                <p>
+                                    Order #@review.OrderId · @review.CreatedAt.ToString("dd MMM yyyy HH:mm")
+                                </p>
+                            </div>
+
+                            <div class="menu-review-ratings">
+                                <span>Menu: ⭐ @review.MenuRating / 5</span>
+                                <span>Restaurant: ⭐ @review.CatererRating / 5</span>
+                            </div>
+                        </div>
+
+                        <div class="menu-review-body">
+                            @if (string.IsNullOrWhiteSpace(review.Comment))
+                            {
+                                <p class="text-muted">
+                                    No written comment.
+                                </p>
+                            }
+                            else
+                            {
+                                <p>@review.Comment</p>
+                            }
+                        </div>
+
+                        <div class="menu-review-footer">
+                            <span>Item: @review.MenuItemName</span>
+                            <span>Quantity: @review.Quantity</span>
+                            <span>Line Total: @review.LineTotal.ToString("0.00")</span>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/cart-storage.js" asp-append-version="true"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            if (window.TasteAtDoorCart) {
+                window.TasteAtDoorCart.initMenuButtons("cart-client-message");
+                window.TasteAtDoorCart.initCustomizationPricePreview();
+            }
+        });
+    </script>
+}

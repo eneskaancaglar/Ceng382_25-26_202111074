@@ -10,6 +10,10 @@
             <h1 class="page-title">Payment</h1>
             <p class="page-subtitle">Complete your order with a simulated payment.</p>
         </div>
+
+        <a asp-controller="Cart" asp-action="Index" class="btn-secondary-main">
+            Back to Cart
+        </a>
     </div>
 
     <div class="checkout-layout">
@@ -30,36 +34,59 @@
 
         <div class="auth-card">
             <h3 class="section-title">Card Information</h3>
+            <p class="page-subtitle">
+                This is a simulation only. Do not enter a real card number.
+            </p>
 
             <form asp-controller="Cart" asp-action="Checkout" method="post">
+                @Html.AntiForgeryToken()
+
                 <input asp-for="CartJson" type="hidden" id="CartJson" />
+
                 <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
                 <div class="form-group mb-3">
-                    <label asp-for="CardHolderName"></label>
-                    <input asp-for="CardHolderName" class="form-control" />
+                    <label asp-for="CardHolderName">Card Holder Name</label>
+                    <input asp-for="CardHolderName"
+                           class="form-control"
+                           placeholder="Demo User" />
                     <span asp-validation-for="CardHolderName" class="text-danger"></span>
                 </div>
 
                 <div class="form-group mb-3">
-                    <label asp-for="CardNumber"></label>
-                    <input asp-for="CardNumber" class="form-control" />
+                    <label asp-for="CardNumber">Card Number</label>
+                    <input asp-for="CardNumber"
+                           class="form-control"
+                           placeholder="4111111111111111" />
                     <span asp-validation-for="CardNumber" class="text-danger"></span>
+                    <small class="text-muted">Use demo data only.</small>
                 </div>
 
-                <div class="form-group mb-3">
-                    <label asp-for="ExpiryDate"></label>
-                    <input asp-for="ExpiryDate" class="form-control" placeholder="MM/YY" />
-                    <span asp-validation-for="ExpiryDate" class="text-danger"></span>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label asp-for="ExpiryDate">Expiry Date</label>
+                            <input asp-for="ExpiryDate"
+                                   class="form-control"
+                                   placeholder="12/30" />
+                            <span asp-validation-for="ExpiryDate" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label asp-for="CVV">CVV</label>
+                            <input asp-for="CVV"
+                                   class="form-control"
+                                   placeholder="123" />
+                            <span asp-validation-for="CVV" class="text-danger"></span>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="form-group mb-3">
-                    <label asp-for="CVV"></label>
-                    <input asp-for="CVV" class="form-control" />
-                    <span asp-validation-for="CVV" class="text-danger"></span>
-                </div>
-
-                <button type="submit" class="btn-main">Complete Payment</button>
+                <button type="submit" class="btn-main w-100">
+                    Complete Simulated Payment
+                </button>
             </form>
         </div>
     </div>
@@ -67,6 +94,7 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             const CART_KEY = "tasteAtDoorCart";
@@ -78,7 +106,11 @@
 
             function getRawCart() {
                 const json = localStorage.getItem(CART_KEY);
-                if (!json) return [];
+
+                if (!json) {
+                    return [];
+                }
+
                 try {
                     return JSON.parse(json);
                 } catch {
@@ -98,11 +130,22 @@
 
             function normalizeItem(raw) {
                 const baseUnitPrice = parseNumber(
-                    raw?.baseUnitPrice ?? raw?.BaseUnitPrice ?? raw?.unitPrice ?? raw?.UnitPrice
+                    raw?.baseUnitPrice ??
+                    raw?.BaseUnitPrice ??
+                    raw?.price ??
+                    raw?.Price ??
+                    raw?.unitPrice ??
+                    raw?.UnitPrice
                 );
 
                 const finalUnitPrice = parseNumber(
-                    raw?.finalUnitPrice ?? raw?.FinalUnitPrice ?? raw?.unitPrice ?? raw?.UnitPrice ?? baseUnitPrice
+                    raw?.finalUnitPrice ??
+                    raw?.FinalUnitPrice ??
+                    raw?.price ??
+                    raw?.Price ??
+                    raw?.unitPrice ??
+                    raw?.UnitPrice ??
+                    baseUnitPrice
                 );
 
                 const selectedOptionsRaw = raw?.selectedOptions ?? raw?.SelectedOptions ?? [];
@@ -111,12 +154,15 @@
                     signature: raw?.signature ?? raw?.Signature ?? "",
                     menuItemId: parseNumber(raw?.menuItemId ?? raw?.MenuItemId),
                     name: raw?.name ?? raw?.Name ?? "",
+                    description: raw?.description ?? raw?.Description ?? "",
                     baseUnitPrice: baseUnitPrice,
                     finalUnitPrice: finalUnitPrice,
                     quantity: parseNumber(raw?.quantity ?? raw?.Quantity, 1),
                     imageContentType: raw?.imageContentType ?? raw?.ImageContentType ?? "",
                     imageBase64: raw?.imageBase64 ?? raw?.ImageBase64 ?? "",
-                    selectedOptions: Array.isArray(selectedOptionsRaw) ? selectedOptionsRaw.map(normalizeOption) : []
+                    selectedOptions: Array.isArray(selectedOptionsRaw)
+                        ? selectedOptionsRaw.map(normalizeOption)
+                        : []
                 };
             }
 
@@ -152,7 +198,11 @@
             }
 
             const cart = getCart();
-            document.getElementById("CartJson").value = JSON.stringify(cart);
+            const cartJsonInput = document.getElementById("CartJson");
+
+            if (cartJsonInput) {
+                cartJsonInput.value = JSON.stringify(cart);
+            }
 
             const emptyBox = document.getElementById("checkout-empty-state");
             const summaryStack = document.getElementById("checkout-summary-stack");
@@ -186,6 +236,7 @@
                     </div>
                     <div class="menu-price">${lineTotal.toFixed(2)}</div>
                 `;
+
                 summaryStack.appendChild(row);
             });
 

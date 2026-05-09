@@ -1,474 +1,154 @@
-@model TasteAtDoor.Models.ViewModels.BrowseMenusPageViewModel
+@model TasteAtDoor.Models.ViewModels.RestaurantListPageViewModel
 
 @{
-    ViewData["Title"] = "Browse Menus";
-    bool canAddToCart = User.IsInRole("User");
+    ViewData["Title"] = "Available Menus";
 }
 
-<div class="dashboard-shell">
-    <div class="page-header-row">
+<div class="available-restaurants-page">
+    <div class="available-hero">
         <div>
-            <h1 class="page-title">Available Menu Items</h1>
-            <p class="page-subtitle">Browse menus created by caretakers.</p>
+            <span class="available-eyebrow">TasteAtDoor</span>
+            <h1>Available Menus Near You</h1>
+            <p>
+                Choose a restaurant first. Distances are calculated from your saved location.
+                You can order only from restaurants within 5 km.
+            </p>
         </div>
 
-        @if (canAddToCart)
-        {
-            <a asp-controller="Cart" asp-action="Index" class="btn-main">Go to Cart</a>
-        }
+        <a asp-controller="User" asp-action="MyLocation" class="btn-secondary-main">
+            Change My Location
+        </a>
     </div>
 
-    <div class="table-card">
-        <form method="get" asp-controller="User" asp-action="Index" class="row g-3">
-            <div class="col-md-9">
-                <label class="form-label">Search</label>
-                <input name="search" value="@Model.Search" class="form-control" placeholder="Menu, description, or caretaker" />
-            </div>
-
-            <div class="col-md-3 d-flex align-items-end">
-                <button type="submit" class="btn-main w-100">Filter</button>
-            </div>
-        </form>
-    </div>
-
-    <div id="cart-client-message" class="success-box" style="display:none;"></div>
-
-    @if (!Model.Items.Any())
+    @if (TempData["Error"] is string error)
     {
-        <div class="empty-box">
-            <h3>No menu items available</h3>
-            <p>There are currently no matching menus.</p>
+        <div class="text-danger mb-3">@error</div>
+    }
+
+    @if (!Model.UserLocationSaved)
+    {
+        <div class="empty-state-card">
+            <h2>Save your location first</h2>
+            <p>You must save your location before viewing restaurants near you.</p>
+
+            <a asp-controller="User" asp-action="MyLocation" class="btn-main">
+                Save My Location
+            </a>
         </div>
     }
     else
     {
-        <div class="menu-grid">
-            @foreach (var entry in Model.Items)
-            {
-                var item = entry.MenuItem;
-                var orderedGroups = item.CustomizationGroups
-                    .OrderBy(g => g.DisplayOrder)
-                    .ThenBy(g => g.Id)
-                    .ToList();
+        <form asp-controller="User" asp-action="Index" method="get" class="restaurant-search-bar">
+            <input type="text"
+                   name="search"
+                   value="@Model.Search"
+                   placeholder="Search by restaurant name, address, or description..."
+                   class="form-control" />
 
-                <div class="menu-card">
-                    <div class="menu-preview-clickable" data-toggle-panel role="button" tabindex="0">
-                        <img src="data:@item.ImageContentType;base64,@Convert.ToBase64String(item.ImageData)" alt="@item.Name" class="menu-card-image" />
+            <button type="submit" class="btn-main">
+                Search
+            </button>
+        </form>
 
-                        <div class="menu-card-header">
-                            <h3>@item.Name</h3>
-                            <span class="menu-price">@item.Price.ToString("0.00")</span>
-                        </div>
-
-                        <p class="menu-description">@item.Description</p>
-
-                        <div class="menu-meta">
-                            Caretaker:
-                            <strong>@(item.Caretaker?.FullName ?? item.Caretaker?.Email ?? "Unknown")</strong>
-                        </div>
-
-                        <div class="menu-meta">
-                            Location:
-                            <strong>@item.LocationText</strong>
-                        </div>
-
-                        <div class="menu-meta">
-                            Menu Rating:
-                            <strong>
-                                @(entry.MenuReviewCount > 0
-                                    ? $"{entry.AverageMenuRating:0.0} / 5 ({entry.MenuReviewCount})"
-                                    : "No ratings yet")
-                            </strong>
-                        </div>
-
-                        <div class="menu-meta">
-                            Caterer Rating:
-                            <strong>
-                                @(entry.CatererReviewCount > 0
-                                    ? $"{entry.AverageCatererRating:0.0} / 5 ({entry.CatererReviewCount})"
-                                    : "No ratings yet")
-                            </strong>
-                        </div>
-
-                        <div class="table-link">
-                            @(canAddToCart ? "Click to customize" : "Click to view details")
-                        </div>
-                    </div>
-
-                    <div class="user-customization-block customization-panel" style="display:none;">
-                        @if (!orderedGroups.Any())
-                        {
-                            <div class="group-empty-text">No customization options defined for this menu item.</div>
-                        }
-                        else
-                        {
-                            <h4>Customization Options</h4>
-
-                            @foreach (var group in orderedGroups)
-                            {
-                                var orderedOptions = group.Options
-                                    .OrderBy(o => o.DisplayOrder)
-                                    .ThenBy(o => o.Id)
-                                    .ToList();
-
-                                <div class="user-group-box customization-group"
-                                     data-group-id="@group.Id"
-                                     data-group-title="@group.Title"
-                                     data-group-type="@group.GroupType"
-                                     data-group-required="@group.IsRequired.ToString().ToLower()">
-
-                                    <div class="user-group-title">
-                                        @group.Title
-                                        <span class="group-badge">@group.GroupType</span>
-                                        @if (group.IsRequired)
-                                        {
-                                            <span class="group-badge">Required</span>
-                                        }
-                                    </div>
-
-                                    @if (!canAddToCart)
-                                    {
-                                        <ul class="user-option-list">
-                                            @foreach (var option in orderedOptions)
-                                            {
-                                                <li>
-                                                    @option.Name
-                                                    @if (option.PriceChange != 0)
-                                                    {
-                                                        <span class="option-price-change">
-                                                            (@option.PriceChange.ToString("0.00"))
-                                                        </span>
-                                                    }
-                                                </li>
-                                            }
-                                        </ul>
-                                    }
-                                    else
-                                    {
-                                        @if (group.GroupType == "SingleSelect")
-                                        {
-                                            bool hasDefault = orderedOptions.Any(o => o.IsDefault);
-
-                                            @for (int i = 0; i < orderedOptions.Count; i++)
-                                            {
-                                                var option = orderedOptions[i];
-                                                bool shouldCheck = option.IsDefault || (!hasDefault && group.IsRequired && i == 0);
-
-                                                <div class="form-check mb-2">
-                                                    <input class="form-check-input customization-input"
-                                                           type="radio"
-                                                           name="group-@item.Id-@group.Id"
-                                                           value="@option.Id"
-                                                           data-group-id="@group.Id"
-                                                           data-group-title="@group.Title"
-                                                           data-option-id="@option.Id"
-                                                           data-option-name="@option.Name"
-                                                           data-price-change="@option.PriceChange.ToString(System.Globalization.CultureInfo.InvariantCulture)"
-                                                           @(shouldCheck ? "checked" : null) />
-                                                    <label class="form-check-label">
-                                                        @option.Name
-                                                        @if (option.PriceChange != 0)
-                                                        {
-                                                            <span class="option-price-change">
-                                                                (@option.PriceChange.ToString("0.00"))
-                                                            </span>
-                                                        }
-                                                    </label>
-                                                </div>
-                                            }
-                                        }
-                                        else if (group.GroupType == "MultiSelect")
-                                        {
-                                            @foreach (var option in orderedOptions)
-                                            {
-                                                <div class="form-check mb-2">
-                                                    <input class="form-check-input customization-input"
-                                                           type="checkbox"
-                                                           value="@option.Id"
-                                                           data-group-id="@group.Id"
-                                                           data-group-title="@group.Title"
-                                                           data-option-id="@option.Id"
-                                                           data-option-name="@option.Name"
-                                                           data-price-change="@option.PriceChange.ToString(System.Globalization.CultureInfo.InvariantCulture)" />
-                                                    <label class="form-check-label">
-                                                        @option.Name
-                                                        @if (option.PriceChange != 0)
-                                                        {
-                                                            <span class="option-price-change">
-                                                                (@option.PriceChange.ToString("0.00"))
-                                                            </span>
-                                                        }
-                                                    </label>
-                                                </div>
-                                            }
-                                        }
-                                        else if (group.GroupType == "Removable")
-                                        {
-                                            @foreach (var option in orderedOptions)
-                                            {
-                                                <div class="form-check mb-2">
-                                                    <input class="form-check-input customization-input removable-input"
-                                                           type="checkbox"
-                                                           value="@option.Id"
-                                                           data-group-id="@group.Id"
-                                                           data-group-title="@group.Title"
-                                                           data-option-id="@option.Id"
-                                                           data-option-name="@option.Name"
-                                                           data-price-change="@option.PriceChange.ToString(System.Globalization.CultureInfo.InvariantCulture)" />
-                                                    <label class="form-check-label">
-                                                        Remove @option.Name
-                                                    </label>
-                                                </div>
-                                            }
-                                        }
-                                    }
-                                </div>
-                            }
-                        }
-
-                        @if (canAddToCart)
-                        {
-                            <div class="text-danger panel-error mb-2" style="display:none;"></div>
-
-                            <div class="d-flex align-items-center gap-2 flex-wrap mt-3">
-                                <button type="button" class="mini-btn quantity-decrease">-</button>
-                                <span class="quantity-value">1</span>
-                                <button type="button" class="mini-btn quantity-increase">+</button>
-                            </div>
-
-                            <div class="mt-3">
-                                <button type="button"
-                                        class="btn-main add-customized-to-cart"
-                                        data-menu-id="@item.Id"
-                                        data-menu-name="@item.Name"
-                                        data-base-price="@item.Price.ToString(System.Globalization.CultureInfo.InvariantCulture)"
-                                        data-image-content-type="@item.ImageContentType"
-                                        data-image-base64="@Convert.ToBase64String(item.ImageData)">
-                                    Add to Cart
-                                </button>
-                            </div>
-                        }
-                    </div>
-                </div>
-            }
-        </div>
-
-        <div class="table-card">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>Page @Model.Page / @Model.TotalPages</div>
-
-                <div class="d-flex gap-2">
-                    @if (Model.Page > 1)
-                    {
-                        <a class="btn-secondary-main"
-                           asp-controller="User"
-                           asp-action="Index"
-                           asp-route-search="@Model.Search"
-                           asp-route-page="@(Model.Page - 1)">
-                            Previous
-                        </a>
-                    }
-
-                    @if (Model.Page < Model.TotalPages)
-                    {
-                        <a class="btn-secondary-main"
-                           asp-controller="User"
-                           asp-action="Index"
-                           asp-route-search="@Model.Search"
-                           asp-route-page="@(Model.Page + 1)">
-                            Next
-                        </a>
-                    }
-                </div>
+        @if (Model.Restaurants.Count == 0)
+        {
+            <div class="empty-state-card">
+                <h2>No restaurants found</h2>
+                <p>No restaurant has saved a location yet, or your search did not match anything.</p>
             </div>
-        </div>
+        }
+        else
+        {
+            <div class="restaurant-card-grid">
+                @foreach (var restaurant in Model.Restaurants)
+                {
+                    string? logoSource = null;
+
+                    if (restaurant.LogoImageData is not null &&
+                        restaurant.LogoImageData.Length > 0 &&
+                        !string.IsNullOrWhiteSpace(restaurant.LogoImageContentType))
+                    {
+                        logoSource = $"data:{restaurant.LogoImageContentType};base64,{Convert.ToBase64String(restaurant.LogoImageData)}";
+                    }
+
+                    <div class="restaurant-card-modern">
+                        <div class="restaurant-card-top">
+                            <div class="restaurant-logo-box">
+                                @if (!string.IsNullOrWhiteSpace(logoSource))
+                                {
+                                    <img src="@logoSource"
+                                         alt="@restaurant.RestaurantName"
+                                         class="restaurant-logo-img" />
+                                }
+                                else
+                                {
+                                    <div class="restaurant-logo-placeholder">
+                                        @(string.IsNullOrWhiteSpace(restaurant.RestaurantName)
+                                            ? "R"
+                                            : restaurant.RestaurantName.Substring(0, 1).ToUpper())
+                                    </div>
+                                }
+                            </div>
+
+                            <div class="restaurant-status-pill @(restaurant.CanOrder ? "status-open" : "status-closed")">
+                                @(restaurant.CanOrder ? "Within 5 km" : "Outside 5 km")
+                            </div>
+                        </div>
+
+                        <div class="restaurant-card-body-modern">
+                            <h3>@restaurant.RestaurantName</h3>
+
+                            @if (!string.IsNullOrWhiteSpace(restaurant.Bio))
+                            {
+                                <p class="restaurant-bio">
+                                    @restaurant.Bio
+                                </p>
+                            }
+                            else
+                            {
+                                <p class="restaurant-bio text-muted">
+                                    No restaurant description yet.
+                                </p>
+                            }
+
+                            @if (!string.IsNullOrWhiteSpace(restaurant.Address))
+                            {
+                                <p class="restaurant-meta">
+                                    <strong>Address:</strong> @restaurant.Address
+                                </p>
+                            }
+
+                            <div class="restaurant-info-row">
+                                <span>
+                                    <strong>@restaurant.DistanceKm.ToString("0.0") km</strong>
+                                    away
+                                </span>
+
+                                <span>
+                                    <strong>@restaurant.MenuCount</strong>
+                                    menus
+                                </span>
+                            </div>
+
+                            @if (!restaurant.CanOrder)
+                            {
+                                <p class="restaurant-warning">
+                                    You can view the menu, but ordering is disabled because this restaurant is more than 5 km away.
+                                </p>
+                            }
+                        </div>
+
+                        <div class="restaurant-card-footer-modern">
+                            <a asp-controller="User"
+                               asp-action="RestaurantMenu"
+                               asp-route-id="@restaurant.Id"
+                               class="btn-main w-100">
+                                View Menu
+                            </a>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
     }
 </div>
-
-@section Scripts {
-@if (canAddToCart)
-{
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const CART_KEY = "tasteAtDoorCart";
-
-        function getCart() {
-            const json = localStorage.getItem(CART_KEY);
-            if (!json) return [];
-            try {
-                return JSON.parse(json);
-            } catch {
-                return [];
-            }
-        }
-
-        function saveCart(cart) {
-            localStorage.setItem(CART_KEY, JSON.stringify(cart));
-        }
-
-        function showMessage(text) {
-            const box = document.getElementById("cart-client-message");
-            if (!box) return;
-            box.textContent = text;
-            box.style.display = "block";
-            setTimeout(() => {
-                box.style.display = "none";
-            }, 2000);
-        }
-
-        function makeSignature(menuItemId, selectedOptions) {
-            const ids = selectedOptions
-                .map(x => x.optionId)
-                .sort((a, b) => a - b)
-                .join("-");
-            return `${menuItemId}|${ids}`;
-        }
-
-        function collectSelections(panel) {
-            const groups = panel.querySelectorAll(".customization-group");
-            const selectedOptions = [];
-
-            for (const group of groups) {
-                const groupType = group.dataset.groupType;
-                const groupTitle = group.dataset.groupTitle;
-                const isRequired = group.dataset.groupRequired === "true";
-
-                if (groupType === "SingleSelect") {
-                    const checked = group.querySelector('input[type="radio"]:checked');
-
-                    if (!checked && isRequired) {
-                        return {
-                            ok: false,
-                            error: `Please choose an option for ${groupTitle}.`,
-                            selectedOptions: []
-                        };
-                    }
-
-                    if (checked) {
-                        selectedOptions.push({
-                            groupId: parseInt(checked.dataset.groupId),
-                            groupTitle: checked.dataset.groupTitle,
-                            optionId: parseInt(checked.dataset.optionId),
-                            optionName: checked.dataset.optionName,
-                            priceChange: parseFloat(checked.dataset.priceChange || "0")
-                        });
-                    }
-                }
-                else if (groupType === "MultiSelect") {
-                    const checkedItems = group.querySelectorAll('input[type="checkbox"]:checked');
-                    checkedItems.forEach(input => {
-                        selectedOptions.push({
-                            groupId: parseInt(input.dataset.groupId),
-                            groupTitle: input.dataset.groupTitle,
-                            optionId: parseInt(input.dataset.optionId),
-                            optionName: input.dataset.optionName,
-                            priceChange: parseFloat(input.dataset.priceChange || "0")
-                        });
-                    });
-                }
-                else if (groupType === "Removable") {
-                    const checkedItems = group.querySelectorAll('input[type="checkbox"]:checked');
-                    checkedItems.forEach(input => {
-                        selectedOptions.push({
-                            groupId: parseInt(input.dataset.groupId),
-                            groupTitle: input.dataset.groupTitle,
-                            optionId: parseInt(input.dataset.optionId),
-                            optionName: "No " + input.dataset.optionName,
-                            priceChange: parseFloat(input.dataset.priceChange || "0")
-                        });
-                    });
-                }
-            }
-
-            return {
-                ok: true,
-                error: "",
-                selectedOptions: selectedOptions
-            };
-        }
-
-        document.querySelectorAll("[data-toggle-panel]").forEach(preview => {
-            preview.addEventListener("click", function () {
-                const panel = this.parentElement.querySelector(".customization-panel");
-                if (!panel) return;
-                panel.style.display = (panel.style.display === "none" || panel.style.display === "") ? "block" : "none";
-            });
-
-            preview.addEventListener("keydown", function (event) {
-                if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    this.click();
-                }
-            });
-        });
-
-        document.querySelectorAll(".quantity-increase").forEach(button => {
-            button.addEventListener("click", function () {
-                const valueSpan = this.parentElement.querySelector(".quantity-value");
-                const current = parseInt(valueSpan.textContent || "1");
-                valueSpan.textContent = (current + 1).toString();
-            });
-        });
-
-        document.querySelectorAll(".quantity-decrease").forEach(button => {
-            button.addEventListener("click", function () {
-                const valueSpan = this.parentElement.querySelector(".quantity-value");
-                const current = parseInt(valueSpan.textContent || "1");
-                valueSpan.textContent = Math.max(1, current - 1).toString();
-            });
-        });
-
-        document.querySelectorAll(".add-customized-to-cart").forEach(button => {
-            button.addEventListener("click", function () {
-                const panel = this.closest(".customization-panel");
-                const errorBox = panel.querySelector(".panel-error");
-
-                if (errorBox) {
-                    errorBox.style.display = "none";
-                    errorBox.textContent = "";
-                }
-
-                const result = collectSelections(panel);
-
-                if (!result.ok) {
-                    if (errorBox) {
-                        errorBox.textContent = result.error;
-                        errorBox.style.display = "block";
-                    }
-                    return;
-                }
-
-                const quantity = parseInt(panel.querySelector(".quantity-value")?.textContent || "1");
-                const basePrice = parseFloat(this.dataset.basePrice || "0");
-                const extraPrice = result.selectedOptions.reduce((sum, x) => sum + x.priceChange, 0);
-                const finalUnitPrice = basePrice + extraPrice;
-
-                const item = {
-                    signature: makeSignature(parseInt(this.dataset.menuId), result.selectedOptions),
-                    menuItemId: parseInt(this.dataset.menuId),
-                    name: this.dataset.menuName,
-                    baseUnitPrice: basePrice,
-                    finalUnitPrice: finalUnitPrice,
-                    quantity: quantity,
-                    imageContentType: this.dataset.imageContentType,
-                    imageBase64: this.dataset.imageBase64,
-                    selectedOptions: result.selectedOptions
-                };
-
-                const cart = getCart();
-                const existing = cart.find(x => x.signature === item.signature);
-
-                if (existing) {
-                    existing.quantity += item.quantity;
-                } else {
-                    cart.push(item);
-                }
-
-                saveCart(cart);
-                showMessage("Item added to cart.");
-            });
-        });
-    });
-</script>
-}
-}

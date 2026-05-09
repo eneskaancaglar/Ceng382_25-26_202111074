@@ -11,5 +11,7 @@ namespace TasteAtDoor.Models.ViewModels
 
         public int MenuReviewCount { get; set; }
         public int CatererReviewCount { get; set; }
+
+        public double? DistanceKm { get; set; }
     }
 }

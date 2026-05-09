@@ -17,8 +17,39 @@
         </div>
 
         <div class="hero-buttons">
-            <a asp-controller="User" asp-action="Index" class="btn-main">Back to Menus</a>
-            <a asp-controller="Cart" asp-action="Index" class="btn-secondary-main">Open Cart</a>
+            <a asp-controller="User"
+               asp-action="Receipt"
+               asp-route-id="@Model.OrderId"
+               class="btn-main">
+                View Receipt
+            </a>
+
+            <a asp-controller="OrderDocument"
+               asp-action="ReceiptPdf"
+               asp-route-id="@Model.OrderId"
+               class="btn-secondary-main">
+                Download Receipt PDF
+            </a>
+
+            <a asp-controller="OrderDocument"
+               asp-action="AgreementPdf"
+               asp-route-id="@Model.OrderId"
+               class="btn-secondary-main">
+                Download Agreement PDF
+            </a>
+
+            <a asp-controller="OrderChat"
+               asp-action="Room"
+               asp-route-orderId="@Model.OrderId"
+               class="btn-main">
+                Open Order Chat
+            </a>
+
+            <a asp-controller="User"
+               asp-action="Index"
+               class="btn-secondary-main">
+                Back to Restaurants
+            </a>
         </div>
     </div>
 </div>

@@ -21,6 +21,9 @@ namespace TasteAtDoor.Models
         [StringLength(250)]
         public string LocationText { get; set; } = string.Empty;
 
+        public double? Latitude { get; set; }
+        public double? Longitude { get; set; }
+
         [Required]
         public string CaretakerId { get; set; } = string.Empty;
         public ApplicationUser? Caretaker { get; set; }

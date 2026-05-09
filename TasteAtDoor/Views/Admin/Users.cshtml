@@ -1,0 +1,122 @@
+@model TasteAtDoor.Models.ViewModels.AdminUserListPageViewModel
+
+@{
+    ViewData["Title"] = "Users";
+}
+
+<div class="dashboard-shell">
+    <div class="page-header-row">
+        <div>
+            <h1 class="page-title">Users</h1>
+            <p class="page-subtitle">Filter and inspect customers, caterers, and admins.</p>
+        </div>
+
+        <a asp-controller="Admin" asp-action="Dashboard" class="btn-secondary-main">
+            Back to Dashboard
+        </a>
+    </div>
+
+    <div class="table-card">
+        <form method="get" asp-controller="Admin" asp-action="Users" class="row g-3">
+            <div class="col-md-5">
+                <label class="form-label">Search</label>
+                <input name="search"
+                       value="@Model.Search"
+                       class="form-control"
+                       placeholder="Name, email, phone, role..." />
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label">Role</label>
+                <select name="role" class="form-control">
+                    <option value="">All Roles</option>
+                    <option value="User" selected="@(Model.Role == "User")">User</option>
+                    <option value="Caretaker" selected="@(Model.Role == "Caretaker")">Caretaker</option>
+                    <option value="Admin" selected="@(Model.Role == "Admin")">Admin</option>
+                </select>
+            </div>
+
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn-main w-100">Filter</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-card">
+        @if (!Model.Users.Any())
+        {
+            <p>No users found.</p>
+        }
+        else
+        {
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Roles</th>
+                        <th>Orders</th>
+                        <th>Spent</th>
+                        <th>Menus</th>
+                        <th>Caterer Avg</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in Model.Users)
+                    {
+                        <tr>
+                            <td>@user.FullName</td>
+                            <td>@(user.Email ?? "-")</td>
+                            <td>@(user.PhoneNumber ?? "-")</td>
+                            <td>@user.RolesText</td>
+                            <td>@user.OrderCount</td>
+                            <td>@user.TotalSpent.ToString("0.00")</td>
+                            <td>@user.MenuCount</td>
+                            <td>
+                                @if (user.AverageCatererRating > 0)
+                                {
+                                    <span>@user.AverageCatererRating.ToString("0.0") / 5</span>
+                                }
+                                else
+                                {
+                                    <span>-</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+        <div class="d-flex justify-content-between align-items-center mt-3">
+            <div>Page @Model.Page / @Model.TotalPages</div>
+
+            <div class="d-flex gap-2">
+                @if (Model.Page > 1)
+                {
+                    <a class="btn-secondary-main"
+                       asp-controller="Admin"
+                       asp-action="Users"
+                       asp-route-search="@Model.Search"
+                       asp-route-role="@Model.Role"
+                       asp-route-page="@(Model.Page - 1)">
+                        Previous
+                    </a>
+                }
+
+                @if (Model.Page < Model.TotalPages)
+                {
+                    <a class="btn-secondary-main"
+                       asp-controller="Admin"
+                       asp-action="Users"
+                       asp-route-search="@Model.Search"
+                       asp-route-role="@Model.Role"
+                       asp-route-page="@(Model.Page + 1)">
+                        Next
+                    </a>
+                }
+            </div>
+        </div>
+    </div>
+</div>

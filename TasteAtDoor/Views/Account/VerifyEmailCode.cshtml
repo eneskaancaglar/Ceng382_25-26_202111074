@@ -1,0 +1,50 @@
+@model TasteAtDoor.Models.ViewModels.Account.VerifyEmailCodeViewModel
+
+@{
+    ViewData["Title"] = "Verify Login";
+}
+
+<div class="auth-page">
+    <div class="auth-card">
+        <h1>Email Verification</h1>
+
+        <p>
+            We sent a 6-digit login code to:
+            <strong>@Model.Email</strong>
+        </p>
+
+        <p class="text-muted">
+            In development mode, check the <strong>EmailPreview</strong> folder in your project.
+        </p>
+
+        <form asp-controller="Account" asp-action="VerifyEmailCode" method="post">
+            @Html.AntiForgeryToken()
+
+            <input asp-for="Email" type="hidden" />
+
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="form-group mb-3">
+                <label asp-for="Code">Verification Code</label>
+                <input asp-for="Code"
+                       class="form-control verification-code-input"
+                       placeholder="123456"
+                       maxlength="6" />
+                <span asp-validation-for="Code" class="text-danger"></span>
+            </div>
+
+            <button type="submit" class="btn-main w-100">
+                Verify and Login
+            </button>
+        </form>
+
+        <div class="auth-switch">
+            <span>Wrong account?</span>
+            <a asp-controller="Account" asp-action="Login">Back to Login</a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

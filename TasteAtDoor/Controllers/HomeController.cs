@@ -8,7 +8,25 @@ public class HomeController : Controller
 {
     public IActionResult Index()
     {
-        return View();
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            if (User.IsInRole("Admin"))
+            {
+                return RedirectToAction("Dashboard", "Admin");
+            }
+
+            if (User.IsInRole("Caretaker"))
+            {
+                return RedirectToAction("Dashboard", "Caretaker");
+            }
+
+            if (User.IsInRole("User"))
+            {
+                return RedirectToAction("Dashboard", "User");
+            }
+        }
+
+        return RedirectToAction("Login", "Account");
     }
 
     public IActionResult Privacy()
@@ -19,6 +37,9 @@ public class HomeController : Controller
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()
     {
-        return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        return View(new ErrorViewModel
+        {
+            RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier
+        });
     }
 }

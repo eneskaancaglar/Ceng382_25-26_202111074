@@ -1,0 +1,69 @@
+TasteAtDoor - Security Vulnerability Report
+
+1) Default admin account and predictable password
+Evidence: In Program.cs around lines 114-127, if the user admin@tasteatdoor.com does not exist, it is automatically created with the password "Admin123".
+Technical explanation: When the application starts, it creates an administrator account with a fixed email address and a fixed password. Since this information exists in the source code, anyone who sees or guesses it can attempt to log in to the admin panel.
+Possible consequence: If an unauthorized person takes over the admin account, they can view or manipulate users, orders, logs, and system data. This may lead to full system compromise.
+
+2) Weak password policy
+Evidence: In Program.cs around lines 20-27, the minimum password length is 6, and uppercase letters, lowercase letters, and special characters are not required. RegisterViewModel.cs around lines 15-18 also allows a minimum of 6 characters.
+Technical explanation: The password policy only requires a digit and a low minimum length. This makes user passwords weak against dictionary attacks and brute-force attempts.
+Possible consequence: Attackers can guess short and simple passwords more quickly with automated tools. User, caretaker, or admin accounts may be compromised.
+
+3) Ineffective login brute-force protection
+Evidence: In AccountController.cs around lines 134-137, CheckPasswordSignInAsync is called with lockoutOnFailure: false.
+Technical explanation: Failed login attempts do not trigger account lockout. Therefore, an attacker can try unlimited passwords for the same email address.
+Possible consequence: Password guessing attacks become easier. Combined with the weak password policy, the risk of account takeover increases.
+
+4) Self-registration as a Caretaker role
+Evidence: In AccountController.cs around lines 50-68, if the selected role is "User" or "Caretaker", it is accepted and directly assigned to the user. RegisterViewModel.cs around lines 25-26 receives the Role field from the user.
+Technical explanation: A user can select the Caretaker role from the normal registration page. Since the Caretaker role has more privileges, such as creating menu items, editing restaurant profiles, and managing orders, this role should not be assigned without admin approval.
+Possible consequence: Anyone can register with seller/caretaker privileges. This creates risks such as fake restaurant creation, fake menu uploads, and abuse of the order flow.
+
+5) Email verification step is skipped for Admin and Caretaker accounts
+Evidence: In AccountController.cs around lines 152-164, users with roles other than normal "User" are signed in directly using SignInAsync. The email verification code is generated only for normal users.
+Technical explanation: Extra verification is not applied to higher-privilege roles such as Admin and Caretaker. However, additional verification is more critical for accounts with higher impact.
+Possible consequence: If an Admin or Caretaker password is stolen, the attacker can log in without any additional verification. This increases the risk of privileged account compromise.
+
+6) Weak verification-code generation and no attempt limit
+Evidence: In AccountController.cs around lines 167-173, the verification code is stored in session. The GenerateVerificationCode method around lines 383-386 creates a 6-digit code with Random.Shared.Next. In VerifyEmailCode, around lines 265-275, there is no limit for wrong-code attempts.
+Technical explanation: Random.Shared is not suitable for cryptographic randomness. Also, because there is no attempt limit for the verification code, the code can be repeatedly guessed within the 10-minute validity period.
+Possible consequence: If the password of a user account is known, an attacker may try to brute-force the verification code. If the session is compromised, the code can be used directly.
+
+7) Google Maps API key is stored in source/appsettings
+Evidence: In appsettings.json around lines 22-24, the GoogleMaps:ApiKey value is written in plain text. This key is passed to pages through ViewBag in UserController.cs and CaretakerController.cs.
+Technical explanation: API keys should not be considered secret if they are stored in application source code or sent to client-side HTML/JavaScript. If the key is not restricted, third parties may use it.
+Possible consequence: The API quota can be abused, paid usage may occur, or Google Maps services may be consumed by unauthorized people.
+
+8) Email preview files contain verification codes and personal data
+Evidence: In EmailService.cs around lines 30-32 and 89-119, sent emails are saved as HTML files under the EmailPreview folder. Example files in the EmailPreview folder contain recipient email addresses and 6-digit verification codes.
+Technical explanation: Email preview files remain in the project folder. If this folder is committed to the repository or accidentally published, verification codes, order details, and user email addresses may be exposed.
+Possible consequence: Users' personal data may be leaked. If active verification codes are exposed, account security may be affected.
+
+9) Missing file type and size validation for menu image uploads
+Evidence: In CaretakerController.cs around lines 399-433, when creating a menu item, only the existence of the file is checked; ContentType, real file signature, and file size are not validated. In the Edit operation around lines 551-558, the new image is similarly loaded directly into memory.
+Technical explanation: User-uploaded files are directly converted into byte arrays with MemoryStream and saved to the database. Since there is no size limit, very large files can be uploaded. Since the file type is not verified, non-image files can also be stored as if they were images.
+Possible consequence: The database may grow excessively, memory usage may increase, and denial of service may occur. Malicious content may be stored as an image and later rendered by the browser.
+
+10) Cart data can be manipulated by the client and there is no upper limit for quantity
+Evidence: CheckoutViewModel.cs around lines 7-8 receives the CartJson field from the client. In CartController.cs around lines 53-70, CartJson is deserialized. Around lines 170-173, only Quantity <= 0 is skipped, but no upper limit is applied. In CartItem.cs around line 10, the Quantity field has no validation.
+Technical explanation: The cart comes from localStorage and can be modified by the user. Although the server recalculates the price from the database, there is no reasonable upper limit, stock control, or business-rule validation for quantity.
+Possible consequence: A user may try to create orders with extremely large quantities. This may cause incorrect totals, overflow/performance problems, fake orders, and data integrity issues.
+
+11) Session termination through a GET request
+Evidence: In AccountController.cs around lines 95-106, when the Login page is opened with GET and the user is already authenticated, SignOutAsync is called, the session is cleared, and the authentication cookie is deleted.
+Technical explanation: GET requests should normally be read-only. Here, GET /Account/Login changes the user's session state. This may create logout-CSRF-like behavior.
+Possible consequence: An attacker can force a user to open the Login link or embed a request that unintentionally logs the user out. This does not directly leak data, but it is a weakness in usability and session security.
+
+12) Ephemeral Data Protection keys are used
+Evidence: In Program.cs around lines 11-12, UseEphemeralDataProtectionProvider is used.
+Technical explanation: Ephemeral Data Protection keys are lost when the application restarts. Cookies, tokens, and protected data may become invalid after a restart. In production, a persistent key store should be preferred.
+Possible consequence: User sessions and tokens may become unexpectedly invalid. This is mostly a reliability and session-management problem, but it can also create confusion in the authentication flow.
+
+Tools that can be used:
+- dotnet package list --include-transitive --vulnerable --format json > dependencyReport.json
+- semgrep scan --config auto .
+- gitleaks detect --source .
+- trivy fs .
+- OWASP ZAP Baseline Scan: can be used for passive web security scanning while the application is running.
+

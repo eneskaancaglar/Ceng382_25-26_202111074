@@ -18,17 +18,20 @@ namespace TasteAtDoor.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IAppLogService _appLogService;
         private readonly IEmailService _emailService;
+        private readonly IGoogleMapsService _googleMapsService;
 
         public CartController(
             ApplicationDbContext context,
             UserManager<ApplicationUser> userManager,
             IAppLogService appLogService,
-            IEmailService emailService)
+            IEmailService emailService,
+            IGoogleMapsService googleMapsService)
         {
             _context = context;
             _userManager = userManager;
             _appLogService = appLogService;
             _emailService = emailService;
+            _googleMapsService = googleMapsService;
         }
 
         [HttpGet]
@@ -63,7 +66,8 @@ namespace TasteAtDoor.Controllers
             {
                 try
                 {
-                    clientCart = JsonSerializer.Deserialize<List<CartItem>>(model.CartJson, jsonOptions) ?? new List<CartItem>();
+                    clientCart = JsonSerializer.Deserialize<List<CartItem>>(model.CartJson, jsonOptions)
+                                 ?? new List<CartItem>();
                 }
                 catch
                 {
@@ -88,11 +92,64 @@ namespace TasteAtDoor.Controllers
                 return Challenge();
             }
 
-            var menuIds = clientCart.Select(c => c.MenuItemId).Distinct().ToList();
+            var menuIds = clientCart
+                .Select(c => c.MenuItemId)
+                .Distinct()
+                .ToList();
 
             var menuItems = await _context.MenuItems
+                .Include(m => m.Caretaker)
                 .Where(m => menuIds.Contains(m.Id))
                 .ToDictionaryAsync(m => m.Id);
+
+            if (!currentUser.Latitude.HasValue || !currentUser.Longitude.HasValue)
+            {
+                ModelState.AddModelError(string.Empty, "Please save your location before checkout.");
+                return View(model);
+            }
+
+            foreach (var cartItem in clientCart)
+            {
+                if (!menuItems.TryGetValue(cartItem.MenuItemId, out var menuForDistance))
+                {
+                    continue;
+                }
+
+                if (menuForDistance.Caretaker is null ||
+                    !menuForDistance.Caretaker.Latitude.HasValue ||
+                    !menuForDistance.Caretaker.Longitude.HasValue)
+                {
+                    ModelState.AddModelError(
+                        string.Empty,
+                        $"Restaurant location is missing for '{menuForDistance.Name}'.");
+
+                    return View(model);
+                }
+
+                var distanceKm = await _googleMapsService.GetRouteDistanceKmAsync(
+                    currentUser.Latitude.Value,
+                    currentUser.Longitude.Value,
+                    menuForDistance.Caretaker.Latitude.Value,
+                    menuForDistance.Caretaker.Longitude.Value);
+
+                if (!distanceKm.HasValue)
+                {
+                    ModelState.AddModelError(
+                        string.Empty,
+                        $"Distance for '{menuForDistance.Name}' could not be verified with Google Maps. Please try again.");
+
+                    return View(model);
+                }
+
+                if (distanceKm.Value > 5)
+                {
+                    ModelState.AddModelError(
+                        string.Empty,
+                        $"You cannot order '{menuForDistance.Name}' because the restaurant is {distanceKm.Value:0.0} km away by Google Maps route distance. Maximum distance is 5 km.");
+
+                    return View(model);
+                }
+            }
 
             var order = new Order
             {
@@ -193,30 +250,94 @@ namespace TasteAtDoor.Controllers
 
             if (savedOrder is not null)
             {
-                if (!string.IsNullOrWhiteSpace(savedOrder.ApplicationUser?.Email))
+                try
                 {
-                    await _emailService.SendAsync(
-                        savedOrder.ApplicationUser.Email!,
-                        $"Taste At Door - Order Confirmation #{savedOrder.Id}",
-                        BuildUserOrderEmail(savedOrder));
-                }
-
-                var caretakerEmails = savedOrder.OrderItems
-                    .Where(oi => oi.MenuItem?.Caretaker?.Email != null)
-                    .Select(oi => oi.MenuItem!.Caretaker!.Email!)
-                    .Distinct()
-                    .ToList();
-
-                foreach (var caretakerEmail in caretakerEmails)
-                {
-                    var caretakerBody = BuildCaretakerOrderEmail(savedOrder, caretakerEmail);
-
-                    if (!string.IsNullOrWhiteSpace(caretakerBody))
+                    if (!string.IsNullOrWhiteSpace(savedOrder.ApplicationUser?.Email))
                     {
                         await _emailService.SendAsync(
-                            caretakerEmail,
+                            savedOrder.ApplicationUser.Email!,
+                            $"Taste At Door - Order Confirmation #{savedOrder.Id}",
+                            BuildUserOrderEmail(savedOrder));
+
+                        await _appLogService.LogAsync(
+                            eventType: "OrderEmailSentToUser",
+                            message: "Order confirmation email sent to customer.",
+                            userId: currentUser.Id,
+                            userEmail: currentUser.Email,
+                            details: $"OrderId: {savedOrder.Id} | To: {savedOrder.ApplicationUser.Email}");
+                    }
+                    else
+                    {
+                        await _appLogService.LogAsync(
+                            eventType: "OrderEmailSkippedForUser",
+                            message: "Customer email is missing, order email was not sent.",
+                            level: "Warning",
+                            userId: currentUser.Id,
+                            userEmail: currentUser.Email,
+                            details: $"OrderId: {savedOrder.Id}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    await _appLogService.LogAsync(
+                        eventType: "OrderEmailFailedForUser",
+                        message: "Order confirmation email could not be sent to customer.",
+                        level: "Error",
+                        userId: currentUser.Id,
+                        userEmail: currentUser.Email,
+                        details: $"OrderId: {savedOrder.Id} | Error: {ex.Message}");
+                }
+
+                var caretakerGroups = savedOrder.OrderItems
+                    .Where(oi =>
+                        oi.MenuItem?.Caretaker != null &&
+                        !string.IsNullOrWhiteSpace(oi.MenuItem.Caretaker.Email))
+                    .GroupBy(oi => oi.MenuItem!.CaretakerId)
+                    .ToList();
+
+                foreach (var caretakerGroup in caretakerGroups)
+                {
+                    var caretaker = caretakerGroup.First().MenuItem!.Caretaker!;
+
+                    if (string.IsNullOrWhiteSpace(caretaker.Email))
+                    {
+                        await _appLogService.LogAsync(
+                            eventType: "OrderEmailSkippedForCaterer",
+                            message: "Caterer email is missing, order email was not sent.",
+                            level: "Warning",
+                            userId: currentUser.Id,
+                            userEmail: currentUser.Email,
+                            details: $"OrderId: {savedOrder.Id} | CatererId: {caretaker.Id}");
+
+                        continue;
+                    }
+
+                    var relatedItems = caretakerGroup.ToList();
+                    var caretakerBody = BuildCaretakerOrderEmail(savedOrder, caretaker, relatedItems);
+
+                    try
+                    {
+                        await _emailService.SendAsync(
+                            caretaker.Email!,
                             $"Taste At Door - New Order #{savedOrder.Id}",
                             caretakerBody);
+
+                        await _appLogService.LogAsync(
+                            eventType: "OrderEmailSentToCaterer",
+                            message: "New order email sent to caterer.",
+                            userId: currentUser.Id,
+                            userEmail: currentUser.Email,
+                            details: $"OrderId: {savedOrder.Id} | Restaurant: {caretaker.FullName} | To: {caretaker.Email}");
+                    }
+                    catch (Exception ex)
+                    {
+                        await _appLogService.LogAsync(
+                            eventType: "OrderEmailFailedForCaterer",
+                            message: "New order email could not be sent to caterer.",
+                            level: "Error",
+                            userId: currentUser.Id,
+                            userEmail: currentUser.Email,
+                            details: $"OrderId: {savedOrder.Id} | Restaurant: {caretaker.FullName} | To: {caretaker.Email} | Error: {ex.Message}");
                     }
                 }
             }
@@ -255,78 +376,169 @@ namespace TasteAtDoor.Controllers
 
         private string BuildUserOrderEmail(Order order)
         {
+            static string H(string? value)
+            {
+                return System.Net.WebUtility.HtmlEncode(value ?? string.Empty);
+            }
+
             var sb = new StringBuilder();
 
-            sb.Append($"<p>Hello {(order.ApplicationUser?.FullName ?? "User")},</p>");
+            sb.Append($"<p>Hello <strong>{H(order.ApplicationUser?.FullName ?? "User")}</strong>,</p>");
             sb.Append($"<p>Your order <strong>#{order.Id}</strong> has been completed successfully.</p>");
-            sb.Append($"<p><strong>Order Date:</strong> {order.OrderDate}</p>");
-            sb.Append($"<p><strong>Total Price:</strong> {order.TotalPrice:0.00}</p>");
-            sb.Append("<h3>Order Items</h3>");
+
+            sb.Append("<h3>Order Summary</h3>");
             sb.Append("<ul>");
+            sb.Append($"<li><strong>Order ID:</strong> #{order.Id}</li>");
+            sb.Append($"<li><strong>Order Date:</strong> {order.OrderDate:dd.MM.yyyy HH:mm}</li>");
+            sb.Append($"<li><strong>Status:</strong> {H(order.Status)}</li>");
+            sb.Append($"<li><strong>Total Price:</strong> {order.TotalPrice:0.00}</li>");
+            sb.Append("</ul>");
+
+            sb.Append("<h3>Ordered Items</h3>");
+            sb.Append("<table style='border-collapse:collapse;width:100%;font-family:Arial,sans-serif;'>");
+            sb.Append("<thead>");
+            sb.Append("<tr>");
+            sb.Append("<th style='border:1px solid #ddd;padding:8px;text-align:left;'>Restaurant</th>");
+            sb.Append("<th style='border:1px solid #ddd;padding:8px;text-align:left;'>Menu Item</th>");
+            sb.Append("<th style='border:1px solid #ddd;padding:8px;text-align:left;'>Quantity</th>");
+            sb.Append("<th style='border:1px solid #ddd;padding:8px;text-align:left;'>Customizations</th>");
+            sb.Append("<th style='border:1px solid #ddd;padding:8px;text-align:left;'>Line Total</th>");
+            sb.Append("</tr>");
+            sb.Append("</thead>");
+            sb.Append("<tbody>");
 
             foreach (var item in order.OrderItems)
             {
-                sb.Append("<li>");
-                sb.Append($"{item.MenuItem?.Name ?? "Menu Item"} - Qty: {item.Quantity} - Total: {item.LineTotal:0.00}");
+                var restaurantName = item.MenuItem?.Caretaker?.FullName ?? "Restaurant";
+                var menuName = item.MenuItem?.Name ?? "Menu Item";
+
+                var customizationText = "None";
 
                 if (item.SelectedCustomizations.Any())
                 {
-                    sb.Append("<ul>");
-                    foreach (var customization in item.SelectedCustomizations)
-                    {
-                        sb.Append($"<li>{customization.GroupTitle}: {customization.OptionName}</li>");
-                    }
-                    sb.Append("</ul>");
+                    customizationText = string.Join("<br />",
+                        item.SelectedCustomizations.Select(c =>
+                            $"{H(c.GroupTitle)}: {H(c.OptionName)}" +
+                            (c.PriceChange != 0 ? $" ({c.PriceChange:0.00})" : "")));
                 }
 
-                sb.Append("</li>");
+                sb.Append("<tr>");
+                sb.Append($"<td style='border:1px solid #ddd;padding:8px;'>{H(restaurantName)}</td>");
+                sb.Append($"<td style='border:1px solid #ddd;padding:8px;'>{H(menuName)}</td>");
+                sb.Append($"<td style='border:1px solid #ddd;padding:8px;'>{item.Quantity}</td>");
+                sb.Append($"<td style='border:1px solid #ddd;padding:8px;'>{customizationText}</td>");
+                sb.Append($"<td style='border:1px solid #ddd;padding:8px;'>{item.LineTotal:0.00}</td>");
+                sb.Append("</tr>");
             }
 
-            sb.Append("</ul>");
-            sb.Append("<p>Thank you for using Taste At Door.</p>");
+            sb.Append("</tbody>");
+            sb.Append("</table>");
+
+            var restaurantNames = order.OrderItems
+                .Where(i => i.MenuItem?.Caretaker != null)
+                .Select(i => i.MenuItem!.Caretaker!.FullName)
+                .Distinct()
+                .ToList();
+
+            if (restaurantNames.Any())
+            {
+                sb.Append("<h3>Restaurant Information</h3>");
+                sb.Append("<ul>");
+
+                foreach (var restaurantName in restaurantNames)
+                {
+                    sb.Append($"<li>{H(restaurantName)}</li>");
+                }
+
+                sb.Append("</ul>");
+            }
+
+            sb.Append("<p>Thank you for using TasteAtDoor.</p>");
 
             return sb.ToString();
         }
 
-        private string BuildCaretakerOrderEmail(Order order, string caretakerEmail)
+        private string BuildCaretakerOrderEmail(
+    Order order,
+    ApplicationUser caretaker,
+    List<OrderItem> relatedItems)
         {
-            var relatedItems = order.OrderItems
-                .Where(oi => oi.MenuItem?.Caretaker?.Email == caretakerEmail)
-                .ToList();
-
-            if (!relatedItems.Any())
+            static string H(string? value)
             {
-                return string.Empty;
+                return System.Net.WebUtility.HtmlEncode(value ?? string.Empty);
             }
+
+            var restaurantTotal = relatedItems.Sum(i => i.LineTotal);
 
             var sb = new StringBuilder();
 
-            sb.Append("<p>Hello,</p>");
-            sb.Append($"<p>A new order <strong>#{order.Id}</strong> has been placed for your menu items.</p>");
-            sb.Append($"<p><strong>Customer:</strong> {(order.ApplicationUser?.FullName ?? "Customer")} ({order.ApplicationUser?.Email ?? "No email"})</p>");
-            sb.Append("<h3>Your Items in This Order</h3>");
+            sb.Append($"<p>Hello <strong>{H(caretaker.FullName)}</strong>,</p>");
+            sb.Append($"<p>A new order <strong>#{order.Id}</strong> has been placed for your restaurant.</p>");
+
+            sb.Append("<h3>Restaurant Information</h3>");
             sb.Append("<ul>");
+            sb.Append($"<li><strong>Restaurant:</strong> {H(caretaker.FullName)}</li>");
+            sb.Append($"<li><strong>Restaurant Email:</strong> {H(caretaker.Email)}</li>");
 
-            foreach (var item in relatedItems)
+            if (!string.IsNullOrWhiteSpace(caretaker.Address))
             {
-                sb.Append("<li>");
-                sb.Append($"{item.MenuItem?.Name ?? "Menu Item"} - Qty: {item.Quantity} - Line Total: {item.LineTotal:0.00}");
-
-                if (item.SelectedCustomizations.Any())
-                {
-                    sb.Append("<ul>");
-                    foreach (var customization in item.SelectedCustomizations)
-                    {
-                        sb.Append($"<li>{customization.GroupTitle}: {customization.OptionName}</li>");
-                    }
-                    sb.Append("</ul>");
-                }
-
-                sb.Append("</li>");
+                sb.Append($"<li><strong>Restaurant Address:</strong> {H(caretaker.Address)}</li>");
             }
 
             sb.Append("</ul>");
-            sb.Append("<p>Please review the order in the system.</p>");
+
+            sb.Append("<h3>Customer Information</h3>");
+            sb.Append("<ul>");
+            sb.Append($"<li><strong>Customer:</strong> {H(order.ApplicationUser?.FullName ?? "Customer")}</li>");
+            sb.Append($"<li><strong>Customer Email:</strong> {H(order.ApplicationUser?.Email ?? "No email")}</li>");
+            sb.Append("</ul>");
+
+            sb.Append("<h3>Order Summary</h3>");
+            sb.Append("<ul>");
+            sb.Append($"<li><strong>Order ID:</strong> #{order.Id}</li>");
+            sb.Append($"<li><strong>Order Date:</strong> {order.OrderDate:dd.MM.yyyy HH:mm}</li>");
+            sb.Append($"<li><strong>Status:</strong> {H(order.Status)}</li>");
+            sb.Append($"<li><strong>Your Restaurant Total:</strong> {restaurantTotal:0.00}</li>");
+            sb.Append("</ul>");
+
+            sb.Append("<h3>Your Items in This Order</h3>");
+            sb.Append("<table style='border-collapse:collapse;width:100%;font-family:Arial,sans-serif;'>");
+            sb.Append("<thead>");
+            sb.Append("<tr>");
+            sb.Append("<th style='border:1px solid #ddd;padding:8px;text-align:left;'>Menu Item</th>");
+            sb.Append("<th style='border:1px solid #ddd;padding:8px;text-align:left;'>Quantity</th>");
+            sb.Append("<th style='border:1px solid #ddd;padding:8px;text-align:left;'>Customizations</th>");
+            sb.Append("<th style='border:1px solid #ddd;padding:8px;text-align:left;'>Line Total</th>");
+            sb.Append("</tr>");
+            sb.Append("</thead>");
+            sb.Append("<tbody>");
+
+            foreach (var item in relatedItems)
+            {
+                var menuName = item.MenuItem?.Name ?? "Menu Item";
+
+                var customizationText = "None";
+
+                if (item.SelectedCustomizations.Any())
+                {
+                    customizationText = string.Join("<br />",
+                        item.SelectedCustomizations.Select(c =>
+                            $"{H(c.GroupTitle)}: {H(c.OptionName)}" +
+                            (c.PriceChange != 0 ? $" ({c.PriceChange:0.00})" : "")));
+                }
+
+                sb.Append("<tr>");
+                sb.Append($"<td style='border:1px solid #ddd;padding:8px;'>{H(menuName)}</td>");
+                sb.Append($"<td style='border:1px solid #ddd;padding:8px;'>{item.Quantity}</td>");
+                sb.Append($"<td style='border:1px solid #ddd;padding:8px;'>{customizationText}</td>");
+                sb.Append($"<td style='border:1px solid #ddd;padding:8px;'>{item.LineTotal:0.00}</td>");
+                sb.Append("</tr>");
+            }
+
+            sb.Append("</tbody>");
+            sb.Append("</table>");
+
+            sb.Append("<p>Please login to TasteAtDoor to review the order and communicate with the customer.</p>");
 
             return sb.ToString();
         }

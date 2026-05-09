@@ -1,0 +1,139 @@
+@model TasteAtDoor.Models.ViewModels.ReviewListPageViewModel
+
+@{
+    ViewData["Title"] = "Customer Reviews";
+}
+
+<div class="dashboard-shell">
+    <div class="page-header-row">
+        <div>
+            <h1 class="page-title">Customer Reviews</h1>
+            <p class="page-subtitle">See menu ratings, restaurant ratings, and comments from your completed orders.</p>
+        </div>
+
+        <a asp-controller="Caretaker" asp-action="Dashboard" class="btn-secondary-main">
+            Back to Dashboard
+        </a>
+    </div>
+
+    <div class="table-card">
+        <form method="get" asp-controller="Caretaker" asp-action="Reviews" class="row g-3">
+            <div class="col-md-5">
+                <label class="form-label">Search</label>
+                <input name="search"
+                       value="@Model.Search"
+                       class="form-control"
+                       placeholder="Order, customer, menu, comment..." />
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label">Menu Rating</label>
+                <input name="menuRating"
+                       value="@Model.MenuRating"
+                       type="number"
+                       min="1"
+                       max="5"
+                       class="form-control" />
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label">Caterer Rating</label>
+                <input name="catererRating"
+                       value="@Model.CatererRating"
+                       type="number"
+                       min="1"
+                       max="5"
+                       class="form-control" />
+            </div>
+
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn-main w-100">Filter</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-card">
+        @if (!Model.Reviews.Any())
+        {
+            <p>No customer reviews yet.</p>
+        }
+        else
+        {
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th>Order</th>
+                        <th>Customer</th>
+                        <th>Menu Item</th>
+                        <th>Menu Rating</th>
+                        <th>Caterer Rating</th>
+                        <th>Comment</th>
+                        <th>Line Total</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach (var review in Model.Reviews)
+                    {
+                        <tr>
+                            <td>#@review.OrderId</td>
+
+                            <td>
+                                @review.CustomerName
+                                <br />
+                                <small>@(review.CustomerEmail ?? "-")</small>
+                            </td>
+
+                            <td>@review.MenuItemName</td>
+
+                            <td>@review.MenuRating / 5</td>
+
+                            <td>@review.CatererRating / 5</td>
+
+                            <td>
+                                @(string.IsNullOrWhiteSpace(review.Comment) ? "-" : review.Comment)
+                            </td>
+
+                            <td>@review.LineTotal.ToString("0.00")</td>
+
+                            <td>@review.CreatedAt</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+        <div class="d-flex justify-content-between align-items-center mt-3">
+            <div>Page @Model.Page / @Model.TotalPages</div>
+
+            <div class="d-flex gap-2">
+                @if (Model.Page > 1)
+                {
+                    <a class="btn-secondary-main"
+                       asp-controller="Caretaker"
+                       asp-action="Reviews"
+                       asp-route-search="@Model.Search"
+                       asp-route-menuRating="@Model.MenuRating"
+                       asp-route-catererRating="@Model.CatererRating"
+                       asp-route-page="@(Model.Page - 1)">
+                        Previous
+                    </a>
+                }
+
+                @if (Model.Page < Model.TotalPages)
+                {
+                    <a class="btn-secondary-main"
+                       asp-controller="Caretaker"
+                       asp-action="Reviews"
+                       asp-route-search="@Model.Search"
+                       asp-route-menuRating="@Model.MenuRating"
+                       asp-route-catererRating="@Model.CatererRating"
+                       asp-route-page="@(Model.Page + 1)">
+                        Next
+                    </a>
+                }
+            </div>
+        </div>
+    </div>
+</div>

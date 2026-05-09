@@ -32,8 +32,13 @@
 
             <div class="form-group mb-3">
                 <label asp-for="LocationText"></label>
-                <input asp-for="LocationText" class="form-control" placeholder="Example: Kızılay, Ankara" />
+                <input asp-for="LocationText"
+                       class="form-control"
+                       placeholder="Optional. Leave empty to use your saved restaurant location." />
                 <span asp-validation-for="LocationText" class="text-danger"></span>
+                <small class="text-muted">
+                    If this field is empty, the saved restaurant location will be used automatically.
+                </small>
             </div>
 
             <div class="form-group mb-3">

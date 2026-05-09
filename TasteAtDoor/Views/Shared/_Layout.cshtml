@@ -1,114 +1,267 @@
-﻿<!DOCTYPE html>
+﻿@using Microsoft.AspNetCore.Identity
+@using TasteAtDoor.Models
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+
+@{
+    ApplicationUser? currentUser = null;
+    string? accountImageSource = null;
+    string accountInitial = "A";
+    string accountName = "Account";
+    string accountRoleLabel = "";
+
+    if (SignInManager.IsSignedIn(User))
+    {
+        currentUser = await UserManager.GetUserAsync(User);
+
+        if (currentUser is not null)
+        {
+            accountName = string.IsNullOrWhiteSpace(currentUser.FullName)
+                ? currentUser.Email ?? "Account"
+                : currentUser.FullName;
+
+            accountInitial = string.IsNullOrWhiteSpace(accountName)
+                ? "A"
+                : accountName.Substring(0, 1).ToUpper();
+
+            if (currentUser.ProfileImageData is not null &&
+                currentUser.ProfileImageData.Length > 0 &&
+                !string.IsNullOrWhiteSpace(currentUser.ProfileImageContentType))
+            {
+                accountImageSource =
+                    $"data:{currentUser.ProfileImageContentType};base64,{Convert.ToBase64String(currentUser.ProfileImageData)}";
+            }
+
+            if (User.IsInRole("Caretaker"))
+            {
+                accountRoleLabel = "Restaurant";
+            }
+            else if (User.IsInRole("Admin"))
+            {
+                accountRoleLabel = "Admin";
+            }
+            else
+            {
+                accountRoleLabel = "Customer";
+            }
+        }
+    }
+
+    string profileController = User.IsInRole("Caretaker") ? "Caretaker" : "User";
+}
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Taste At Door</title>
+
+    <title>@ViewData["Title"] - TasteAtDoor</title>
+
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
-<body>
-    <header>
-        <nav class="navbar custom-navbar">
-            <div class="container-fluid navbar-inner">
-                <a class="navbar-brand brand-text" asp-area="" asp-controller="Home" asp-action="Index">
-                    <img src="~/images/logo.png" alt="Taste At Door Logo" class="site-logo" />
-                    <span>Taste At Door</span>
+<body class="modern-app-body">
+    @if (SignInManager.IsSignedIn(User))
+    {
+        <div class="modern-app-shell">
+            <aside class="modern-sidebar">
+                <a class="modern-sidebar-brand" asp-controller="Home" asp-action="Index">
+                    <span class="modern-logo-box">
+                        <img src="~/images/app-logo.png"
+                             alt="TasteAtDoor"
+                             class="modern-logo-img"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+
+                        <span class="modern-logo-fallback" style="display:none;">
+                            T
+                        </span>
+                    </span>
+
+                    <span class="modern-brand-text">
+                        <strong>TasteAtDoor</strong>
+                        <small>Fresh meals nearby</small>
+                    </span>
                 </a>
 
-                <div class="top-links">
-                    <a asp-controller="Home" asp-action="Index">Home</a>
-
-                    @if (User.Identity?.IsAuthenticated ?? false)
+                <nav class="modern-sidebar-nav">
+                    @if (User.IsInRole("Admin"))
                     {
-                        @if (User.IsInRole("Caretaker"))
-                        {
-                            <a asp-controller="Caretaker" asp-action="Dashboard">Dashboard</a>
-                            <a asp-controller="Caretaker" asp-action="Index">My Menus</a>
-                            <a asp-controller="User" asp-action="Index">Browse Menus</a>
-                        }
+                        <a asp-controller="Admin" asp-action="Dashboard" class="modern-sidebar-link">
+                            <span class="modern-sidebar-icon">📊</span>
+                            <span>Dashboard</span>
+                        </a>
 
-                        @if (User.IsInRole("User"))
-                        {
-                            <a asp-controller="User" asp-action="Dashboard">Dashboard</a>
-                            <a asp-controller="User" asp-action="Index">Browse Menus</a>
-                            <a asp-controller="Cart" asp-action="Index">Cart</a>
-                        }
+                        <a asp-controller="Admin" asp-action="Users" class="modern-sidebar-link">
+                            <span class="modern-sidebar-icon">👥</span>
+                            <span>Users</span>
+                        </a>
 
-                        @if (User.IsInRole("Admin"))
-                        {
-                            <a asp-controller="Admin" asp-action="Index">Dashboard</a>
-                            <a asp-controller="User" asp-action="Index">Browse Menus</a>
-                        }
+                        <a asp-controller="Admin" asp-action="Orders" class="modern-sidebar-link">
+                            <span class="modern-sidebar-icon">📦</span>
+                            <span>Orders</span>
+                        </a>
 
-                        <a asp-controller="Account" asp-action="Index">My Account</a>
+                        <a asp-controller="Admin" asp-action="Ratings" class="modern-sidebar-link">
+                            <span class="modern-sidebar-icon">⭐</span>
+                            <span>Ratings</span>
+                        </a>
 
-                        <form asp-controller="Account" asp-action="Logout" method="post" class="auth-inline-form">
-                            <button type="submit" class="auth-link-button">Logout</button>
-                        </form>
+                        <a asp-controller="Admin" asp-action="Logs" class="modern-sidebar-link">
+                            <span class="modern-sidebar-icon">🧾</span>
+                            <span>Logs</span>
+                        </a>
+                    }
+                    else if (User.IsInRole("Caretaker"))
+                    {
+                        <a asp-controller="Caretaker" asp-action="Dashboard" class="modern-sidebar-link">
+                            <span class="modern-sidebar-icon">📊</span>
+                            <span>Dashboard</span>
+                        </a>
+
+                        <a asp-controller="Caretaker" asp-action="Index" class="modern-sidebar-link">
+                            <span class="modern-sidebar-icon">🍽️</span>
+                            <span>My Menus</span>
+                        </a>
+
+                        <a asp-controller="Caretaker" asp-action="Create" class="modern-sidebar-link">
+                            <span class="modern-sidebar-icon">➕</span>
+                            <span>Add Menu</span>
+                        </a>
+
+                        <a asp-controller="Caretaker" asp-action="RestaurantLocation" class="modern-sidebar-link">
+                            <span class="modern-sidebar-icon">📍</span>
+                            <span>Restaurant Location</span>
+                        </a>
+
+                        <a asp-controller="Caretaker" asp-action="Profile" class="modern-sidebar-link">
+                            <span class="modern-sidebar-icon">🏪</span>
+                            <span>Restaurant Profile</span>
+                        </a>
+
+                        <a asp-controller="Caretaker" asp-action="Reviews" class="modern-sidebar-link">
+                            <span class="modern-sidebar-icon">⭐</span>
+                            <span>Reviews</span>
+                        </a>
                     }
                     else
                     {
-                        <a asp-controller="Account" asp-action="Register">Register</a>
-                        <a asp-controller="Account" asp-action="Login">Login</a>
+                        <a asp-controller="User" asp-action="Index" class="modern-sidebar-link">
+                            <span class="modern-sidebar-icon">🏪</span>
+                            <span>Restaurants</span>
+                        </a>
+
+                        <a asp-controller="User" asp-action="MyLocation" class="modern-sidebar-link">
+                            <span class="modern-sidebar-icon">📍</span>
+                            <span>My Location</span>
+                        </a>
+
+                        <a asp-controller="User" asp-action="Profile" class="modern-sidebar-link">
+                            <span class="modern-sidebar-icon">👤</span>
+                            <span>My Profile</span>
+                        </a>
+
+                        <a asp-controller="Cart" asp-action="Index" class="modern-sidebar-link">
+                            <span class="modern-sidebar-icon">🛒</span>
+                            <span>Cart</span>
+                        </a>
+
+                        <a asp-controller="User" asp-action="Orders" class="modern-sidebar-link">
+                            <span class="modern-sidebar-icon">📦</span>
+                            <span>My Orders</span>
+                        </a>
+
+                        <a asp-controller="User" asp-action="MyReviews" class="modern-sidebar-link">
+                            <span class="modern-sidebar-icon">⭐</span>
+                            <span>My Reviews</span>
+</a>
                     }
+                </nav>
+            </aside>
+
+            <main class="modern-main">
+                <header class="modern-topbar">
+                    <div class="modern-topbar-title">
+                        <span>@ViewData["Title"]</span>
+                        <small>TasteAtDoor</small>
+                    </div>
+
+                    <div class="modern-topbar-actions">
+                        <a asp-controller="@profileController"
+                           asp-action="Profile"
+                           class="modern-account-pill">
+                            <span class="modern-account-avatar">
+                                @if (!string.IsNullOrWhiteSpace(accountImageSource))
+                                {
+                                    <img src="@accountImageSource" alt="@accountName" />
+                                }
+                                else
+                                {
+                                    <span>@accountInitial</span>
+                                }
+                            </span>
+
+                            <span class="modern-account-text">
+                                <strong>@accountName</strong>
+                                <small>@accountRoleLabel</small>
+                            </span>
+                        </a>
+
+                        <form asp-controller="Account" asp-action="Logout" method="post" class="modern-logout-form">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="modern-logout-button">
+                                Logout
+                            </button>
+                        </form>
+                    </div>
+                </header>
+
+                <section class="modern-content">
+                    @RenderBody()
+                </section>
+            </main>
+        </div>
+    }
+    else
+    {
+        <div class="modern-guest-shell">
+            <header class="modern-guest-topbar">
+                <a class="modern-guest-brand" asp-controller="Home" asp-action="Index">
+                    <span class="modern-logo-box">
+                        <img src="~/images/app-logo.png"
+                             alt="TasteAtDoor"
+                             class="modern-logo-img"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+
+                        <span class="modern-logo-fallback" style="display:none;">
+                            T
+                        </span>
+                    </span>
+
+                    <strong>TasteAtDoor</strong>
+                </a>
+
+                <div class="modern-guest-actions">
+                    <a asp-controller="Account" asp-action="Login" class="btn-secondary-main">
+                        Login
+                    </a>
+
+                    <a asp-controller="Account" asp-action="Register" class="btn-main">
+                        Register
+                    </a>
                 </div>
-            </div>
-        </nav>
-    </header>
+            </header>
 
-    <div class="page-wrapper">
-        <aside class="sidebar">
-            <h3>Navigation</h3>
-            <ul>
-                <li><a asp-controller="Home" asp-action="Index">Dashboard</a></li>
-
-                @if (User.Identity?.IsAuthenticated ?? false)
-                {
-                    @if (User.IsInRole("Caretaker"))
-                    {
-                        <li><a asp-controller="Caretaker" asp-action="Dashboard">Caretaker Dashboard</a></li>
-                        <li><a asp-controller="Caretaker" asp-action="Index">My Menu Items</a></li>
-                        <li><a asp-controller="Caretaker" asp-action="Create">Create Menu Item</a></li>
-                        <li><a asp-controller="User" asp-action="Index">Browse Menus</a></li>
-                    }
-
-                    @if (User.IsInRole("User"))
-                    {
-                        <li><a asp-controller="User" asp-action="Dashboard">User Dashboard</a></li>
-                        <li><a asp-controller="User" asp-action="Orders">Order History</a></li>
-                        <li><a asp-controller="User" asp-action="Index">Available Menus</a></li>
-                        <li><a asp-controller="Cart" asp-action="Index">My Cart</a></li>
-                    }
-
-                    @if (User.IsInRole("Admin"))
-                    {
-                        <li><a asp-controller="Admin" asp-action="Index">Admin Dashboard</a></li>
-                        <li><a asp-controller="User" asp-action="Index">Browse Menus</a></li>
-                    }
-
-                    <li><a asp-controller="Account" asp-action="Index">My Account</a></li>
-                }
-                else
-                {
-                    <li><a asp-controller="Account" asp-action="Login">Login</a></li>
-                    <li><a asp-controller="Account" asp-action="Register">Register</a></li>
-                }
-            </ul>
-        </aside>
-
-        <main class="main-content">
-            @RenderBody()
-        </main>
-    </div>
-
-    <footer class="custom-footer">
-        <p>© 2026 Taste At Door - All rights reserved.</p>
-    </footer>
+            <main class="modern-guest-content">
+                @RenderBody()
+            </main>
+        </div>
+    }
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

@@ -8,7 +8,7 @@
     <div class="page-header-row">
         <div>
             <h1 class="page-title">My Menu Items</h1>
-            <p class="page-subtitle">Create, edit, customize, and manage your menu items.</p>
+            <p class="page-subtitle">Create, edit, customize, manage, and inspect reviews for your menu items.</p>
         </div>
 
         <a asp-controller="Caretaker" asp-action="Create" class="btn-main">Create Menu Item</a>
@@ -23,7 +23,10 @@
         <form method="get" asp-controller="Caretaker" asp-action="Index" class="row g-3">
             <div class="col-md-9">
                 <label class="form-label">Search</label>
-                <input name="search" value="@Model.Search" class="form-control" placeholder="Menu name, description, or location" />
+                <input name="search"
+                       value="@Model.Search"
+                       class="form-control"
+                       placeholder="Menu name, description, or location" />
             </div>
 
             <div class="col-md-3 d-flex align-items-end">
@@ -62,6 +65,13 @@
                     </div>
 
                     <div class="hero-buttons">
+                        <a asp-controller="User"
+                           asp-action="MenuDetails"
+                           asp-route-id="@item.Id"
+                           class="btn-secondary-main">
+                            View Public Page
+                        </a>
+
                         <a asp-controller="Caretaker"
                            asp-action="Edit"
                            asp-route-id="@item.Id"
@@ -80,7 +90,10 @@
                               asp-action="Delete"
                               asp-route-id="@item.Id"
                               method="post">
-                            <button type="submit" class="btn-secondary-main">Delete</button>
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn-secondary-main">
+                                Delete
+                            </button>
                         </form>
                     </div>
                 </div>

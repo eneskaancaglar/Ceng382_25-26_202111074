@@ -206,6 +206,14 @@ namespace TasteAtDoor.Migrations
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("int");
 
+                    b.Property<string>("Address")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("Bio")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
@@ -222,11 +230,17 @@ namespace TasteAtDoor.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<double?>("Latitude")
+                        .HasColumnType("float");
+
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("bit");
 
                     b.Property<DateTimeOffset?>("LockoutEnd")
                         .HasColumnType("datetimeoffset");
+
+                    b.Property<double?>("Longitude")
+                        .HasColumnType("float");
 
                     b.Property<string>("NormalizedEmail")
                         .HasMaxLength(256)
@@ -244,6 +258,17 @@ namespace TasteAtDoor.Migrations
 
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
+
+                    b.Property<string>("ProfileImageContentType")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<byte[]>("ProfileImageData")
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<string>("ProfileImageFileName")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
 
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
@@ -277,18 +302,25 @@ namespace TasteAtDoor.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Address")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ApplicationUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("BusinessName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("PhoneNumber")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<double?>("Latitude")
+                        .HasColumnType("float");
+
+                    b.Property<double?>("Longitude")
+                        .HasColumnType("float");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ApplicationUserId");
 
                     b.ToTable("Caterers");
                 });
@@ -372,6 +404,9 @@ namespace TasteAtDoor.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<int?>("CatererId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasMaxLength(1000)
@@ -389,10 +424,16 @@ namespace TasteAtDoor.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<double?>("Latitude")
+                        .HasColumnType("float");
+
                     b.Property<string>("LocationText")
                         .IsRequired()
                         .HasMaxLength(250)
                         .HasColumnType("nvarchar(250)");
+
+                    b.Property<double?>("Longitude")
+                        .HasColumnType("float");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -406,6 +447,8 @@ namespace TasteAtDoor.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CaretakerId");
+
+                    b.HasIndex("CatererId");
 
                     b.ToTable("MenuItems");
                 });
@@ -438,6 +481,43 @@ namespace TasteAtDoor.Migrations
                     b.HasIndex("ApplicationUserId");
 
                     b.ToTable("Orders");
+                });
+
+            modelBuilder.Entity("TasteAtDoor.Models.OrderChatMessage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SenderRole")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("SenderUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("SentAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SenderUserId");
+
+                    b.HasIndex("OrderId", "SentAt");
+
+                    b.ToTable("OrderChatMessages");
                 });
 
             modelBuilder.Entity("TasteAtDoor.Models.OrderItem", b =>
@@ -619,6 +699,17 @@ namespace TasteAtDoor.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("TasteAtDoor.Models.Caterer", b =>
+                {
+                    b.HasOne("TasteAtDoor.Models.ApplicationUser", "ApplicationUser")
+                        .WithMany()
+                        .HasForeignKey("ApplicationUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ApplicationUser");
+                });
+
             modelBuilder.Entity("TasteAtDoor.Models.CustomizationGroup", b =>
                 {
                     b.HasOne("TasteAtDoor.Models.MenuItem", "MenuItem")
@@ -649,6 +740,10 @@ namespace TasteAtDoor.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("TasteAtDoor.Models.Caterer", null)
+                        .WithMany("MenuItems")
+                        .HasForeignKey("CatererId");
+
                     b.Navigation("Caretaker");
                 });
 
@@ -661,6 +756,25 @@ namespace TasteAtDoor.Migrations
                         .IsRequired();
 
                     b.Navigation("ApplicationUser");
+                });
+
+            modelBuilder.Entity("TasteAtDoor.Models.OrderChatMessage", b =>
+                {
+                    b.HasOne("TasteAtDoor.Models.Order", "Order")
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TasteAtDoor.Models.ApplicationUser", "SenderUser")
+                        .WithMany()
+                        .HasForeignKey("SenderUserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+
+                    b.Navigation("SenderUser");
                 });
 
             modelBuilder.Entity("TasteAtDoor.Models.OrderItem", b =>
@@ -737,6 +851,11 @@ namespace TasteAtDoor.Migrations
                 });
 
             modelBuilder.Entity("TasteAtDoor.Models.ApplicationUser", b =>
+                {
+                    b.Navigation("MenuItems");
+                });
+
+            modelBuilder.Entity("TasteAtDoor.Models.Caterer", b =>
                 {
                     b.Navigation("MenuItems");
                 });
