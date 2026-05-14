@@ -4,13 +4,24 @@
 @inject UserManager<ApplicationUser> UserManager
 
 @{
+    var controllerName = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    var actionName = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+
+    bool isPureAuthPage =
+        controllerName.Equals("Account", StringComparison.OrdinalIgnoreCase) &&
+        (
+            actionName.Equals("Login", StringComparison.OrdinalIgnoreCase) ||
+            actionName.Equals("Register", StringComparison.OrdinalIgnoreCase) ||
+            actionName.Equals("AccessDenied", StringComparison.OrdinalIgnoreCase)
+        );
+
     ApplicationUser? currentUser = null;
     string? accountImageSource = null;
     string accountInitial = "A";
     string accountName = "Account";
     string accountRoleLabel = "";
 
-    if (SignInManager.IsSignedIn(User))
+    if (!isPureAuthPage && SignInManager.IsSignedIn(User))
     {
         currentUser = await UserManager.GetUserAsync(User);
 
@@ -61,207 +72,198 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
-<body class="modern-app-body">
-    @if (SignInManager.IsSignedIn(User))
-    {
-        <div class="modern-app-shell">
-            <aside class="modern-sidebar">
-                <a class="modern-sidebar-brand" asp-controller="Home" asp-action="Index">
-                    <span class="modern-logo-box">
-                        <img src="~/images/app-logo.png"
-                             alt="TasteAtDoor"
-                             class="modern-logo-img"
-                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
 
-                        <span class="modern-logo-fallback" style="display:none;">
-                            T
+@if (isPureAuthPage)
+{
+    <body class="modern-app-body">
+        <main class="modern-auth-only-content">
+            @RenderBody()
+        </main>
+
+        <script src="~/lib/jquery/dist/jquery.min.js"></script>
+        <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="~/js/site.js" asp-append-version="true"></script>
+
+        @await RenderSectionAsync("Scripts", required: false)
+    </body>
+}
+else
+{
+    <body class="modern-app-body">
+        @if (SignInManager.IsSignedIn(User))
+        {
+            <div class="modern-app-shell">
+                <aside class="modern-sidebar">
+                    <a class="modern-sidebar-brand" asp-controller="Home" asp-action="Index">
+                        <span class="modern-logo-box">
+                            <img src="~/images/app-logo.png"
+                                 alt="TasteAtDoor"
+                                 class="modern-logo-img"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+
+                            <span class="modern-logo-fallback" style="display:none;">
+                                T
+                            </span>
                         </span>
-                    </span>
 
-                    <span class="modern-brand-text">
-                        <strong>TasteAtDoor</strong>
-                        <small>Event catering nearby</small>
-                    </span>
-                </a>
+                        <span class="modern-brand-text">
+                            <strong>TasteAtDoor</strong>
+                            <small>Event catering nearby</small>
+                        </span>
+                    </a>
 
-                <nav class="modern-sidebar-nav">
-                    @if (User.IsInRole("Admin"))
-                    {
-                        <a asp-controller="Admin" asp-action="Dashboard" class="modern-sidebar-link">
-                            <span class="modern-sidebar-icon">📊</span>
-                            <span>Dashboard</span>
-                        </a>
+                    <nav class="modern-sidebar-nav">
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <a asp-controller="Admin" asp-action="Dashboard" class="modern-sidebar-link">
+                                <span class="modern-sidebar-icon">📊</span>
+                                <span>Dashboard</span>
+                            </a>
 
-                        <a asp-controller="Admin" asp-action="Users" class="modern-sidebar-link">
-                            <span class="modern-sidebar-icon">👥</span>
-                            <span>Users</span>
-                        </a>
+                            <a asp-controller="Admin" asp-action="Users" class="modern-sidebar-link">
+                                <span class="modern-sidebar-icon">👥</span>
+                                <span>Users</span>
+                            </a>
 
-                        <a asp-controller="Admin" asp-action="Orders" class="modern-sidebar-link">
-                            <span class="modern-sidebar-icon">📦</span>
-                            <span>Orders</span>
-                        </a>
+                            <a asp-controller="Admin" asp-action="Orders" class="modern-sidebar-link">
+                                <span class="modern-sidebar-icon">📦</span>
+                                <span>Requests</span>
+                            </a>
 
-                        <a asp-controller="Admin" asp-action="Ratings" class="modern-sidebar-link">
-                            <span class="modern-sidebar-icon">⭐</span>
-                            <span>Ratings</span>
-                        </a>
+                            <a asp-controller="Admin" asp-action="Ratings" class="modern-sidebar-link">
+                                <span class="modern-sidebar-icon">⭐</span>
+                                <span>Ratings</span>
+                            </a>
 
-                        <a asp-controller="Admin" asp-action="Logs" class="modern-sidebar-link">
-                            <span class="modern-sidebar-icon">🧾</span>
-                            <span>Logs</span>
-                        </a>
-                    }
-                    else if (User.IsInRole("Caretaker"))
-                    {
-                        <a asp-controller="Caretaker" asp-action="Dashboard" class="modern-sidebar-link">
-                            <span class="modern-sidebar-icon">📊</span>
-                            <span>Dashboard</span>
-                        </a>
+                            <a asp-controller="Admin" asp-action="Logs" class="modern-sidebar-link">
+                                <span class="modern-sidebar-icon">🧾</span>
+                                <span>Logs</span>
+                            </a>
+                        }
+                        else if (User.IsInRole("Caretaker"))
+                        {
+                            <a asp-controller="Caretaker" asp-action="Dashboard" class="modern-sidebar-link">
+                                <span class="modern-sidebar-icon">📊</span>
+                                <span>Dashboard</span>
+                            </a>
 
-                        <a asp-controller="Caretaker" asp-action="Index" class="modern-sidebar-link">
-                            <span class="modern-sidebar-icon">🍱</span>
-                            <span>My Catering Packages</span>
-                        </a>
+                            <a asp-controller="Caretaker" asp-action="Index" class="modern-sidebar-link">
+                                <span class="modern-sidebar-icon">🍱</span>
+                                <span>My Catering Packages</span>
+                            </a>
 
-                        <a asp-controller="Caretaker" asp-action="Create" class="modern-sidebar-link">
-                            <span class="modern-sidebar-icon">➕</span>
-                            <span>Add Package</span>
-                        </a>
+                            <a asp-controller="Caretaker" asp-action="Create" class="modern-sidebar-link">
+                                <span class="modern-sidebar-icon">➕</span>
+                                <span>Add Package</span>
+                            </a>
 
-                        <a asp-controller="Caretaker" asp-action="RestaurantLocation" class="modern-sidebar-link">
-                            <span class="modern-sidebar-icon">📍</span>
-                            <span>Caterer Location</span>
-                        </a>
+                            <a asp-controller="Caretaker" asp-action="RestaurantLocation" class="modern-sidebar-link">
+                                <span class="modern-sidebar-icon">📍</span>
+                                <span>Caterer Location</span>
+                            </a>
 
-                        <a asp-controller="Caretaker" asp-action="Profile" class="modern-sidebar-link">
-                            <span class="modern-sidebar-icon">🏢</span>
-                            <span>Caterer Profile</span>
-                        </a>
+                            <a asp-controller="Caretaker" asp-action="Profile" class="modern-sidebar-link">
+                                <span class="modern-sidebar-icon">🏢</span>
+                                <span>Caterer Profile</span>
+                            </a>
 
-                        <a asp-controller="Caretaker" asp-action="Reviews" class="modern-sidebar-link">
-                            <span class="modern-sidebar-icon">⭐</span>
-                            <span>Reviews</span>
-                        </a>
-                    }
-                    else
-                    {
-                        <a asp-controller="User" asp-action="Index" class="modern-sidebar-link">
-                            <span class="modern-sidebar-icon">🏢</span>
-                            <span>Caterers</span>
-                        </a>
+                            <a asp-controller="Caretaker" asp-action="Reviews" class="modern-sidebar-link">
+                                <span class="modern-sidebar-icon">⭐</span>
+                                <span>Reviews</span>
+                            </a>
+                        }
+                        else
+                        {
+                            <a asp-controller="User" asp-action="Index" class="modern-sidebar-link">
+                                <span class="modern-sidebar-icon">🏢</span>
+                                <span>Caterers</span>
+                            </a>
 
-                        <a asp-controller="User" asp-action="MyLocation" class="modern-sidebar-link">
-                            <span class="modern-sidebar-icon">📍</span>
-                            <span>My Location</span>
-                        </a>
+                            <a asp-controller="User" asp-action="MyLocation" class="modern-sidebar-link">
+                                <span class="modern-sidebar-icon">📍</span>
+                                <span>My Location</span>
+                            </a>
 
-                        <a asp-controller="User" asp-action="Profile" class="modern-sidebar-link">
-                            <span class="modern-sidebar-icon">👤</span>
-                            <span>My Profile</span>
-                        </a>
+                            <a asp-controller="User" asp-action="Profile" class="modern-sidebar-link">
+                                <span class="modern-sidebar-icon">👤</span>
+                                <span>My Profile</span>
+                            </a>
 
-                        <a asp-controller="Cart" asp-action="Index" class="modern-sidebar-link">
-                            <span class="modern-sidebar-icon">🛒</span>
-                            <span>Package Cart</span>
-                        </a>
+                            <a asp-controller="Cart" asp-action="Index" class="modern-sidebar-link">
+                                <span class="modern-sidebar-icon">🛒</span>
+                                <span>Package Cart</span>
+                            </a>
 
-                        <a asp-controller="User" asp-action="Orders" class="modern-sidebar-link">
-                            <span class="modern-sidebar-icon">📦</span>
-                            <span>My Catering Orders</span>
-                        </a>
+                            <a asp-controller="User" asp-action="Orders" class="modern-sidebar-link">
+                                <span class="modern-sidebar-icon">📦</span>
+                                <span>My Catering Orders</span>
+                            </a>
 
-                        <a asp-controller="User" asp-action="MyReviews" class="modern-sidebar-link">
-                            <span class="modern-sidebar-icon">⭐</span>
-                            <span>My Reviews</span>
-                        </a>
-                    }
-                </nav>
-            </aside>
+                            <a asp-controller="User" asp-action="MyReviews" class="modern-sidebar-link">
+                                <span class="modern-sidebar-icon">⭐</span>
+                                <span>My Reviews</span>
+                            </a>
+                        }
+                    </nav>
+                </aside>
 
-            <main class="modern-main">
-                <header class="modern-topbar">
-                    <div class="modern-topbar-title">
-                        <span>@ViewData["Title"]</span>
-                        <small>TasteAtDoor Catering</small>
-                    </div>
+                <main class="modern-main">
+                    <header class="modern-topbar">
+                        <div class="modern-topbar-title">
+                            <span>@ViewData["Title"]</span>
+                            <small>TasteAtDoor Catering</small>
+                        </div>
 
-                    <div class="modern-topbar-actions">
-                        <a asp-controller="@profileController"
-                           asp-action="Profile"
-                           class="modern-account-pill">
-                            <span class="modern-account-avatar">
-                                @if (!string.IsNullOrWhiteSpace(accountImageSource))
-                                {
-                                    <img src="@accountImageSource" alt="@accountName" />
-                                }
-                                else
-                                {
-                                    <span>@accountInitial</span>
-                                }
-                            </span>
+                        <div class="modern-topbar-actions">
+                            <a asp-controller="@profileController"
+                               asp-action="Profile"
+                               class="modern-account-pill">
+                                <span class="modern-account-avatar">
+                                    @if (!string.IsNullOrWhiteSpace(accountImageSource))
+                                    {
+                                        <img src="@accountImageSource" alt="@accountName" />
+                                    }
+                                    else
+                                    {
+                                        <span>@accountInitial</span>
+                                    }
+                                </span>
 
-                            <span class="modern-account-text">
-                                <strong>@accountName</strong>
-                                <small>@accountRoleLabel</small>
-                            </span>
-                        </a>
+                                <span class="modern-account-text">
+                                    <strong>@accountName</strong>
+                                    <small>@accountRoleLabel</small>
+                                </span>
+                            </a>
 
-                        <form asp-controller="Account" asp-action="Logout" method="post" class="modern-logout-form">
-                            @Html.AntiForgeryToken()
-                            <button type="submit" class="modern-logout-button">
-                                Logout
-                            </button>
-                        </form>
-                    </div>
-                </header>
+                            <form asp-controller="Account" asp-action="Logout" method="post" class="modern-logout-form">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="modern-logout-button">
+                                    Logout
+                                </button>
+                            </form>
+                        </div>
+                    </header>
 
-                <section class="modern-content">
+                    <section class="modern-content">
+                        @RenderBody()
+                    </section>
+                </main>
+            </div>
+        }
+        else
+        {
+            <div class="modern-guest-shell">
+                <main class="modern-guest-content">
                     @RenderBody()
-                </section>
-            </main>
-        </div>
-    }
-    else
-    {
-        <div class="modern-guest-shell">
-            <header class="modern-guest-topbar">
-                <a class="modern-guest-brand" asp-controller="Home" asp-action="Index">
-                    <span class="modern-logo-box">
-                        <img src="~/images/app-logo.png"
-                             alt="TasteAtDoor"
-                             class="modern-logo-img"
-                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                </main>
+            </div>
+        }
 
-                        <span class="modern-logo-fallback" style="display:none;">
-                            T
-                        </span>
-                    </span>
+        <script src="~/lib/jquery/dist/jquery.min.js"></script>
+        <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="~/js/site.js" asp-append-version="true"></script>
 
-                    <strong>TasteAtDoor</strong>
-                </a>
-
-                <div class="modern-guest-actions">
-                    <a asp-controller="Account" asp-action="Login" class="btn-secondary-main">
-                        Login
-                    </a>
-
-                    <a asp-controller="Account" asp-action="Register" class="btn-main">
-                        Register
-                    </a>
-                </div>
-            </header>
-
-            <main class="modern-guest-content">
-                @RenderBody()
-            </main>
-        </div>
-    }
-
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-
-    @await RenderSectionAsync("Scripts", required: false)
-</body>
+        @await RenderSectionAsync("Scripts", required: false)
+    </body>
+}
 </html>

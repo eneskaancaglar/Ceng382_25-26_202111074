@@ -1,50 +1,90 @@
-@model TasteAtDoor.Models.ViewModels.Account.VerifyEmailCodeViewModel
-
 @{
-    ViewData["Title"] = "Verify Login";
+    Layout = null;
+    ViewData["Title"] = "Login Verification";
+
+    var email = ViewBag.Email as string;
 }
 
-<div class="auth-page">
-    <div class="auth-card">
-        <h1>Email Verification</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login Verification - TasteAtDoor</title>
 
-        <p>
-            We sent a 6-digit login code to:
-            <strong>@Model.Email</strong>
-        </p>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="modern-app-body">
+    <main class="modern-auth-only-content">
+        <div class="auth-page clean-login-page">
+            <div class="auth-card clean-login-card">
+                <h1>Login Verification</h1>
 
-        <p class="text-muted">
-            In development mode, check the <strong>EmailPreview</strong> folder in your project.
-        </p>
+                <p class="page-subtitle mb-3">
+                    Enter the 6-digit code sent to your email address. After verification, you will be redirected to your dashboard.
+                </p>
 
-        <form asp-controller="Account" asp-action="VerifyEmailCode" method="post">
-            @Html.AntiForgeryToken()
+                @if (!string.IsNullOrWhiteSpace(email))
+                {
+                    <div class="info-card mb-3">
+                        <strong>Email:</strong>
+                        <br />
+                        @email
+                    </div>
+                }
 
-            <input asp-for="Email" type="hidden" />
+                @if (TempData["Success"] is string successMessage)
+                {
+                    <div class="success-box mb-3">@successMessage</div>
+                }
 
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                @if (TempData["Error"] is string errorMessage)
+                {
+                    <div class="alert alert-danger mb-3">@errorMessage</div>
+                }
 
-            <div class="form-group mb-3">
-                <label asp-for="Code">Verification Code</label>
-                <input asp-for="Code"
-                       class="form-control verification-code-input"
-                       placeholder="123456"
-                       maxlength="6" />
-                <span asp-validation-for="Code" class="text-danger"></span>
+                <form asp-controller="Account"
+                      asp-action="VerifyEmailCode"
+                      method="post"
+                      autocomplete="off">
+                    <div class="form-group mb-3">
+                        <label for="code">6-Digit Code</label>
+                        <input id="code"
+                               name="code"
+                               class="form-control verification-code-input"
+                               maxlength="6"
+                               inputmode="numeric"
+                               autocomplete="one-time-code"
+                               placeholder="Enter 6-digit code" />
+                    </div>
+
+                    <button type="submit" class="btn-main w-100">
+                        Verify and Continue
+                    </button>
+                </form>
+
+                <form asp-controller="Account"
+                      asp-action="ResendEmailCode"
+                      method="post"
+                      class="mt-3">
+                    <button type="submit" class="btn-secondary-main w-100">
+                        Resend Code
+                    </button>
+                </form>
+
+                <div class="auth-switch">
+                    <a asp-controller="Account"
+                       asp-action="Login"
+                       asp-route-fresh="1">
+                        Back to Login
+                    </a>
+                </div>
             </div>
-
-            <button type="submit" class="btn-main w-100">
-                Verify and Login
-            </button>
-        </form>
-
-        <div class="auth-switch">
-            <span>Wrong account?</span>
-            <a asp-controller="Account" asp-action="Login">Back to Login</a>
         </div>
-    </div>
-</div>
+    </main>
 
-@section Scripts {
-    <partial name="_ValidationScriptsPartial" />
-}
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

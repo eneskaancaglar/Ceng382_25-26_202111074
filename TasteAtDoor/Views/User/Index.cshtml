@@ -1,21 +1,17 @@
 @model TasteAtDoor.Models.ViewModels.RestaurantListPageViewModel
 
 @{
-    ViewData["Title"] = "Nearby Caterers";
+    ViewData["Title"] = "Available Caterers";
 }
 
 <div class="available-restaurants-page">
     <div class="available-hero">
         <div>
-            <span class="available-eyebrow">TasteAtDoor Catering</span>
-            <h1>Nearby Caterers</h1>
+            <span class="available-eyebrow">TasteAtDoor</span>
+            <h1>Available Caterers Near You</h1>
             <p>
-                Find catering companies near your saved location. Choose a caterer for weddings,
-                engagements, corporate events, birthdays, meetings, and other large organizations.
-            </p>
-            <p class="text-muted mb-0">
-                Distances are calculated from your saved location. You can request packages only from
-                caterers within 5 km.
+                Choose a caterer first. Distances are calculated from your saved location.
+                You can request catering packages from caterers within 15 km.
             </p>
         </div>
 
@@ -26,17 +22,14 @@
 
     @if (TempData["Error"] is string error)
     {
-        <div class="text-danger mb-3">@error</div>
+        <div class="alert alert-danger mb-3">@error</div>
     }
 
     @if (!Model.UserLocationSaved)
     {
         <div class="empty-state-card">
             <h2>Save your location first</h2>
-            <p>
-                You must save your location before viewing caterers near you.
-                This helps us show catering companies that can serve your event area.
-            </p>
+            <p>You must save your location before viewing caterers near you.</p>
 
             <a asp-controller="User" asp-action="MyLocation" class="btn-main">
                 Save My Location
@@ -49,7 +42,7 @@
             <input type="text"
                    name="search"
                    value="@Model.Search"
-                   placeholder="Search by caterer name, address, event type, or description..."
+                   placeholder="Search by caterer name, address, or description..."
                    class="form-control" />
 
             <button type="submit" class="btn-main">
@@ -61,15 +54,12 @@
         {
             <div class="empty-state-card">
                 <h2>No caterers found</h2>
-                <p>
-                    No caterer has saved a location yet, no caterer is within 5 km,
-                    or your search did not match anything.
-                </p>
+                <p>No caterer has saved a location yet, or your search did not match anything.</p>
             </div>
         }
         else
         {
-            <div class="restaurant-card-grid">
+            <div class="restaurant-card-grid caterer-card-grid">
                 @foreach (var caterer in Model.Restaurants)
                 {
                     string? logoSource = null;
@@ -83,7 +73,7 @@
 
                     <div class="restaurant-card-modern caterer-card-modern">
                         <div class="restaurant-card-top">
-                            <div class="restaurant-logo-box caterer-logo-box">
+                            <div class="restaurant-logo-box">
                                 @if (!string.IsNullOrWhiteSpace(logoSource))
                                 {
                                     <img src="@logoSource"
@@ -101,12 +91,28 @@
                             </div>
 
                             <div class="restaurant-status-pill @(caterer.CanOrder ? "status-open" : "status-closed")">
-                                @(caterer.CanOrder ? "Within 5 km" : "Outside 5 km")
+                                @(caterer.CanOrder ? "Within 15 km" : "Outside 15 km")
                             </div>
                         </div>
 
-                        <div class="restaurant-card-body-modern">
-                            <h3>@caterer.RestaurantName</h3>
+                        <div class="restaurant-card-body-modern caterer-card-body-modern">
+                            <h3 class="caterer-card-title">
+                                <span>@caterer.RestaurantName</span>
+
+                                @if (caterer.CatererReviewCount > 0)
+                                {
+                                    <small class="rating-inline-badge">
+                                        ⭐ @caterer.AverageCatererRating.ToString("0.0") / 5
+                                        (@caterer.CatererReviewCount)
+                                    </small>
+                                }
+                                else
+                                {
+                                    <small class="rating-inline-badge rating-empty">
+                                        No rating yet
+                                    </small>
+                                }
+                            </h3>
 
                             @if (!string.IsNullOrWhiteSpace(caterer.Bio))
                             {
@@ -117,14 +123,14 @@
                             else
                             {
                                 <p class="restaurant-bio text-muted">
-                                    This caterer has not added a company description yet.
+                                    No caterer description yet.
                                 </p>
                             }
 
                             @if (!string.IsNullOrWhiteSpace(caterer.Address))
                             {
                                 <p class="restaurant-meta">
-                                    <strong>Service Area:</strong> @caterer.Address
+                                    <strong>Address:</strong> @caterer.Address
                                 </p>
                             }
 
@@ -143,13 +149,12 @@
                             @if (!caterer.CanOrder)
                             {
                                 <p class="restaurant-warning">
-                                    You can view this caterer, but requesting a package is disabled because
-                                    this caterer is more than 5 km away.
+                                    You can view this caterer and its packages, but requesting is disabled because this caterer is more than 15 km away.
                                 </p>
                             }
                         </div>
 
-                        <div class="restaurant-card-footer-modern">
+                        <div class="restaurant-card-footer-modern caterer-card-footer-modern">
                             <a asp-controller="User"
                                asp-action="RestaurantMenu"
                                asp-route-id="@caterer.Id"

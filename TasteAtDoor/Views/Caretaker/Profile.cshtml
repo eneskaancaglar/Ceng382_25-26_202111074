@@ -1,13 +1,13 @@
 @model TasteAtDoor.Models.ViewModels.ProfileViewModel
 
 @{
-    ViewData["Title"] = "Restaurant Profile";
+    ViewData["Title"] = "Caterer Profile";
 }
 
 <div class="profile-page">
     <div class="profile-shell">
         <div class="profile-preview-card">
-            <div class="profile-avatar-wrap restaurant-logo-wrap">
+            <div class="profile-avatar-wrap Caterer -logo-wrap">
                 @if (Model.HasExistingImage)
                 {
                     <img src="data:@Model.ExistingImageContentType;base64,@Model.ExistingImageBase64"
@@ -33,18 +33,18 @@
             @if (!string.IsNullOrWhiteSpace(Model.Address))
             {
                 <p class="profile-muted">
-                    <strong>Restaurant location:</strong> @Model.Address
+                    <strong>Caterer location:</strong> @Model.Address
                 </p>
             }
 
-            <a asp-controller="Caretaker" asp-action="RestaurantLocation" class="btn-secondary-main w-100">
-                Update Restaurant Location
+            <a asp-controller="Caretaker" asp-action="Caterer Location" class="btn-secondary-main w-100">
+                Update Caterer Location
             </a>
         </div>
 
         <div class="profile-form-card">
-            <h1>Restaurant Profile</h1>
-            <p>Update your restaurant name, logo, phone, and description.</p>
+            <h1>Caterer Profile</h1>
+            <p>Update your Caterer name, logo, phone, and description.</p>
 
             @if (TempData["Success"] is string success)
             {
@@ -57,7 +57,7 @@
                 <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
                 <div class="form-group mb-3">
-                    <label asp-for="FullName">Restaurant Name</label>
+                    <label asp-for="FullName">Caterer Name</label>
                     <input asp-for="FullName" class="form-control" />
                     <span asp-validation-for="FullName" class="text-danger"></span>
                 </div>
@@ -68,27 +68,27 @@
                 </div>
 
                 <div class="form-group mb-3">
-                    <label asp-for="PhoneNumber">Restaurant Phone</label>
+                    <label asp-for="PhoneNumber">Caterer Phone</label>
                     <input asp-for="PhoneNumber" class="form-control" />
                     <span asp-validation-for="PhoneNumber" class="text-danger"></span>
                 </div>
 
                 <div class="form-group mb-3">
-                    <label asp-for="Bio">Restaurant Description</label>
+                    <label asp-for="Bio">Caterer Description</label>
                     <textarea asp-for="Bio" class="form-control" rows="4"
-                              placeholder="Tell customers about your restaurant..."></textarea>
+                              placeholder="Tell customers about your Caterer ..."></textarea>
                     <span asp-validation-for="Bio" class="text-danger"></span>
                 </div>
 
                 <div class="form-group mb-3">
-                    <label asp-for="ProfileImageFile">Restaurant Logo</label>
+                    <label asp-for="ProfileImageFile">Caterer Logo</label>
                     <input asp-for="ProfileImageFile" class="form-control" type="file" accept="image/*" />
                     <span asp-validation-for="ProfileImageFile" class="text-danger"></span>
                     <small class="profile-muted">Maximum image size: 2 MB.</small>
                 </div>
 
                 <button type="submit" class="btn-main">
-                    Save Restaurant Profile
+                    Save Caterer Profile
                 </button>
             </form>
         </div>

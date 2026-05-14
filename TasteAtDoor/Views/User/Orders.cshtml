@@ -9,7 +9,7 @@
         <div>
             <h1 class="page-title">My Catering Requests</h1>
             <p class="page-subtitle">
-                Track your catering requests, event details, selected packages, chat, receipts, and reviews.
+                Track your catering requests, event details, selected packages, chat, receipts, agreements, and reviews.
             </p>
         </div>
 
@@ -20,14 +20,14 @@
         </a>
     </div>
 
-    @if (TempData["Error"] is string errorMessage)
-    {
-        <div class="alert alert-danger">@errorMessage</div>
-    }
-
     @if (TempData["Success"] is string successMessage)
     {
         <div class="success-box">@successMessage</div>
+    }
+
+    @if (TempData["Error"] is string errorMessage)
+    {
+        <div class="alert alert-danger">@errorMessage</div>
     }
 
     <div class="table-card">
@@ -86,7 +86,9 @@
             <h3>No catering requests found</h3>
             <p>You have not placed any matching catering requests yet.</p>
 
-            <a asp-controller="User" asp-action="Index" class="btn-main">
+            <a asp-controller="User"
+               asp-action="Index"
+               class="btn-main">
                 Browse Caterers
             </a>
         </div>
@@ -146,7 +148,7 @@
                         <div class="group-actions">
                             <a asp-controller="OrderChat"
                                asp-action="Room"
-                               asp-route-id="@order.Id"
+                               asp-route-rawId="@order.Id"
                                class="btn-main">
                                 Open Chat / Live Call
                             </a>
@@ -209,7 +211,7 @@
                                                         @if (customization.PriceChange != 0)
                                                         {
                                                             <span>
-                                                                (@customization.PriceChange.ToString("0.00") ₺ / person)
+                                                                (@customization.PriceChange.ToString("0.00") ₺ / guest)
                                                             </span>
                                                         }
                                                     </li>
@@ -240,7 +242,7 @@
                                     </div>
 
                                     <div>
-                                        @if (order.Status == "Completed" && review is null)
+                                        @if (review is null)
                                         {
                                             <a asp-controller="OrderReview"
                                                asp-action="Create"
@@ -248,6 +250,12 @@
                                                class="btn-secondary-main">
                                                 Rate Package
                                             </a>
+                                        }
+                                        else
+                                        {
+                                            <span class="restaurant-status-pill status-open">
+                                                Reviewed
+                                            </span>
                                         }
                                     </div>
                                 </div>

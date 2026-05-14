@@ -20,6 +20,10 @@ namespace TasteAtDoor.Models.ViewModels
 
         public double DistanceKm { get; set; }
 
-        public bool CanOrder => DistanceKm <= 5;
+        public double AverageCatererRating { get; set; }
+
+        public int CatererReviewCount { get; set; }
+
+        public bool CanOrder => DistanceKm <= 15;
     }
 }

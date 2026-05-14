@@ -1,43 +1,110 @@
 @model TasteAtDoor.Models.ViewModels.Account.LoginViewModel
 
 @{
+    Layout = null;
     ViewData["Title"] = "Login";
 }
 
-<div class="auth-page">
-    <div class="auth-card">
-        <h1>Login</h1>
-        <p>Sign in with your email and password. A verification code will be sent to your email.</p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - TasteAtDoor</title>
 
-        <form asp-controller="Account" asp-action="Login" method="post">
-            @Html.AntiForgeryToken()
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="modern-app-body">
+    <main class="modern-auth-only-content">
+        <div class="auth-page clean-login-page">
+            <div class="auth-card clean-login-card">
+                <h1>Login</h1>
 
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                <p class="page-subtitle mb-3">
+                    Sign in to TasteAtDoor Catering.
+                </p>
 
-            <div class="form-group mb-3">
-                <label asp-for="Email"></label>
-                <input asp-for="Email" class="form-control" />
-                <span asp-validation-for="Email" class="text-danger"></span>
+                @if (TempData["Success"] is string successMessage)
+                {
+                    <div class="success-box mb-3">@successMessage</div>
+                }
+
+                @if (TempData["Error"] is string errorMessage)
+                {
+                    <div class="alert alert-danger mb-3">@errorMessage</div>
+                }
+
+                <form asp-controller="Account"
+                      asp-action="Login"
+                      method="post"
+                      autocomplete="off"
+                      id="loginForm">
+
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                    <div class="form-group mb-3">
+                        <label asp-for="Email"></label>
+                        <input asp-for="Email"
+                               class="form-control"
+                               autocomplete="off"
+                               autocapitalize="none"
+                               spellcheck="false"
+                               value=""
+                               placeholder="Enter your email" />
+                        <span asp-validation-for="Email" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label asp-for="Password"></label>
+                        <input asp-for="Password"
+                               class="form-control"
+                               autocomplete="new-password"
+                               value=""
+                               placeholder="Enter your password" />
+                        <span asp-validation-for="Password" class="text-danger"></span>
+                    </div>
+
+                    <input asp-for="RememberMe" type="hidden" value="false" />
+
+                    <button type="submit" class="btn-main w-100">
+                        Login
+                    </button>
+                </form>
+
+                <div class="auth-switch">
+                    <span>Don't have an account?</span>
+                    <a asp-controller="Account"
+                       asp-action="Register">
+                        Register
+                    </a>
+                </div>
             </div>
-
-            <div class="form-group mb-3">
-                <label asp-for="Password"></label>
-                <input asp-for="Password" class="form-control" />
-                <span asp-validation-for="Password" class="text-danger"></span>
-            </div>
-
-            <button type="submit" class="btn-main w-100">
-                Continue
-            </button>
-        </form>
-
-        <div class="auth-switch">
-            <span>Do not have an account?</span>
-            <a asp-controller="Account" asp-action="Register">Register</a>
         </div>
-    </div>
-</div>
+    </main>
 
-@section Scripts {
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <partial name="_ValidationScriptsPartial" />
-}
+
+    <script>
+        window.addEventListener("pageshow", clearLoginForm);
+        document.addEventListener("DOMContentLoaded", clearLoginForm);
+
+        function clearLoginForm() {
+            const email = document.getElementById("Email");
+            const password = document.getElementById("Password");
+
+            if (email) {
+                email.value = "";
+                email.setAttribute("value", "");
+            }
+
+            if (password) {
+                password.value = "";
+                password.setAttribute("value", "");
+            }
+        }
+    </script>
+</body>
+</html>

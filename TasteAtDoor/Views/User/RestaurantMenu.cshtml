@@ -1,15 +1,15 @@
 @model TasteAtDoor.Models.ViewModels.RestaurantMenuPageViewModel
 
 @{
-    ViewData["Title"] = $"{Model.RestaurantName} Catering Packages";
+    ViewData["Title"] = $"{Model.RestaurantName} Packages";
 
-    string? catererLogoSource = null;
+    string? restaurantLogoSource = null;
 
     if (Model.RestaurantLogoImageData is not null &&
         Model.RestaurantLogoImageData.Length > 0 &&
         !string.IsNullOrWhiteSpace(Model.RestaurantLogoImageContentType))
     {
-        catererLogoSource = $"data:{Model.RestaurantLogoImageContentType};base64,{Convert.ToBase64String(Model.RestaurantLogoImageData)}";
+        restaurantLogoSource = $"data:{Model.RestaurantLogoImageContentType};base64,{Convert.ToBase64String(Model.RestaurantLogoImageData)}";
     }
 }
 
@@ -21,9 +21,9 @@
 
         <div class="restaurant-menu-hero-content">
             <div class="restaurant-menu-logo-large">
-                @if (!string.IsNullOrWhiteSpace(catererLogoSource))
+                @if (!string.IsNullOrWhiteSpace(restaurantLogoSource))
                 {
-                    <img src="@catererLogoSource"
+                    <img src="@restaurantLogoSource"
                          alt="@Model.RestaurantName"
                          class="restaurant-menu-logo-img" />
                 }
@@ -38,8 +38,23 @@
             </div>
 
             <div>
-                <span class="available-eyebrow">Catering Company</span>
-                <h1>@Model.RestaurantName</h1>
+                <h1 class="caterer-detail-title">
+                    <span>@Model.RestaurantName</span>
+
+                    @if (Model.CatererReviewCount > 0)
+                    {
+                        <small class="rating-inline-badge">
+                            ⭐ @Model.AverageCatererRating.ToString("0.0") / 5
+                            (@Model.CatererReviewCount reviews)
+                        </small>
+                    }
+                    else
+                    {
+                        <small class="rating-inline-badge rating-empty">
+                            No rating yet
+                        </small>
+                    }
+                </h1>
 
                 @if (!string.IsNullOrWhiteSpace(Model.RestaurantBio))
                 {
@@ -51,7 +66,7 @@
                 @if (!string.IsNullOrWhiteSpace(Model.RestaurantAddress))
                 {
                     <p>
-                        <strong>Service Area:</strong> @Model.RestaurantAddress
+                        <strong>Address:</strong> @Model.RestaurantAddress
                     </p>
                 }
 
@@ -62,13 +77,13 @@
                 @if (Model.CanOrder)
                 {
                     <div class="success-box">
-                        This caterer is within 5 km. You can request catering packages from this company.
+                        This caterer is within 15 km. You can request packages from this caterer.
                     </div>
                 }
                 else
                 {
                     <div class="text-danger">
-                        This caterer is outside 5 km. You can view packages but cannot request an order.
+                        This caterer is outside 15 km. You can view packages, but requesting is disabled.
                     </div>
                 }
             </div>
@@ -91,130 +106,73 @@
             {
                 string? imageSource = null;
 
-                if (item.ImageData is not null &&
-                    item.ImageData.Length > 0 &&
-                    !string.IsNullOrWhiteSpace(item.ImageContentType))
+                if (item.ImageData is not null && item.ImageData.Length > 0)
                 {
                     imageSource = $"data:{item.ImageContentType};base64,{Convert.ToBase64String(item.ImageData)}";
                 }
 
-                <div class="restaurant-menu-card catering-package-card" data-package-card>
-                    <div class="package-image-frame">
+                var hasMenuRating = Model.MenuReviewCounts.ContainsKey(item.Id) &&
+                                    Model.MenuReviewCounts[item.Id] > 0;
+
+                var menuAverage = hasMenuRating
+                    ? Model.AverageMenuRatings[item.Id]
+                    : 0;
+
+                var menuReviewCount = hasMenuRating
+                    ? Model.MenuReviewCounts[item.Id]
+                    : 0;
+
+                <div class="restaurant-menu-card">
+                    <div class="restaurant-menu-image-wrapper">
                         @if (!string.IsNullOrWhiteSpace(imageSource))
                         {
                             <img src="@imageSource"
                                  alt="@item.Name"
-                                 class="package-image" />
+                                 class="restaurant-menu-image" />
                         }
                         else
                         {
-                            <div class="package-image-placeholder">
-                                <span>No Image</span>
+                            <div class="menu-detail-image-placeholder">
+                                No image
                             </div>
                         }
                     </div>
 
                     <div class="restaurant-menu-card-body">
-                        <div class="menu-card-header">
-                            <h3>@item.Name</h3>
-                            <span class="menu-price">
-                                @item.Price.ToString("0.00") ₺ / person
-                            </span>
-                        </div>
+                        <h3 class="package-card-title">
+                            <span>@item.Name</span>
 
-                        <div class="menu-meta mb-2">
-                            <strong>Event Type:</strong> @item.EventType
-                        </div>
-
-                        <div class="menu-meta mb-2">
-                            <strong>Category:</strong> @item.PackageCategory
-                        </div>
-
-                        <div class="menu-meta mb-2">
-                            <strong>Guest Range:</strong>
-                            @item.MinGuestCount - @item.MaxGuestCount guests
-                        </div>
+                            @if (hasMenuRating)
+                            {
+                                <small class="rating-inline-badge">
+                                    ⭐ @menuAverage.ToString("0.0") / 5
+                                    (@menuReviewCount)
+                                </small>
+                            }
+                            else
+                            {
+                                <small class="rating-inline-badge rating-empty">
+                                    No rating yet
+                                </small>
+                            }
+                        </h3>
 
                         <p class="restaurant-menu-description">
                             @item.Description
                         </p>
 
-                        @if (!string.IsNullOrWhiteSpace(item.IncludedItems))
-                        {
-                            <div class="menu-meta mb-2">
-                                <strong>Included Items:</strong>
-                                <div>@item.IncludedItems</div>
-                            </div>
-                        }
-
-                        @if (!string.IsNullOrWhiteSpace(item.ServiceDetails))
-                        {
-                            <div class="menu-meta mb-2">
-                                <strong>Service Details:</strong>
-                                <div>@item.ServiceDetails</div>
-                            </div>
-                        }
-
-                        <div class="d-flex flex-wrap gap-2 mb-3">
-                            @if (item.IncludesMainCourse)
-                            {
-                                <span class="badge bg-primary">Main Course</span>
-                            }
-
-                            @if (item.IncludesDessert)
-                            {
-                                <span class="badge bg-success">Dessert</span>
-                            }
-
-                            @if (item.IncludesSnacks)
-                            {
-                                <span class="badge bg-warning text-dark">Snacks</span>
-                            }
-
-                            @if (item.IncludesDrinks)
-                            {
-                                <span class="badge bg-info text-dark">Drinks</span>
-                            }
-                        </div>
-
-                        <div class="package-guest-box">
-                            <label class="form-label">Guest Count</label>
-
-                            <div class="package-guest-stepper">
-                                <button type="button" class="guest-step-btn js-guest-step" data-step="-100">-100</button>
-                                <button type="button" class="guest-step-btn js-guest-step" data-step="-10">-10</button>
-
-                                <input type="number"
-                                       class="form-control package-guest-input js-package-guest-count"
-                                       min="@item.MinGuestCount"
-                                       max="@item.MaxGuestCount"
-                                       value="@item.MinGuestCount" />
-
-                                <button type="button" class="guest-step-btn js-guest-step" data-step="10">+10</button>
-                                <button type="button" class="guest-step-btn js-guest-step" data-step="100">+100</button>
-                            </div>
-
-                            <small class="text-muted">
-                                You can also type the number manually.
-                            </small>
-
-                            <div class="package-total-preview">
-                                Estimated package total:
-                                <strong class="js-package-estimated-total"
-                                        data-unit-price="@item.Price.ToString(System.Globalization.CultureInfo.InvariantCulture)">
-                                    @((item.Price * item.MinGuestCount).ToString("0.00")) ₺
-                                </strong>
-                            </div>
-                        </div>
-
                         <p>
                             <strong>Distance:</strong> @Model.DistanceKm.ToString("0.0") km
+                        </p>
+
+                        <p>
+                            <strong>Price Per Guest:</strong> @item.Price.ToString("0.00") ₺
                         </p>
 
                         @if (!Model.CanOrder)
                         {
                             <div class="text-danger mb-2">
-                                You are outside 5 km. Package request is disabled.
+                                You are outside 15 km. You can view this package, but requesting is disabled.
                             </div>
                         }
 
@@ -223,7 +181,7 @@
                                asp-action="MenuDetails"
                                asp-route-id="@item.Id"
                                class="btn-secondary-main">
-                                View Package Details
+                                View Details
                             </a>
 
                             @if (Model.CanOrder)
@@ -234,17 +192,15 @@
                                         data-name="@item.Name"
                                         data-description="@item.Description"
                                         data-price="@item.Price.ToString(System.Globalization.CultureInfo.InvariantCulture)"
-                                        data-min-guest-count="@item.MinGuestCount"
-                                        data-max-guest-count="@item.MaxGuestCount"
                                         data-image-content-type="@item.ImageContentType"
                                         data-image-base64="@(item.ImageData is not null ? Convert.ToBase64String(item.ImageData) : "")">
-                                    Add Package
+                                    Add to Cart
                                 </button>
                             }
                             else
                             {
                                 <button class="btn-secondary-main" disabled>
-                                    Outside 5 km
+                                    Outside 15 km
                                 </button>
                             }
                         </div>

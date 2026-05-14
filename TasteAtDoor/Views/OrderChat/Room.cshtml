@@ -89,6 +89,13 @@
             </div>
         </div>
 
+        @if (TempData["ChatError"] is string chatError)
+        {
+            <div class="alert alert-danger m-3">
+                @chatError
+            </div>
+        }
+
         <div id="chatMessages" class="order-chat-messages">
             @if (Model.Messages is null || !Model.Messages.Any())
             {
@@ -118,12 +125,16 @@
             }
         </div>
 
-        <form id="chatForm" class="order-chat-form">
+        <form asp-controller="OrderChat"
+              asp-action="SendMessage"
+              asp-route-rawId="@Model.OrderId"
+              method="post"
+              class="order-chat-form">
             @Html.AntiForgeryToken()
 
-            <input type="hidden" id="orderId" value="@Model.OrderId" />
+            <input type="hidden" name="orderId" value="@Model.OrderId" />
 
-            <textarea id="messageInput"
+            <textarea name="messageText"
                       class="form-control"
                       rows="2"
                       maxlength="1000"
@@ -142,102 +153,11 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            const form = document.getElementById("chatForm");
-            const input = document.getElementById("messageInput");
-            const orderIdInput = document.getElementById("orderId");
-            const messagesContainer = document.getElementById("chatMessages");
+            const messages = document.getElementById("chatMessages");
 
-            if (!form || !input || !orderIdInput || !messagesContainer) {
-                return;
+            if (messages) {
+                messages.scrollTop = messages.scrollHeight;
             }
-
-            const orderId = Number.parseInt(orderIdInput.value, 10);
-
-            function escapeHtml(value) {
-                return String(value)
-                    .replace(/&/g, "&amp;")
-                    .replace(/</g, "&lt;")
-                    .replace(/>/g, "&gt;")
-                    .replace(/"/g, "&quot;")
-                    .replace(/'/g, "&#039;");
-            }
-
-            function appendMessage(senderName, text, createdAt, isMine) {
-                const empty = messagesContainer.querySelector(".order-chat-loading");
-
-                if (empty) {
-                    empty.remove();
-                }
-
-                const wrapper = document.createElement("div");
-                wrapper.className = isMine
-                    ? "order-chat-message order-chat-message-mine"
-                    : "order-chat-message order-chat-message-other";
-
-                wrapper.innerHTML = `
-                    <div class="order-chat-bubble">
-                        <div class="order-chat-meta">
-                            <strong>${escapeHtml(senderName)}</strong>
-                            <span>${escapeHtml(createdAt)}</span>
-                        </div>
-
-                        <div class="order-chat-text">
-                            ${escapeHtml(text)}
-                        </div>
-                    </div>
-                `;
-
-                messagesContainer.appendChild(wrapper);
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            }
-
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-
-            form.addEventListener("submit", async function (event) {
-                event.preventDefault();
-
-                const text = input.value.trim();
-
-                if (!text) {
-                    return;
-                }
-
-                const tokenInput = form.querySelector("input[name='__RequestVerificationToken']");
-                const token = tokenInput ? tokenInput.value : "";
-
-                try {
-                    const response = await fetch("/OrderChat/SendMessage", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/x-www-form-urlencoded",
-                            "RequestVerificationToken": token
-                        },
-                        body: new URLSearchParams({
-                            orderId: orderId,
-                            messageText: text
-                        })
-                    });
-
-                    if (!response.ok) {
-                        alert("Message could not be sent.");
-                        return;
-                    }
-
-                    const result = await response.json();
-
-                    appendMessage(
-                        result.senderName || "Me",
-                        result.messageText || text,
-                        result.createdAtText || "Now",
-                        true
-                    );
-
-                    input.value = "";
-                } catch (error) {
-                    console.error(error);
-                    alert("Message could not be sent.");
-                }
-            });
         });
     </script>
 }

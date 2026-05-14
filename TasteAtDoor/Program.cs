@@ -1,11 +1,14 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using QuestPDF.Infrastructure;
 using TasteAtDoor.Data;
 using TasteAtDoor.Hubs;
 using TasteAtDoor.Models;
 using TasteAtDoor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+QuestPDF.Settings.License = LicenseType.Community;
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
@@ -18,11 +21,12 @@ builder.Services
     {
         options.SignIn.RequireConfirmedAccount = false;
 
-        options.Password.RequireDigit = true;
-        options.Password.RequireLowercase = true;
-        options.Password.RequireUppercase = true;
+        options.Password.RequireDigit = false;
+        options.Password.RequireLowercase = false;
+        options.Password.RequireUppercase = false;
         options.Password.RequireNonAlphanumeric = false;
         options.Password.RequiredLength = 6;
+        options.Password.RequiredUniqueChars = 1;
     })
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
@@ -84,6 +88,7 @@ app.MapRazorPages()
     .WithStaticAssets();
 
 app.MapHub<OrderCallHub>("/orderCallHub");
+app.MapHub<OrderMessageHub>("/orderMessageHub");
 
 app.Run();
 
@@ -140,6 +145,12 @@ static async Task SeedRolesAndAdminAsync(WebApplication app)
         if (!isAdmin)
         {
             await userManager.AddToRoleAsync(adminUser, "Admin");
+        }
+
+        if (!adminUser.EmailConfirmed)
+        {
+            adminUser.EmailConfirmed = true;
+            await userManager.UpdateAsync(adminUser);
         }
     }
 }

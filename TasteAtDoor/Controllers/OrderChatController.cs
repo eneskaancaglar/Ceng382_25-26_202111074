@@ -23,31 +23,16 @@ namespace TasteAtDoor.Controllers
             _userManager = userManager;
         }
 
-        [HttpGet("Room/{id:int?}")]
-        public async Task<IActionResult> Room(int? id, int? orderId)
+        [HttpGet("Room")]
+        [HttpGet("Room/{rawId?}")]
+        public async Task<IActionResult> Room(string? rawId)
         {
-            int finalOrderId = orderId ?? id ?? 0;
+            var finalOrderId = ResolveOrderId(rawId);
 
             if (finalOrderId <= 0)
             {
-                TempData["Error"] = "Chat could not be opened because the request id was missing.";
-
-                if (User.IsInRole("User"))
-                {
-                    return RedirectToAction("Orders", "User");
-                }
-
-                if (User.IsInRole("Caretaker"))
-                {
-                    return RedirectToAction("Dashboard", "Caretaker");
-                }
-
-                if (User.IsInRole("Admin"))
-                {
-                    return RedirectToAction("Orders", "Admin");
-                }
-
-                return RedirectToAction("Index", "Home");
+                TempData["Error"] = "Chat could not be opened because the catering request id was missing or invalid.";
+                return RedirectToSafePage();
             }
 
             var currentUser = await _userManager.GetUserAsync(User);
@@ -66,14 +51,16 @@ namespace TasteAtDoor.Controllers
 
             if (order is null)
             {
-                return NotFound($"Catering request #{finalOrderId} was not found.");
+                TempData["Error"] = $"Catering request #{finalOrderId} was not found.";
+                return RedirectToSafePage();
             }
 
             var canAccess = await CanAccessOrderAsync(order, currentUser);
 
             if (!canAccess)
             {
-                return Forbid();
+                TempData["Error"] = "You are not allowed to access this catering request chat.";
+                return RedirectToSafePage();
             }
 
             var messages = await _context.OrderChatMessages
@@ -127,65 +114,63 @@ namespace TasteAtDoor.Controllers
         }
 
         [HttpPost("SendMessage")]
+        [HttpPost("SendMessage/{rawId?}")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SendMessage(int orderId, string messageText)
+        public async Task<IActionResult> SendMessage(string? rawId, string messageText)
         {
-            if (orderId <= 0)
+            var finalOrderId = ResolveOrderId(rawId);
+
+            if (finalOrderId <= 0)
             {
-                return BadRequest(new
-                {
-                    error = "Order id is required."
-                });
+                TempData["ChatError"] = "Message could not be sent because the request id was missing.";
+                return RedirectToSafePage();
             }
 
             if (string.IsNullOrWhiteSpace(messageText))
             {
-                return BadRequest(new
-                {
-                    error = "Message cannot be empty."
-                });
+                TempData["ChatError"] = "Message cannot be empty.";
+                return RedirectToAction(nameof(Room), new { rawId = finalOrderId });
             }
 
             if (messageText.Length > 1000)
             {
-                return BadRequest(new
-                {
-                    error = "Message cannot be longer than 1000 characters."
-                });
+                TempData["ChatError"] = "Message cannot be longer than 1000 characters.";
+                return RedirectToAction(nameof(Room), new { rawId = finalOrderId });
             }
 
             var currentUser = await _userManager.GetUserAsync(User);
 
             if (currentUser is null)
             {
-                return Unauthorized();
+                return Challenge();
             }
 
             var order = await _context.Orders
-                .Include(o => o.ApplicationUser)
                 .Include(o => o.OrderItems)
                     .ThenInclude(oi => oi.MenuItem)
-                .FirstOrDefaultAsync(o => o.Id == orderId);
+                .FirstOrDefaultAsync(o => o.Id == finalOrderId);
 
             if (order is null)
             {
-                return NotFound(new
-                {
-                    error = "Catering request was not found."
-                });
+                TempData["ChatError"] = "Catering request was not found.";
+                return RedirectToSafePage();
             }
 
             var canAccess = await CanAccessOrderAsync(order, currentUser);
 
             if (!canAccess)
             {
-                return Forbid();
+                TempData["ChatError"] = "You are not allowed to send messages in this catering request chat.";
+                return RedirectToSafePage();
             }
+
+            var senderRole = await GetSenderRoleAsync(currentUser);
 
             var message = new OrderChatMessage
             {
                 OrderId = order.Id,
                 SenderUserId = currentUser.Id,
+                SenderRole = senderRole,
                 Message = messageText.Trim(),
                 SentAt = DateTime.Now
             };
@@ -193,20 +178,54 @@ namespace TasteAtDoor.Controllers
             _context.OrderChatMessages.Add(message);
             await _context.SaveChangesAsync();
 
-            var senderName = string.IsNullOrWhiteSpace(currentUser.FullName)
-                ? currentUser.Email ?? "User"
-                : currentUser.FullName;
+            return RedirectToAction(nameof(Room), new { rawId = finalOrderId });
+        }
 
-            return Json(new
+        private int ResolveOrderId(string? rawId)
+        {
+            if (int.TryParse(rawId, out var routeId) && routeId > 0)
             {
-                id = message.Id,
-                orderId = message.OrderId,
-                senderId = message.SenderUserId,
-                senderName = senderName,
-                messageText = message.Message,
-                createdAt = message.SentAt,
-                createdAtText = message.SentAt.ToString("dd MMM yyyy HH:mm")
-            });
+                return routeId;
+            }
+
+            if (int.TryParse(Request.Query["id"], out var queryId) && queryId > 0)
+            {
+                return queryId;
+            }
+
+            if (int.TryParse(Request.Query["orderId"], out var queryOrderId) && queryOrderId > 0)
+            {
+                return queryOrderId;
+            }
+
+            if (Request.HasFormContentType &&
+                int.TryParse(Request.Form["orderId"], out var formOrderId) &&
+                formOrderId > 0)
+            {
+                return formOrderId;
+            }
+
+            return 0;
+        }
+
+        private IActionResult RedirectToSafePage()
+        {
+            if (User.IsInRole("User"))
+            {
+                return RedirectToAction("Orders", "User");
+            }
+
+            if (User.IsInRole("Caretaker"))
+            {
+                return RedirectToAction("Dashboard", "Caretaker");
+            }
+
+            if (User.IsInRole("Admin"))
+            {
+                return RedirectToAction("Orders", "Admin");
+            }
+
+            return RedirectToAction("Index", "Home");
         }
 
         private async Task<bool> CanAccessOrderAsync(Order order, ApplicationUser user)
@@ -226,6 +245,21 @@ namespace TasteAtDoor.Controllers
                 oi.MenuItem.CaretakerId == user.Id);
 
             return isCatererForThisOrder;
+        }
+
+        private async Task<string> GetSenderRoleAsync(ApplicationUser user)
+        {
+            if (await _userManager.IsInRoleAsync(user, "Admin"))
+            {
+                return "Admin";
+            }
+
+            if (await _userManager.IsInRoleAsync(user, "Caretaker"))
+            {
+                return "Caterer";
+            }
+
+            return "Customer";
         }
     }
 }

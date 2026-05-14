@@ -51,13 +51,9 @@ namespace TasteAtDoor.Controllers
                 return NotFound();
             }
 
-            if (orderItem.Order?.Status != "Completed")
-            {
-                return RedirectToAction("Orders", "User");
-            }
-
             if (orderItem.Reviews.Any())
             {
+                TempData["Error"] = "You have already reviewed this catering package.";
                 return RedirectToAction("Orders", "User");
             }
 
@@ -65,10 +61,12 @@ namespace TasteAtDoor.Controllers
             {
                 OrderItemId = orderItem.Id,
                 OrderId = orderItem.OrderId,
-                MenuItemName = orderItem.MenuItem?.Name ?? "Menu Item",
+                MenuItemName = orderItem.MenuItem?.Name ?? "Catering Package",
                 CatererName = orderItem.MenuItem?.Caretaker?.FullName
                     ?? orderItem.MenuItem?.Caretaker?.Email
-                    ?? "Caterer"
+                    ?? "Caterer",
+                MenuRating = 5,
+                CatererRating = 5
             };
 
             return View(model);
@@ -100,17 +98,13 @@ namespace TasteAtDoor.Controllers
                 return NotFound();
             }
 
-            if (orderItem.Order?.Status != "Completed")
-            {
-                return RedirectToAction("Orders", "User");
-            }
-
             if (orderItem.Reviews.Any())
             {
+                TempData["Error"] = "You have already reviewed this catering package.";
                 return RedirectToAction("Orders", "User");
             }
 
-            model.MenuItemName = orderItem.MenuItem?.Name ?? "Menu Item";
+            model.MenuItemName = orderItem.MenuItem?.Name ?? "Catering Package";
             model.CatererName = orderItem.MenuItem?.Caretaker?.FullName
                 ?? orderItem.MenuItem?.Caretaker?.Email
                 ?? "Caterer";
@@ -120,16 +114,24 @@ namespace TasteAtDoor.Controllers
                 return View(model);
             }
 
+            var catererId = orderItem.MenuItem?.CaretakerId ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(catererId))
+            {
+                ModelState.AddModelError(string.Empty, "Caterer could not be detected for this package.");
+                return View(model);
+            }
+
             var review = new OrderItemReview
             {
                 OrderId = orderItem.OrderId,
                 OrderItemId = orderItem.Id,
                 UserId = currentUser.Id,
                 MenuItemId = orderItem.MenuItemId,
-                CatererId = orderItem.MenuItem?.CaretakerId ?? string.Empty,
+                CatererId = catererId,
                 MenuRating = model.MenuRating,
                 CatererRating = model.CatererRating,
-                Comment = model.Comment,
+                Comment = model.Comment ?? string.Empty,
                 CreatedAt = DateTime.Now
             };
 
@@ -138,10 +140,10 @@ namespace TasteAtDoor.Controllers
 
             await _appLogService.LogAsync(
                 eventType: "RatingSubmitted",
-                message: "User submitted a review.",
+                message: "User submitted a catering package and caterer review.",
                 userId: currentUser.Id,
                 userEmail: currentUser.Email,
-                details: $"OrderId: {review.OrderId} | OrderItemId: {review.OrderItemId} | MenuRating: {review.MenuRating} | CatererRating: {review.CatererRating}");
+                details: $"OrderId: {review.OrderId} | OrderItemId: {review.OrderItemId} | PackageRating: {review.MenuRating} | CatererRating: {review.CatererRating}");
 
             TempData["Success"] = "Your review has been submitted.";
             return RedirectToAction("Orders", "User");

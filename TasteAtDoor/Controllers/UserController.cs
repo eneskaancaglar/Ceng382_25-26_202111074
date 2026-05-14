@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -50,80 +50,98 @@ namespace TasteAtDoor.Controllers
 
             var caretakers = await _userManager.GetUsersInRoleAsync("Caretaker");
 
-            var catererQuery = caretakers
+            var restaurantQuery = caretakers
                 .Where(c => c.Latitude.HasValue && c.Longitude.HasValue)
                 .AsEnumerable();
 
-            List<string> catererIdsWithMatchingPackages = new();
-
             if (!string.IsNullOrWhiteSpace(search))
             {
-                catererIdsWithMatchingPackages = await _context.MenuItems
-                    .Where(m =>
-                        m.Name.Contains(search) ||
-                        m.Description.Contains(search) ||
-                        m.LocationText.Contains(search) ||
-                        m.EventType.Contains(search) ||
-                        m.PackageCategory.Contains(search) ||
-                        (m.IncludedItems != null && m.IncludedItems.Contains(search)) ||
-                        (m.ServiceDetails != null && m.ServiceDetails.Contains(search)))
-                    .Select(m => m.CaretakerId)
-                    .Distinct()
-                    .ToListAsync();
-
-                catererQuery = catererQuery.Where(c =>
-                    (!string.IsNullOrWhiteSpace(c.FullName) &&
-                     c.FullName.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                restaurantQuery = restaurantQuery.Where(c =>
+                    c.FullName.Contains(search, StringComparison.OrdinalIgnoreCase) ||
                     (!string.IsNullOrWhiteSpace(c.Email) &&
                      c.Email.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
                     (!string.IsNullOrWhiteSpace(c.Address) &&
                      c.Address.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
                     (!string.IsNullOrWhiteSpace(c.Bio) &&
-                     c.Bio.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
-                    catererIdsWithMatchingPackages.Contains(c.Id));
+                     c.Bio.Contains(search, StringComparison.OrdinalIgnoreCase)));
             }
 
-            var catererIds = catererQuery.Select(c => c.Id).ToList();
+            var caretakerList = restaurantQuery.ToList();
+            var caretakerIds = caretakerList.Select(c => c.Id).ToList();
 
-            var packageCountMap = await _context.MenuItems
-                .Where(m => catererIds.Contains(m.CaretakerId))
+            var menuCountMap = await _context.MenuItems
+                .Where(m => caretakerIds.Contains(m.CaretakerId))
                 .GroupBy(m => m.CaretakerId)
-                .Select(g => new { CatererId = g.Key, Count = g.Count() })
-                .ToDictionaryAsync(x => x.CatererId, x => x.Count);
+                .Select(g => new
+                {
+                    CaretakerId = g.Key,
+                    Count = g.Count()
+                })
+                .ToDictionaryAsync(x => x.CaretakerId, x => x.Count);
 
-            var caterers = new List<RestaurantListItemViewModel>();
+            var catererRatingMap = await _context.OrderItemReviews
+                .Where(r => caretakerIds.Contains(r.CatererId))
+                .GroupBy(r => r.CatererId)
+                .Select(g => new
+                {
+                    CatererId = g.Key,
+                    AverageRating = g.Average(r => r.CatererRating),
+                    ReviewCount = g.Count()
+                })
+                .ToDictionaryAsync(x => x.CatererId);
 
-            foreach (var caterer in catererQuery)
+            var restaurants = new List<RestaurantListItemViewModel>();
+
+            foreach (var caretaker in caretakerList)
             {
-                var distanceKm = await GetVerifiedDistanceKmAsync(
+                double distanceKm;
+
+                var googleDistanceKm = await _googleMapsService.GetRouteDistanceKmAsync(
                     currentUser.Latitude.Value,
                     currentUser.Longitude.Value,
-                    caterer.Latitude!.Value,
-                    caterer.Longitude!.Value);
+                    caretaker.Latitude!.Value,
+                    caretaker.Longitude!.Value);
 
-                caterers.Add(new RestaurantListItemViewModel
+                if (googleDistanceKm.HasValue)
                 {
-                    Id = caterer.Id,
-                    RestaurantName = caterer.FullName,
-                    Email = caterer.Email,
-                    Address = caterer.Address,
-                    Bio = caterer.Bio,
-                    LogoImageData = caterer.ProfileImageData,
-                    LogoImageContentType = caterer.ProfileImageContentType,
-                    MenuCount = packageCountMap.ContainsKey(caterer.Id) ? packageCountMap[caterer.Id] : 0,
-                    DistanceKm = distanceKm
+                    distanceKm = googleDistanceKm.Value;
+                }
+                else
+                {
+                    distanceKm = CalculateStraightLineDistanceKm(
+                        currentUser.Latitude.Value,
+                        currentUser.Longitude.Value,
+                        caretaker.Latitude.Value,
+                        caretaker.Longitude.Value);
+                }
+
+                var hasRating = catererRatingMap.TryGetValue(caretaker.Id, out var ratingInfo);
+
+                restaurants.Add(new RestaurantListItemViewModel
+                {
+                    Id = caretaker.Id,
+                    RestaurantName = caretaker.FullName,
+                    Email = caretaker.Email,
+                    Address = caretaker.Address,
+                    Bio = caretaker.Bio,
+                    LogoImageData = caretaker.ProfileImageData,
+                    LogoImageContentType = caretaker.ProfileImageContentType,
+                    MenuCount = menuCountMap.ContainsKey(caretaker.Id) ? menuCountMap[caretaker.Id] : 0,
+                    DistanceKm = distanceKm,
+                    AverageCatererRating = hasRating ? ratingInfo!.AverageRating : 0,
+                    CatererReviewCount = hasRating ? ratingInfo!.ReviewCount : 0
                 });
             }
 
-            caterers = caterers
-                .OrderBy(c => c.DistanceKm)
+            restaurants = restaurants
+                .OrderBy(r => r.DistanceKm)
                 .ToList();
 
             var model = new RestaurantListPageViewModel
             {
                 UserLocationSaved = true,
                 Search = search,
-                Restaurants = caterers
+                Restaurants = restaurants
             };
 
             return View(model);
@@ -171,10 +189,7 @@ namespace TasteAtDoor.Controllers
 
             if (!imageResult.Success)
             {
-                ModelState.AddModelError(
-                    nameof(model.ProfileImageFile),
-                    imageResult.ErrorMessage ?? "Image could not be uploaded.");
-
+                ModelState.AddModelError(nameof(model.ProfileImageFile), imageResult.ErrorMessage ?? "Image could not be uploaded.");
                 FillExistingProfileImage(model, currentUser);
                 return View(model);
             }
@@ -280,48 +295,100 @@ namespace TasteAtDoor.Controllers
                 return RedirectToAction(nameof(MyLocation));
             }
 
-            var caterer = await _context.Users
+            var restaurant = await _context.Users
                 .Include(u => u.MenuItems)
                     .ThenInclude(m => m.CustomizationGroups)
                         .ThenInclude(g => g.Options)
                 .FirstOrDefaultAsync(u => u.Id == id);
 
-            if (caterer is null)
+            if (restaurant is null)
             {
                 return NotFound();
             }
 
-            var isCaterer = await _userManager.IsInRoleAsync(caterer, "Caretaker");
+            var isCaretaker = await _userManager.IsInRoleAsync(restaurant, "Caretaker");
 
-            if (!isCaterer)
+            if (!isCaretaker)
             {
                 return NotFound();
             }
 
-            if (!caterer.Latitude.HasValue || !caterer.Longitude.HasValue)
+            if (!restaurant.Latitude.HasValue || !restaurant.Longitude.HasValue)
             {
-                TempData["Error"] = "This caterer has not saved its service location yet.";
+                TempData["Error"] = "This caterer has not saved its location yet.";
                 return RedirectToAction(nameof(Index));
             }
 
-            var distanceKm = await GetVerifiedDistanceKmAsync(
+            double distanceKm;
+
+            var googleDistanceKm = await _googleMapsService.GetRouteDistanceKmAsync(
                 currentUser.Latitude.Value,
                 currentUser.Longitude.Value,
-                caterer.Latitude.Value,
-                caterer.Longitude.Value);
+                restaurant.Latitude.Value,
+                restaurant.Longitude.Value);
+
+            if (googleDistanceKm.HasValue)
+            {
+                distanceKm = googleDistanceKm.Value;
+            }
+            else
+            {
+                distanceKm = CalculateStraightLineDistanceKm(
+                    currentUser.Latitude.Value,
+                    currentUser.Longitude.Value,
+                    restaurant.Latitude.Value,
+                    restaurant.Longitude.Value);
+            }
+
+            var menuItems = restaurant.MenuItems
+                .OrderByDescending(m => m.Id)
+                .ToList();
+
+            var menuIds = menuItems
+                .Select(m => m.Id)
+                .ToList();
+
+            var menuRatingStats = await _context.OrderItemReviews
+                .Where(r => menuIds.Contains(r.MenuItemId))
+                .GroupBy(r => r.MenuItemId)
+                .Select(g => new
+                {
+                    MenuItemId = g.Key,
+                    AverageMenuRating = g.Average(r => r.MenuRating),
+                    ReviewCount = g.Count()
+                })
+                .ToListAsync();
+
+            var averageMenuRatings = menuRatingStats
+                .ToDictionary(x => x.MenuItemId, x => x.AverageMenuRating);
+
+            var menuReviewCounts = menuRatingStats
+                .ToDictionary(x => x.MenuItemId, x => x.ReviewCount);
+
+            var catererRatingStats = await _context.OrderItemReviews
+                .Where(r => r.CatererId == restaurant.Id)
+                .GroupBy(r => r.CatererId)
+                .Select(g => new
+                {
+                    AverageRating = g.Average(r => r.CatererRating),
+                    ReviewCount = g.Count()
+                })
+                .FirstOrDefaultAsync();
 
             var model = new RestaurantMenuPageViewModel
             {
-                RestaurantId = caterer.Id,
-                RestaurantName = caterer.FullName,
-                RestaurantAddress = caterer.Address,
-                RestaurantBio = caterer.Bio,
-                RestaurantLogoImageData = caterer.ProfileImageData,
-                RestaurantLogoImageContentType = caterer.ProfileImageContentType,
+                RestaurantId = restaurant.Id,
+                RestaurantName = restaurant.FullName,
+                RestaurantAddress = restaurant.Address,
+                RestaurantBio = restaurant.Bio,
+                RestaurantLogoImageData = restaurant.ProfileImageData,
+                RestaurantLogoImageContentType = restaurant.ProfileImageContentType,
                 DistanceKm = distanceKm,
-                MenuItems = caterer.MenuItems
-                    .OrderByDescending(m => m.Id)
-                    .ToList()
+                AverageCatererRating = catererRatingStats?.AverageRating ?? 0,
+                CatererReviewCount = catererRatingStats?.ReviewCount ?? 0,
+                MenuItems = menuItems,
+                AverageMenuRatings = averageMenuRatings,
+                MenuReviewCounts = menuReviewCounts
             };
 
             return View(model);
@@ -362,15 +429,30 @@ namespace TasteAtDoor.Controllers
 
             if (!menuItem.Caretaker.Latitude.HasValue || !menuItem.Caretaker.Longitude.HasValue)
             {
-                TempData["Error"] = "This caterer has not saved its service location yet.";
+                TempData["Error"] = "This caterer has not saved its location yet.";
                 return RedirectToAction(nameof(Index));
             }
 
-            var distanceKm = await GetVerifiedDistanceKmAsync(
+            double distanceKm;
+
+            var googleDistanceKm = await _googleMapsService.GetRouteDistanceKmAsync(
                 currentUser.Latitude.Value,
                 currentUser.Longitude.Value,
                 menuItem.Caretaker.Latitude.Value,
                 menuItem.Caretaker.Longitude.Value);
+
+            if (googleDistanceKm.HasValue)
+            {
+                distanceKm = googleDistanceKm.Value;
+            }
+            else
+            {
+                distanceKm = CalculateStraightLineDistanceKm(
+                    currentUser.Latitude.Value,
+                    currentUser.Longitude.Value,
+                    menuItem.Caretaker.Latitude.Value,
+                    menuItem.Caretaker.Longitude.Value);
+            }
 
             var reviewQuery = _context.OrderItemReviews
                 .Include(r => r.Order)
@@ -378,10 +460,7 @@ namespace TasteAtDoor.Controllers
                 .Include(r => r.MenuItem)
                 .Include(r => r.User)
                 .Include(r => r.Caterer)
-                .Where(r =>
-                    r.MenuItemId == id &&
-                    r.Order != null &&
-                    r.Order.Status == "Completed");
+                .Where(r => r.MenuItemId == id);
 
             var reviewCount = await reviewQuery.CountAsync();
 
@@ -473,8 +552,11 @@ namespace TasteAtDoor.Controllers
             var query = _context.Orders
                 .Include(o => o.OrderItems)
                     .ThenInclude(oi => oi.MenuItem)
+                        .ThenInclude(m => m!.Caretaker)
                 .Include(o => o.OrderItems)
                     .ThenInclude(oi => oi.Reviews)
+                .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.SelectedCustomizations)
                 .Where(o => o.ApplicationUserId == currentUser.Id)
                 .AsQueryable();
 
@@ -482,8 +564,8 @@ namespace TasteAtDoor.Controllers
             {
                 query = query.Where(o =>
                     o.Id.ToString().Contains(search) ||
-                    o.EventType.Contains(search) ||
-                    o.EventAddress.Contains(search) ||
+                    (!string.IsNullOrWhiteSpace(o.EventType) && o.EventType.Contains(search)) ||
+                    (!string.IsNullOrWhiteSpace(o.EventAddress) && o.EventAddress.Contains(search)) ||
                     o.OrderItems.Any(oi =>
                         oi.MenuItem != null &&
                         oi.MenuItem.Name.Contains(search)));
@@ -531,11 +613,7 @@ namespace TasteAtDoor.Controllers
         }
 
         [Authorize(Roles = "User")]
-        public async Task<IActionResult> MyReviews(
-            string search = "",
-            int? menuRating = null,
-            int? catererRating = null,
-            int page = 1)
+        public async Task<IActionResult> MyReviews(string search = "", int? menuRating = null, int? catererRating = null, int page = 1)
         {
             var currentUser = await _userManager.GetUserAsync(User);
 
@@ -716,30 +794,6 @@ namespace TasteAtDoor.Controllers
             return (true, null);
         }
 
-        private async Task<double> GetVerifiedDistanceKmAsync(
-            double startLatitude,
-            double startLongitude,
-            double endLatitude,
-            double endLongitude)
-        {
-            var googleDistanceKm = await _googleMapsService.GetRouteDistanceKmAsync(
-                startLatitude,
-                startLongitude,
-                endLatitude,
-                endLongitude);
-
-            if (googleDistanceKm.HasValue)
-            {
-                return googleDistanceKm.Value;
-            }
-
-            return CalculateStraightLineDistanceKm(
-                startLatitude,
-                startLongitude,
-                endLatitude,
-                endLongitude);
-        }
-
         private static double CalculateStraightLineDistanceKm(
             double startLatitude,
             double startLongitude,
@@ -748,18 +802,18 @@ namespace TasteAtDoor.Controllers
         {
             const double earthRadiusKm = 6371;
 
-            double dLat = DegreesToRadians(endLatitude - startLatitude);
-            double dLon = DegreesToRadians(endLongitude - startLongitude);
+            var dLat = DegreesToRadians(endLatitude - startLatitude);
+            var dLon = DegreesToRadians(endLongitude - startLongitude);
 
-            double lat1 = DegreesToRadians(startLatitude);
-            double lat2 = DegreesToRadians(endLatitude);
+            var lat1 = DegreesToRadians(startLatitude);
+            var lat2 = DegreesToRadians(endLatitude);
 
-            double a =
+            var a =
                 Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
                 Math.Cos(lat1) * Math.Cos(lat2) *
                 Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
 
-            double c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+            var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
 
             return earthRadiusKm * c;
         }

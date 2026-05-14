@@ -1,45 +1,28 @@
-using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using System.Diagnostics;
 using TasteAtDoor.Models;
 
-namespace TasteAtDoor.Controllers;
-
-public class HomeController : Controller
+namespace TasteAtDoor.Controllers
 {
-    public IActionResult Index()
+    public class HomeController : Controller
     {
-        if (User.Identity?.IsAuthenticated == true)
+        public IActionResult Index()
         {
-            if (User.IsInRole("Admin"))
-            {
-                return RedirectToAction("Dashboard", "Admin");
-            }
-
-            if (User.IsInRole("Caretaker"))
-            {
-                return RedirectToAction("Dashboard", "Caretaker");
-            }
-
-            if (User.IsInRole("User"))
-            {
-                return RedirectToAction("Dashboard", "User");
-            }
+            return RedirectToAction("Login", "Account", new { fresh = 1 });
         }
 
-        return RedirectToAction("Login", "Account");
-    }
-
-    public IActionResult Privacy()
-    {
-        return View();
-    }
-
-    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-    public IActionResult Error()
-    {
-        return View(new ErrorViewModel
+        public IActionResult Privacy()
         {
-            RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier
-        });
+            return View();
+        }
+
+        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+        public IActionResult Error()
+        {
+            return View(new ErrorViewModel
+            {
+                RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier
+            });
+        }
     }
 }

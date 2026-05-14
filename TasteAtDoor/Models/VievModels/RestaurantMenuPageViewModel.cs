@@ -18,8 +18,16 @@ namespace TasteAtDoor.Models.ViewModels
 
         public double DistanceKm { get; set; }
 
-        public bool CanOrder => DistanceKm <= 5;
+        public double AverageCatererRating { get; set; }
+
+        public int CatererReviewCount { get; set; }
+
+        public bool CanOrder => DistanceKm <= 15;
 
         public List<MenuItem> MenuItems { get; set; } = new();
+
+        public Dictionary<int, double> AverageMenuRatings { get; set; } = new();
+
+        public Dictionary<int, int> MenuReviewCounts { get; set; } = new();
     }
 }

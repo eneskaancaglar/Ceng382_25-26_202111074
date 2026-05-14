@@ -1,7 +1,7 @@
 @model TasteAtDoor.Models.ViewModels.MenuDetailsPageViewModel
 
 @{
-    ViewData["Title"] = $"{Model.MenuItem.Name} Package Details";
+    ViewData["Title"] = $"{Model.MenuItem.Name} Details";
     var item = Model.MenuItem;
 
     string? imageSource = null;
@@ -43,20 +43,20 @@
         @if (Model.CanOrder)
         {
             <div class="success-box">
-                This caterer is within 5 km. You can request this catering package.
+                This caterer is within 15 km. You can request this package.
             </div>
         }
         else
         {
             <div class="text-danger">
-                This caterer is outside 5 km. You can view details but cannot request this package.
+                This caterer is outside 15 km. You can view all package details, but requesting is disabled.
             </div>
         }
     </div>
 
     <div id="cart-client-message" class="mb-3"></div>
 
-    <div class="menu-detail-layout">
+    <div class="menu-detail-layout" data-package-card>
         <div class="menu-detail-image-panel">
             @if (!string.IsNullOrWhiteSpace(imageSource))
             {
@@ -72,72 +72,12 @@
             }
         </div>
 
-        <div class="menu-detail-info-panel" data-package-card>
+        <div class="menu-detail-info-panel">
             <h2>@item.Name</h2>
 
-            <p>
-                @item.Description
-            </p>
-
-            <div class="menu-meta mb-2">
-                <strong>Event Type:</strong> @item.EventType
-            </div>
-
-            <div class="menu-meta mb-2">
-                <strong>Category:</strong> @item.PackageCategory
-            </div>
-
-            <div class="menu-meta mb-2">
-                <strong>Guest Range:</strong>
-                @item.MinGuestCount - @item.MaxGuestCount guests
-            </div>
-
-            @if (!string.IsNullOrWhiteSpace(item.IncludedItems))
-            {
-                <div class="menu-meta mb-2">
-                    <strong>Included Items:</strong>
-                    <div>@item.IncludedItems</div>
-                </div>
-            }
-
-            @if (!string.IsNullOrWhiteSpace(item.ServiceDetails))
-            {
-                <div class="menu-meta mb-2">
-                    <strong>Service Details:</strong>
-                    <div>@item.ServiceDetails</div>
-                </div>
-            }
-
-            <div class="d-flex flex-wrap gap-2 mb-3">
-                @if (item.IncludesMainCourse)
-                {
-                    <span class="badge bg-primary">Main Course</span>
-                }
-
-                @if (item.IncludesDessert)
-                {
-                    <span class="badge bg-success">Dessert</span>
-                }
-
-                @if (item.IncludesSnacks)
-                {
-                    <span class="badge bg-warning text-dark">Snacks</span>
-                }
-
-                @if (item.IncludesDrinks)
-                {
-                    <span class="badge bg-info text-dark">Drinks</span>
-                }
-            </div>
-
-            <p>
-                <strong>Price Per Person:</strong> @item.Price.ToString("0.00") ₺
-            </p>
-
-            <div class="menu-rating-summary">
+            <div class="menu-rating-summary mb-3">
                 <div class="menu-rating-card">
                     <span>Package Rating</span>
-
                     @if (Model.ReviewCount > 0)
                     {
                         <strong>⭐ @Model.AverageMenuRating.ToString("0.0") / 5</strong>
@@ -150,7 +90,6 @@
 
                 <div class="menu-rating-card">
                     <span>Caterer Rating</span>
-
                     @if (Model.ReviewCount > 0)
                     {
                         <strong>⭐ @Model.AverageCatererRating.ToString("0.0") / 5</strong>
@@ -167,65 +106,151 @@
                 </div>
             </div>
 
-            <hr />
+            <div class="menu-detail-section-card">
+                <h3>Package Overview</h3>
 
-            <h3>Choose Package Options</h3>
+                <p>@item.Description</p>
 
-            @if (item.CustomizationGroups is null || !item.CustomizationGroups.Any())
-            {
-                <p class="text-muted">
-                    This catering package has no additional options.
-                </p>
-            }
-            else
-            {
-                foreach (var group in item.CustomizationGroups.OrderBy(g => g.Id))
+                <div class="menu-detail-info-grid">
+                    <div>
+                        <span>Price Per Person</span>
+                        <strong>@item.Price.ToString("0.00") ₺</strong>
+                    </div>
+
+                    <div>
+                        <span>Event Type</span>
+                        <strong>@item.EventType</strong>
+                    </div>
+
+                    <div>
+                        <span>Package Category</span>
+                        <strong>@item.PackageCategory</strong>
+                    </div>
+
+                    <div>
+                        <span>Guest Range</span>
+                        <strong>@item.MinGuestCount - @item.MaxGuestCount guests</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="menu-detail-section-card">
+                <h3>Package Includes</h3>
+
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    @if (item.IncludesMainCourse)
+                    {
+                        <span class="badge bg-primary">Main Course</span>
+                    }
+
+                    @if (item.IncludesDessert)
+                    {
+                        <span class="badge bg-success">Dessert</span>
+                    }
+
+                    @if (item.IncludesSnacks)
+                    {
+                        <span class="badge bg-warning text-dark">Snacks</span>
+                    }
+
+                    @if (item.IncludesDrinks)
+                    {
+                        <span class="badge bg-info text-dark">Drinks</span>
+                    }
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(item.IncludedItems))
                 {
-                    <div class="customization-select-group">
-                        <h4>@group.Title</h4>
-
-                        @if (group.Options is null || !group.Options.Any())
-                        {
-                            <p class="text-muted">
-                                No options in this group.
-                            </p>
-                        }
-                        else
-                        {
-                            <div class="customization-choice-list">
-                                @foreach (var option in group.Options.OrderBy(o => o.Id))
-                                {
-                                    <label class="customization-choice">
-                                        <input type="checkbox"
-                                               class="js-customization-option"
-                                               data-option-id="@option.Id"
-                                               data-group-title="@group.Title"
-                                               data-option-name="@option.Name"
-                                               data-price-change="@option.PriceChange.ToString(System.Globalization.CultureInfo.InvariantCulture)" />
-
-                                        <span class="customization-choice-text">
-                                            <strong>@option.Name</strong>
-
-                                            @if (option.PriceChange > 0)
-                                            {
-                                                <small>+ @option.PriceChange.ToString("0.00") ₺ / person</small>
-                                            }
-                                            else if (option.PriceChange < 0)
-                                            {
-                                                <small>@option.PriceChange.ToString("0.00") ₺ / person</small>
-                                            }
-                                            else
-                                            {
-                                                <small>No extra charge</small>
-                                            }
-                                        </span>
-                                    </label>
-                                }
-                            </div>
-                        }
+                    <div class="menu-meta mb-3">
+                        <strong>Included Items</strong>
+                        <div>@item.IncludedItems</div>
                     </div>
                 }
-            }
+                else
+                {
+                    <p class="text-muted">No included item details were provided.</p>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(item.ServiceDetails))
+                {
+                    <div class="menu-meta mb-3">
+                        <strong>Service Details</strong>
+                        <div>@item.ServiceDetails</div>
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted">No service details were provided.</p>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(item.LocationText))
+                {
+                    <div class="menu-meta mb-2">
+                        <strong>Package Location / Address</strong>
+                        <div>@item.LocationText</div>
+                    </div>
+                }
+            </div>
+
+            <div class="menu-detail-section-card">
+                <h3>Choose Package Options</h3>
+
+                @if (item.CustomizationGroups is null || !item.CustomizationGroups.Any())
+                {
+                    <p class="text-muted">
+                        This catering package has no customization options.
+                    </p>
+                }
+                else
+                {
+                    foreach (var group in item.CustomizationGroups.OrderBy(g => g.Id))
+                    {
+                        <div class="customization-select-group">
+                            <h4>@group.Title</h4>
+
+                            @if (group.Options is null || !group.Options.Any())
+                            {
+                                <p class="text-muted">
+                                    No options in this group.
+                                </p>
+                            }
+                            else
+                            {
+                                <div class="customization-choice-list">
+                                    @foreach (var option in group.Options.OrderBy(o => o.Id))
+                                    {
+                                        <label class="customization-choice">
+                                            <input type="checkbox"
+                                                   class="js-customization-option"
+                                                   data-option-id="@option.Id"
+                                                   data-group-title="@group.Title"
+                                                   data-option-name="@option.Name"
+                                                   data-price-change="@option.PriceChange.ToString(System.Globalization.CultureInfo.InvariantCulture)" />
+
+                                            <span class="customization-choice-text">
+                                                <strong>@option.Name</strong>
+
+                                                @if (option.PriceChange > 0)
+                                                {
+                                                    <small>+ @option.PriceChange.ToString("0.00") ₺ / guest</small>
+                                                }
+                                                else if (option.PriceChange < 0)
+                                                {
+                                                    <small>@option.PriceChange.ToString("0.00") ₺ / guest</small>
+                                                }
+                                                else
+                                                {
+                                                    <small>No extra charge</small>
+                                                }
+                                            </span>
+                                        </label>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                }
+            </div>
 
             <div class="package-guest-box">
                 <label class="form-label">Guest Count</label>
@@ -245,7 +270,7 @@
                 </div>
 
                 <small class="text-muted">
-                    You can also type the guest count manually.
+                    You can type the guest count manually. It must be between @item.MinGuestCount and @item.MaxGuestCount guests.
                 </small>
             </div>
 
@@ -278,13 +303,13 @@
                             data-max-guest-count="@item.MaxGuestCount"
                             data-image-content-type="@item.ImageContentType"
                             data-image-base64="@(item.ImageData is not null ? Convert.ToBase64String(item.ImageData) : "")">
-                        Add Package to Cart
+                        Add Selected Package to Cart
                     </button>
                 }
                 else
                 {
                     <button class="btn-secondary-main" disabled>
-                        Outside 5 km
+                        Outside 15 km - Request Disabled
                     </button>
                 }
             </div>
@@ -296,7 +321,7 @@
             <div>
                 <h2 class="page-title">Customer Reviews</h2>
                 <p class="page-subtitle">
-                    Reviews are shown only from completed orders for this catering package.
+                    Reviews are shown from customer ratings submitted for this catering package.
                 </p>
             </div>
         </div>
@@ -305,7 +330,7 @@
         {
             <div class="empty-state-card">
                 <h3>No reviews yet</h3>
-                <p>This catering package has not received any completed-order reviews yet.</p>
+                <p>This catering package has not received any reviews yet.</p>
             </div>
         }
         else
@@ -318,7 +343,7 @@
                             <div>
                                 <h3>@review.CustomerName</h3>
                                 <p>
-                                    Order #@review.OrderId · @review.CreatedAt.ToString("dd MMM yyyy HH:mm")
+                                    Request #@review.OrderId · @review.CreatedAt.ToString("dd MMM yyyy HH:mm")
                                 </p>
                             </div>
 
@@ -344,7 +369,7 @@
                         <div class="menu-review-footer">
                             <span>Package: @review.MenuItemName</span>
                             <span>Guest Count: @review.Quantity</span>
-                            <span>Line Total: @review.LineTotal.ToString("0.00") ₺</span>
+                            <span>Total: @review.LineTotal.ToString("0.00") ₺</span>
                         </div>
                     </div>
                 }

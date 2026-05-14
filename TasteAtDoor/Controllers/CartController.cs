@@ -127,57 +127,52 @@ namespace TasteAtDoor.Controllers
                 .Where(m => menuIds.Contains(m.Id))
                 .ToDictionaryAsync(m => m.Id);
 
+            const double maxAllowedDistanceKm = 15;
+
             foreach (var cartItem in clientCart)
             {
-                if (!menuItems.TryGetValue(cartItem.MenuItemId, out var packageForDistance))
+                if (!menuItems.TryGetValue(cartItem.MenuItemId, out var menuForDistance))
+                {
+                    continue;
+                }
+
+                if (menuForDistance.Caretaker is null ||
+                    !menuForDistance.Caretaker.Latitude.HasValue ||
+                    !menuForDistance.Caretaker.Longitude.HasValue)
                 {
                     ModelState.AddModelError(
                         string.Empty,
-                        "One of the packages in your cart could not be found.");
+                        $"Caterer location is missing for '{menuForDistance.Name}'.");
 
                     return View(model);
                 }
 
-                if (packageForDistance.Caretaker is null ||
-                    !packageForDistance.Caretaker.Latitude.HasValue ||
-                    !packageForDistance.Caretaker.Longitude.HasValue)
-                {
-                    ModelState.AddModelError(
-                        string.Empty,
-                        $"Caterer location is missing for '{packageForDistance.Name}'.");
+                double distanceKm;
 
-                    return View(model);
-                }
-
-                var distanceKm = await GetVerifiedDistanceKmAsync(
+                var googleDistanceKm = await _googleMapsService.GetRouteDistanceKmAsync(
                     currentUser.Latitude.Value,
                     currentUser.Longitude.Value,
-                    packageForDistance.Caretaker.Latitude.Value,
-                    packageForDistance.Caretaker.Longitude.Value);
+                    menuForDistance.Caretaker.Latitude.Value,
+                    menuForDistance.Caretaker.Longitude.Value);
 
-                if (distanceKm > 5)
+                if (googleDistanceKm.HasValue)
                 {
-                    ModelState.AddModelError(
-                        string.Empty,
-                        $"You cannot request '{packageForDistance.Name}' because this caterer is {distanceKm:0.0} km away. Maximum allowed distance is 5 km.");
-
-                    return View(model);
+                    distanceKm = googleDistanceKm.Value;
+                }
+                else
+                {
+                    distanceKm = CalculateFallbackDistanceKmForCheckout(
+                        currentUser.Latitude.Value,
+                        currentUser.Longitude.Value,
+                        menuForDistance.Caretaker.Latitude.Value,
+                        menuForDistance.Caretaker.Longitude.Value);
                 }
 
-                if (cartItem.Quantity < packageForDistance.MinGuestCount)
+                if (distanceKm > maxAllowedDistanceKm)
                 {
                     ModelState.AddModelError(
                         string.Empty,
-                        $"Guest count for '{packageForDistance.Name}' must be at least {packageForDistance.MinGuestCount}.");
-
-                    return View(model);
-                }
-
-                if (cartItem.Quantity > packageForDistance.MaxGuestCount)
-                {
-                    ModelState.AddModelError(
-                        string.Empty,
-                        $"Guest count for '{packageForDistance.Name}' cannot exceed {packageForDistance.MaxGuestCount}.");
+                        $"You cannot request '{menuForDistance.Name}' because this caterer is {distanceKm:0.0} km away. Maximum allowed distance is {maxAllowedDistanceKm:0} km.");
 
                     return View(model);
                 }
@@ -669,6 +664,34 @@ namespace TasteAtDoor.Controllers
         }
 
         private static double DegreesToRadians(double degrees)
+        {
+            return degrees * Math.PI / 180;
+        }
+        private static double CalculateFallbackDistanceKmForCheckout(
+            double startLatitude,
+            double startLongitude,
+            double endLatitude,
+            double endLongitude)
+        {
+            const double earthRadiusKm = 6371;
+
+            var dLat = DegreesToRadiansForCheckout(endLatitude - startLatitude);
+            var dLon = DegreesToRadiansForCheckout(endLongitude - startLongitude);
+
+            var lat1 = DegreesToRadiansForCheckout(startLatitude);
+            var lat2 = DegreesToRadiansForCheckout(endLatitude);
+
+            var a =
+                Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+                Math.Cos(lat1) * Math.Cos(lat2) *
+                Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+
+            var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+
+            return earthRadiusKm * c;
+        }
+
+        private static double DegreesToRadiansForCheckout(double degrees)
         {
             return degrees * Math.PI / 180;
         }

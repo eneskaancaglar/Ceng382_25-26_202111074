@@ -17,6 +17,10 @@ namespace TasteAtDoor.Models
         public ApplicationUser? SenderUser { get; set; }
 
         [Required]
+        [StringLength(50)]
+        public string SenderRole { get; set; } = string.Empty;
+
+        [Required]
         [StringLength(1000)]
         public string Message { get; set; } = string.Empty;
 

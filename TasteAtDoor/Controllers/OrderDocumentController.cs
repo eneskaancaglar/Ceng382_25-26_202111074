@@ -11,6 +11,7 @@ using TasteAtDoor.Services;
 namespace TasteAtDoor.Controllers
 {
     [Authorize(Roles = "User,Caretaker,Admin")]
+    [Route("[controller]")]
     public class OrderDocumentController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -27,9 +28,18 @@ namespace TasteAtDoor.Controllers
             _appLogService = appLogService;
         }
 
-        [HttpGet]
-        public async Task<IActionResult> ReceiptPdf(int id)
+        [HttpGet("ReceiptPdf")]
+        [HttpGet("ReceiptPdf/{rawId?}")]
+        public async Task<IActionResult> ReceiptPdf(string? rawId)
         {
+            var finalOrderId = ResolveOrderId(rawId);
+
+            if (finalOrderId <= 0)
+            {
+                TempData["Error"] = "Receipt PDF could not be opened because the catering request id was missing or invalid.";
+                return RedirectToSafePage();
+            }
+
             var currentUser = await _userManager.GetUserAsync(User);
 
             if (currentUser is null)
@@ -37,18 +47,20 @@ namespace TasteAtDoor.Controllers
                 return Challenge();
             }
 
-            var order = await LoadOrderForDocumentAsync(id);
+            var order = await LoadOrderForDocumentAsync(finalOrderId);
 
             if (order is null)
             {
-                return NotFound();
+                TempData["Error"] = $"Catering request #{finalOrderId} was not found.";
+                return RedirectToSafePage();
             }
 
             var canAccess = await CanAccessOrderAsync(currentUser, order);
 
             if (!canAccess)
             {
-                return Forbid();
+                TempData["Error"] = "You are not allowed to access this catering request document.";
+                return RedirectToSafePage();
             }
 
             var document = new OrderReceiptDocument(order);
@@ -56,7 +68,7 @@ namespace TasteAtDoor.Controllers
 
             await _appLogService.LogAsync(
                 eventType: "ReceiptPdfGenerated",
-                message: "Receipt PDF generated.",
+                message: "Catering receipt PDF generated.",
                 userId: currentUser.Id,
                 userEmail: currentUser.Email,
                 details: $"OrderId: {order.Id}");
@@ -64,12 +76,21 @@ namespace TasteAtDoor.Controllers
             return File(
                 pdfBytes,
                 "application/pdf",
-                $"receipt-order-{order.Id}.pdf");
+                $"CateringReceipt_Order_{order.Id}.pdf");
         }
 
-        [HttpGet]
-        public async Task<IActionResult> AgreementPdf(int id)
+        [HttpGet("AgreementPdf")]
+        [HttpGet("AgreementPdf/{rawId?}")]
+        public async Task<IActionResult> AgreementPdf(string? rawId)
         {
+            var finalOrderId = ResolveOrderId(rawId);
+
+            if (finalOrderId <= 0)
+            {
+                TempData["Error"] = "Agreement PDF could not be opened because the catering request id was missing or invalid.";
+                return RedirectToSafePage();
+            }
+
             var currentUser = await _userManager.GetUserAsync(User);
 
             if (currentUser is null)
@@ -77,18 +98,20 @@ namespace TasteAtDoor.Controllers
                 return Challenge();
             }
 
-            var order = await LoadOrderForDocumentAsync(id);
+            var order = await LoadOrderForDocumentAsync(finalOrderId);
 
             if (order is null)
             {
-                return NotFound();
+                TempData["Error"] = $"Catering request #{finalOrderId} was not found.";
+                return RedirectToSafePage();
             }
 
             var canAccess = await CanAccessOrderAsync(currentUser, order);
 
             if (!canAccess)
             {
-                return Forbid();
+                TempData["Error"] = "You are not allowed to access this catering request agreement.";
+                return RedirectToSafePage();
             }
 
             var document = new OrderAgreementDocument(order);
@@ -96,7 +119,7 @@ namespace TasteAtDoor.Controllers
 
             await _appLogService.LogAsync(
                 eventType: "AgreementPdfGenerated",
-                message: "Agreement PDF generated.",
+                message: "Serious Turkish catering service agreement PDF generated.",
                 userId: currentUser.Id,
                 userEmail: currentUser.Email,
                 details: $"OrderId: {order.Id}");
@@ -104,7 +127,27 @@ namespace TasteAtDoor.Controllers
             return File(
                 pdfBytes,
                 "application/pdf",
-                $"agreement-order-{order.Id}.pdf");
+                $"CateringAgreement_Order_{order.Id}.pdf");
+        }
+
+        private int ResolveOrderId(string? rawId)
+        {
+            if (int.TryParse(rawId, out var routeId) && routeId > 0)
+            {
+                return routeId;
+            }
+
+            if (int.TryParse(Request.Query["id"], out var queryId) && queryId > 0)
+            {
+                return queryId;
+            }
+
+            if (int.TryParse(Request.Query["orderId"], out var queryOrderId) && queryOrderId > 0)
+            {
+                return queryOrderId;
+            }
+
+            return 0;
         }
 
         private async Task<Order?> LoadOrderForDocumentAsync(int id)
@@ -139,6 +182,26 @@ namespace TasteAtDoor.Controllers
             }
 
             return false;
+        }
+
+        private IActionResult RedirectToSafePage()
+        {
+            if (User.IsInRole("User"))
+            {
+                return RedirectToAction("Orders", "User");
+            }
+
+            if (User.IsInRole("Caretaker"))
+            {
+                return RedirectToAction("Dashboard", "Caretaker");
+            }
+
+            if (User.IsInRole("Admin"))
+            {
+                return RedirectToAction("Orders", "Admin");
+            }
+
+            return RedirectToAction("Index", "Home");
         }
     }
 }
