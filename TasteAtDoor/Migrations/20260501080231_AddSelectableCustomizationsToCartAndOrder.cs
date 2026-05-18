@@ -69,3 +69,4 @@ namespace TasteAtDoor.Migrations
         }
     }
 }
+

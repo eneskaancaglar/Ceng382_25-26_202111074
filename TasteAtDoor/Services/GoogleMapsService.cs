@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using System.Text.Json;
 
 namespace TasteAtDoor.Services
@@ -205,3 +205,4 @@ namespace TasteAtDoor.Services
         }
     }
 }
+

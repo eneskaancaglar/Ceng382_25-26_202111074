@@ -1,4 +1,4 @@
-namespace TasteAtDoor.Services
+﻿namespace TasteAtDoor.Services
 {
     public interface IAppLogService
     {
@@ -11,3 +11,4 @@ namespace TasteAtDoor.Services
             string? details = null);
     }
 }
+

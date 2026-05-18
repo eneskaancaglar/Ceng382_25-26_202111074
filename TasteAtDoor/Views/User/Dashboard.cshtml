@@ -1,179 +1,485 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using TasteAtDoor.Models
+@inject UserManager<ApplicationUser> UserManager
 @model TasteAtDoor.Models.ViewModels.UserDashboardViewModel
 
 @{
-    ViewData["Title"] = "Customer Dashboard";
+    ViewData["Title"] = "Welcome";
+
+    var currentUser = await UserManager.GetUserAsync(User);
+    var fullName = currentUser?.FullName?.Trim();
+
+    var userDisplayName = !string.IsNullOrWhiteSpace(fullName)
+        ? fullName
+        : "Guest";
 }
 
-<div class="dashboard-shell">
-    <div class="page-header-row">
-        <div>
-            <h1 class="page-title">Customer Dashboard</h1>
-            <p class="page-subtitle">
-                Review your catering request summary, recent requests, receipts, and live chat access.
+<style>
+    .welcome-dashboard {
+        display: grid;
+        gap: 28px;
+    }
+
+    .welcome-hero {
+        position: relative;
+        overflow: hidden;
+        border-radius: 34px;
+        min-height: 560px;
+        padding: 42px;
+        color: #fff;
+        background:
+            radial-gradient(circle at 10% 15%, rgba(255,255,255,.26), transparent 26%),
+            radial-gradient(circle at 85% 20%, rgba(255,255,255,.18), transparent 22%),
+            radial-gradient(circle at 75% 80%, rgba(255,255,255,.10), transparent 24%),
+            linear-gradient(135deg, #7A0613 0%, #B3132A 42%, #F59E0B 100%);
+        box-shadow: 0 30px 70px rgba(122, 6, 19, .25);
+    }
+
+    .welcome-hero::before {
+        content: "";
+        position: absolute;
+        width: 320px;
+        height: 320px;
+        border-radius: 50%;
+        top: -90px;
+        right: -70px;
+        background: rgba(255,255,255,.12);
+    }
+
+    .welcome-hero::after {
+        content: "";
+        position: absolute;
+        width: 240px;
+        height: 240px;
+        border-radius: 50%;
+        bottom: -90px;
+        left: -70px;
+        background: rgba(255,255,255,.08);
+    }
+
+    .welcome-hero-inner {
+        position: relative;
+        z-index: 2;
+        display: grid;
+        grid-template-columns: minmax(0, 1.15fr) minmax(280px, .85fr);
+        gap: 28px;
+        align-items: center;
+        min-height: 476px;
+    }
+
+    .welcome-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border-radius: 999px;
+        padding: 9px 16px;
+        background: rgba(255,255,255,.15);
+        border: 1px solid rgba(255,255,255,.22);
+        font-size: .8rem;
+        font-weight: 900;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        margin-bottom: 18px;
+        backdrop-filter: blur(10px);
+    }
+
+    .welcome-title {
+        margin: 0;
+        font-size: clamp(2.5rem, 5vw, 4.6rem);
+        line-height: .98;
+        font-weight: 950;
+        letter-spacing: -.05em;
+        max-width: 760px;
+    }
+
+    .welcome-subtitle {
+        margin: 18px 0 0;
+        font-size: 1.08rem;
+        line-height: 1.75;
+        color: rgba(255,255,255,.92);
+        max-width: 720px;
+    }
+
+    .welcome-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        margin-top: 28px;
+    }
+
+    .welcome-btn-primary,
+    .welcome-btn-secondary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 48px;
+        padding: 12px 20px;
+        border-radius: 999px;
+        font-weight: 900;
+        text-decoration: none;
+        transition: .22s ease;
+    }
+
+    .welcome-btn-primary {
+        background: #fff;
+        color: #7A0613 !important;
+        box-shadow: 0 16px 30px rgba(0,0,0,.18);
+    }
+
+    .welcome-btn-secondary {
+        color: #fff !important;
+        background: rgba(255,255,255,.12);
+        border: 1px solid rgba(255,255,255,.28);
+        backdrop-filter: blur(10px);
+    }
+
+    .welcome-btn-primary:hover,
+    .welcome-btn-secondary:hover {
+        transform: translateY(-3px);
+    }
+
+    .welcome-visual-side {
+        display: grid;
+        gap: 16px;
+    }
+
+    .glass-showcase {
+        position: relative;
+        overflow: hidden;
+        border-radius: 26px;
+        padding: 22px;
+        background: rgba(255,255,255,.14);
+        border: 1px solid rgba(255,255,255,.22);
+        backdrop-filter: blur(14px);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.12);
+    }
+
+    .glass-showcase h3 {
+        margin: 0 0 10px;
+        font-size: 1.15rem;
+        font-weight: 900;
+        color: #fff;
+    }
+
+    .glass-showcase p {
+        margin: 0;
+        color: rgba(255,255,255,.88);
+        line-height: 1.6;
+        font-size: .95rem;
+    }
+
+    .showcase-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+    }
+
+    .mini-show {
+        border-radius: 22px;
+        padding: 18px;
+        min-height: 120px;
+        background: rgba(255,255,255,.12);
+        border: 1px solid rgba(255,255,255,.20);
+        backdrop-filter: blur(12px);
+    }
+
+    .mini-show .emoji {
+        font-size: 1.7rem;
+        margin-bottom: 10px;
+    }
+
+    .mini-show h4 {
+        margin: 0 0 6px;
+        font-size: 1rem;
+        font-weight: 900;
+    }
+
+    .mini-show p {
+        margin: 0;
+        color: rgba(255,255,255,.85);
+        font-size: .9rem;
+        line-height: 1.5;
+    }
+
+    .welcome-section {
+        display: grid;
+        gap: 18px;
+    }
+
+    .welcome-section-head {
+        text-align: center;
+        margin-top: 8px;
+    }
+
+    .welcome-section-head h2 {
+        margin: 0;
+        font-size: 2rem;
+        font-weight: 950;
+        color: #242124;
+        letter-spacing: -.03em;
+    }
+
+    .welcome-section-head p {
+        margin: 10px auto 0;
+        max-width: 720px;
+        color: #6F6870;
+        line-height: 1.65;
+    }
+
+    .experience-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 18px;
+    }
+
+    .experience-card {
+        position: relative;
+        overflow: hidden;
+        border-radius: 28px;
+        min-height: 230px;
+        padding: 24px;
+        background: rgba(255,255,255,.95);
+        border: 1px solid rgba(36,33,36,.08);
+        box-shadow: 0 20px 44px rgba(36,33,36,.08);
+        transition: .22s ease;
+    }
+
+    .experience-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 26px 52px rgba(36,33,36,.13);
+    }
+
+    .experience-card.one {
+        background:
+            radial-gradient(circle at top right, rgba(245,158,11,.16), transparent 28%),
+            linear-gradient(135deg, #fff8ef 0%, #ffffff 65%);
+    }
+
+    .experience-card.two {
+        background:
+            radial-gradient(circle at top right, rgba(179,19,42,.12), transparent 28%),
+            linear-gradient(135deg, #fff4f6 0%, #ffffff 65%);
+    }
+
+    .experience-card.three {
+        background:
+            radial-gradient(circle at top right, rgba(122,6,19,.12), transparent 28%),
+            linear-gradient(135deg, #fff7f7 0%, #ffffff 65%);
+    }
+
+    .experience-no {
+        width: 46px;
+        height: 46px;
+        border-radius: 16px;
+        display: grid;
+        place-items: center;
+        margin-bottom: 18px;
+        font-weight: 950;
+        background: #fff;
+        color: #7A0613;
+        box-shadow: 0 12px 24px rgba(122,6,19,.12);
+    }
+
+    .experience-card h3 {
+        margin: 0 0 10px;
+        font-size: 1.18rem;
+        font-weight: 950;
+        color: #242124;
+    }
+
+    .experience-card p {
+        margin: 0;
+        color: #6F6870;
+        line-height: 1.7;
+        font-size: .95rem;
+    }
+
+    .cta-banner {
+        position: relative;
+        overflow: hidden;
+        border-radius: 30px;
+        padding: 30px;
+        background:
+            radial-gradient(circle at left center, rgba(255,255,255,.18), transparent 30%),
+            linear-gradient(135deg, #242124 0%, #7A0613 55%, #B3132A 100%);
+        color: #fff;
+        box-shadow: 0 24px 55px rgba(36,33,36,.18);
+    }
+
+    .cta-banner h2 {
+        margin: 0 0 12px;
+        font-size: 2rem;
+        font-weight: 950;
+        letter-spacing: -.03em;
+    }
+
+    .cta-banner p {
+        margin: 0;
+        max-width: 760px;
+        line-height: 1.75;
+        color: rgba(255,255,255,.9);
+    }
+
+    .cta-banner .welcome-actions {
+        margin-top: 22px;
+    }
+
+    @@media (max-width: 1050px) {
+        .welcome-hero-inner,
+        .experience-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .welcome-hero {
+            min-height: auto;
+        }
+    }
+
+    @@media (max-width: 700px) {
+        .welcome-hero {
+            padding: 26px;
+        }
+
+        .showcase-grid,
+        .experience-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .welcome-title {
+            font-size: 2.35rem;
+        }
+
+        .welcome-subtitle {
+            font-size: 1rem;
+        }
+    }
+</style>
+
+<div class="dashboard-shell welcome-dashboard">
+
+    <section class="welcome-hero">
+        <div class="welcome-hero-inner">
+            <div>
+                <div class="welcome-kicker">TasteAtDoor Experience</div>
+
+                <h1 class="welcome-title">
+                    Welcome, @userDisplayName.
+                    Let’s plan your next unforgettable event.
+                </h1>
+
+                <p class="welcome-subtitle">
+                    Step into a premium catering experience. Explore beautifully prepared menus,
+                    save your event location, and begin your order journey through a modern,
+                    polished, and effortless interface.
+                </p>
+
+                <div class="welcome-actions">
+                    <a asp-controller="User" asp-action="Index" class="welcome-btn-primary">
+                        Explore Catering Menus
+                    </a>
+                    <a asp-controller="User" asp-action="MyLocation" class="welcome-btn-secondary">
+                        Set My Location
+                    </a>
+                    <a asp-controller="Cart" asp-action="Index" class="welcome-btn-secondary">
+                        Open Cart
+                    </a>
+                </div>
+            </div>
+
+            <div class="welcome-visual-side">
+                <div class="glass-showcase">
+                    <h3>A refined start for every event</h3>
+                    <p>
+                        From private gatherings to larger celebrations, TasteAtDoor helps you
+                        discover the right catering packages with a cleaner and more welcoming experience.
+                    </p>
+                </div>
+
+                <div class="showcase-grid">
+                    <div class="mini-show">
+                        <div class="emoji">🍽️</div>
+                        <h4>Curated Menus</h4>
+                        <p>Find polished catering packages prepared for different event styles.</p>
+                    </div>
+
+                    <div class="mini-show">
+                        <div class="emoji">📍</div>
+                        <h4>Smart Location</h4>
+                        <p>Save your location and continue with a smoother order flow.</p>
+                    </div>
+
+                    <div class="mini-show">
+                        <div class="emoji">✨</div>
+                        <h4>Elegant Journey</h4>
+                        <p>Enjoy a visually rich dashboard designed for a premium first impression.</p>
+                    </div>
+
+                    <div class="mini-show">
+                        <div class="emoji">🎉</div>
+                        <h4>Event Ready</h4>
+                        <p>Start planning your next gathering with comfort, speed, and style.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="welcome-section">
+        <div class="welcome-section-head">
+            <h2>Your catering journey starts here</h2>
+            <p>
+                This page is designed as a clean and visually rich welcome area.
+                Instead of showing dense operational details, it gives customers a strong first impression
+                and guides them toward the main actions.
             </p>
         </div>
 
-        <div class="hero-buttons">
-            <a asp-controller="User"
-               asp-action="Index"
-               class="btn-main">
-                Browse Caterers
-            </a>
-
-            <a asp-controller="User"
-               asp-action="Orders"
-               class="btn-secondary-main">
-                View All Catering Requests
-            </a>
-        </div>
-    </div>
-
-    @if (TempData["Error"] is string errorMessage)
-    {
-        <div class="alert alert-danger">@errorMessage</div>
-    }
-
-    @if (TempData["Success"] is string successMessage)
-    {
-        <div class="success-box">@successMessage</div>
-    }
-
-    <div class="cards-section">
-        <div class="info-card">
-            <h3>Total Requests</h3>
-            <p class="dashboard-number">@Model.TotalOrders</p>
-        </div>
-
-        <div class="info-card">
-            <h3>Total Spent</h3>
-            <p class="dashboard-number">@Model.TotalSpent.ToString("0.00") ₺</p>
-        </div>
-
-        <div class="info-card">
-            <h3>Total Guests Ordered</h3>
-            <p class="dashboard-number">@Model.TotalItemsPurchased</p>
-        </div>
-    </div>
-
-    <div class="table-card">
-        <div class="page-header-row">
-            <div>
-                <h2 class="section-title">Recent Catering Requests</h2>
-                <p class="page-subtitle">
-                    Open chat and live call from any recent catering request.
+        <div class="experience-grid">
+            <a asp-controller="User" asp-action="Index" class="experience-card one" style="text-decoration:none;">
+                <div class="experience-no">01</div>
+                <h3>Explore Menus</h3>
+                <p>
+                    Browse caterers and discover menu packages prepared for different events,
+                    guest counts, and catering styles.
                 </p>
-            </div>
+            </a>
 
-            <a asp-controller="User"
-               asp-action="Orders"
-               class="btn-secondary-main">
-                View All
+            <a asp-controller="User" asp-action="MyLocation" class="experience-card two" style="text-decoration:none;">
+                <div class="experience-no">02</div>
+                <h3>Choose Location</h3>
+                <p>
+                    Save your preferred location and make the delivery and distance experience
+                    more seamless for your upcoming catering request.
+                </p>
+            </a>
+
+            <a asp-controller="Cart" asp-action="Index" class="experience-card three" style="text-decoration:none;">
+                <div class="experience-no">03</div>
+                <h3>Continue Ordering</h3>
+                <p>
+                    Open your cart anytime and continue your catering journey with a cleaner
+                    and more guided customer flow.
+                </p>
             </a>
         </div>
+    </section>
 
-        @if (Model.RecentOrders is null || !Model.RecentOrders.Any())
-        {
-            <div class="empty-box">
-                <h3>No catering requests yet</h3>
-                <p>You have not created any catering request yet.</p>
+    <section class="cta-banner">
+        <h2>Create a memorable event with a better first impression</h2>
+        <p>
+            TasteAtDoor helps customers move from discovery to ordering with a smooth, modern,
+            and event-focused experience. The page keeps the first screen simple, premium,
+            and action-oriented.
+        </p>
 
-                <a asp-controller="User"
-                   asp-action="Index"
-                   class="btn-main">
-                    Browse Caterers
-                </a>
-            </div>
-        }
-        else
-        {
-            <div class="group-stack">
-                @foreach (var order in Model.RecentOrders)
-                {
-                    <div class="group-card">
-                        <div class="group-card-header">
-                            <div>
-                                <h3>Catering Request #@order.Id</h3>
+        <div class="welcome-actions">
+            <a asp-controller="User" asp-action="Index" class="welcome-btn-primary">
+                Start Browsing Now
+            </a>
+            <a asp-controller="User" asp-action="MyReviews" class="welcome-btn-secondary">
+                View My Reviews
+            </a>
+        </div>
+    </section>
 
-                                <div class="cart-meta">
-                                    <strong>Request Date:</strong>
-                                    @order.OrderDate.ToString("dd MMM yyyy HH:mm")
-                                </div>
-
-                                <div class="cart-meta">
-                                    <strong>Status:</strong>
-                                    @order.Status
-                                </div>
-
-                                <div class="cart-meta">
-                                    <strong>Event Type:</strong>
-                                    @order.EventType
-                                </div>
-
-                                @if (order.EventDate.HasValue)
-                                {
-                                    <div class="cart-meta">
-                                        <strong>Event Date:</strong>
-                                        @order.EventDate.Value.ToString("dd MMM yyyy HH:mm")
-                                    </div>
-                                }
-
-                                <div class="cart-meta">
-                                    <strong>Total Guest Count:</strong>
-                                    @order.GuestCount
-                                </div>
-
-                                <div class="cart-meta">
-                                    <strong>Total Estimated Price:</strong>
-                                    @order.TotalPrice.ToString("0.00") ₺
-                                </div>
-                            </div>
-
-                            <div class="group-actions">
-                                <a asp-controller="OrderChat"
-                                   asp-action="Room"
-                                   asp-route-id="@order.Id"
-                                   class="btn-main">
-                                    Open Chat / Live Call
-                                </a>
-
-                                <a asp-controller="User"
-                                   asp-action="Receipt"
-                                   asp-route-id="@order.Id"
-                                   class="btn-secondary-main">
-                                    View Receipt
-                                </a>
-                            </div>
-                        </div>
-
-                        @if (order.OrderItems is not null && order.OrderItems.Any())
-                        {
-                            <div class="option-list">
-                                @foreach (var item in order.OrderItems)
-                                {
-                                    <div class="option-row">
-                                        <div>
-                                            <strong>@(item.MenuItem?.Name ?? "Catering Package")</strong>
-
-                                            <span class="option-meta">
-                                                Guest Count: @item.Quantity |
-                                                Price Per Person: @item.FinalUnitPrice.ToString("0.00") ₺ |
-                                                Package Total: @item.LineTotal.ToString("0.00") ₺
-                                            </span>
-
-                                            @if (item.MenuItem?.Caretaker is not null)
-                                            {
-                                                <span class="option-meta">
-                                                    Caterer: @item.MenuItem.Caretaker.FullName
-                                                </span>
-                                            }
-                                        </div>
-                                    </div>
-                                }
-                            </div>
-                        }
-                    </div>
-                }
-            </div>
-        }
-    </div>
 </div>

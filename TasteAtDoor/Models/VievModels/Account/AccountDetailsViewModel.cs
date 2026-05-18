@@ -1,4 +1,4 @@
-namespace TasteAtDoor.Models.ViewModels.Account
+﻿namespace TasteAtDoor.Models.ViewModels.Account
 {
     public class AccountDetailsViewModel
     {
@@ -8,3 +8,4 @@ namespace TasteAtDoor.Models.ViewModels.Account
         public List<string> Roles { get; set; } = new();
     }
 }
+

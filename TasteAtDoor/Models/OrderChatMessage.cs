@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace TasteAtDoor.Models
 {
@@ -27,3 +27,4 @@ namespace TasteAtDoor.Models
         public DateTime SentAt { get; set; } = DateTime.Now;
     }
 }
+

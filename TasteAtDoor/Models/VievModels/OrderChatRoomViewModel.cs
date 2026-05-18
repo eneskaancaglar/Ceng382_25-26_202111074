@@ -1,4 +1,4 @@
-namespace TasteAtDoor.Models.ViewModels
+﻿namespace TasteAtDoor.Models.ViewModels
 {
     public class OrderChatRoomViewModel
     {
@@ -36,3 +36,4 @@ namespace TasteAtDoor.Models.ViewModels
         public DateTime CreatedAt { get; set; }
     }
 }
+

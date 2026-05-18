@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace TasteAtDoor.Models
 {
@@ -28,3 +28,4 @@ namespace TasteAtDoor.Models
         public string? Details { get; set; }
     }
 }
+

@@ -21,9 +21,40 @@
     string accountName = "Account";
     string accountRoleLabel = "";
 
+    string dashboardController = "Home";
+    string dashboardAction = "Index";
+
+    string profileController = "User";
+    string profileAction = "Profile";
+
     if (!isPureAuthPage && SignInManager.IsSignedIn(User))
     {
         currentUser = await UserManager.GetUserAsync(User);
+
+        if (User.IsInRole("Admin"))
+        {
+            dashboardController = "Admin";
+            dashboardAction = "Dashboard";
+
+            profileController = "Admin";
+            profileAction = "Dashboard";
+        }
+        else if (User.IsInRole("Caretaker") || User.IsInRole("Caterer"))
+        {
+            dashboardController = "Caretaker";
+            dashboardAction = "Dashboard";
+
+            profileController = "Caretaker";
+            profileAction = "Profile";
+        }
+        else
+        {
+            dashboardController = "User";
+            dashboardAction = "Dashboard";
+
+            profileController = "User";
+            profileAction = "Profile";
+        }
 
         if (currentUser is not null)
         {
@@ -43,13 +74,13 @@
                     $"data:{currentUser.ProfileImageContentType};base64,{Convert.ToBase64String(currentUser.ProfileImageData)}";
             }
 
-            if (User.IsInRole("Caretaker"))
-            {
-                accountRoleLabel = "Caterer";
-            }
-            else if (User.IsInRole("Admin"))
+            if (User.IsInRole("Admin"))
             {
                 accountRoleLabel = "Admin";
+            }
+            else if (User.IsInRole("Caretaker") || User.IsInRole("Caterer"))
+            {
+                accountRoleLabel = "Caterer";
             }
             else
             {
@@ -57,8 +88,6 @@
             }
         }
     }
-
-    string profileController = User.IsInRole("Caretaker") ? "Caretaker" : "User";
 }
 
 <!DOCTYPE html>
@@ -94,7 +123,9 @@ else
         {
             <div class="modern-app-shell">
                 <aside class="modern-sidebar">
-                    <a class="modern-sidebar-brand" asp-controller="Home" asp-action="Index">
+                    <a class="modern-sidebar-brand"
+                       asp-controller="@dashboardController"
+                       asp-action="@dashboardAction">
                         <span class="modern-logo-box">
                             <img src="~/images/app-logo.png"
                                  alt="TasteAtDoor"
@@ -140,7 +171,7 @@ else
                                 <span>Logs</span>
                             </a>
                         }
-                        else if (User.IsInRole("Caretaker"))
+                        else if (User.IsInRole("Caretaker") || User.IsInRole("Caterer"))
                         {
                             <a asp-controller="Caretaker" asp-action="Dashboard" class="modern-sidebar-link">
                                 <span class="modern-sidebar-icon">📊</span>
@@ -174,6 +205,11 @@ else
                         }
                         else
                         {
+                            <a asp-controller="User" asp-action="Dashboard" class="modern-sidebar-link">
+                                <span class="modern-sidebar-icon">📊</span>
+                                <span>Dashboard</span>
+                            </a>
+
                             <a asp-controller="User" asp-action="Index" class="modern-sidebar-link">
                                 <span class="modern-sidebar-icon">🏢</span>
                                 <span>Caterers</span>
@@ -209,14 +245,36 @@ else
 
                 <main class="modern-main">
                     <header class="modern-topbar">
-                        <div class="modern-topbar-title">
-                            <span>@ViewData["Title"]</span>
-                            <small>TasteAtDoor Catering</small>
+                        <div class="modern-topbar-left">
+                            <a class="modern-topbar-brand"
+                               asp-controller="@dashboardController"
+                               asp-action="@dashboardAction">
+                                <span class="modern-logo-box modern-topbar-logo-box">
+                                    <img src="~/images/app-logo.png"
+                                         alt="TasteAtDoor"
+                                         class="modern-logo-img"
+                                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+
+                                    <span class="modern-logo-fallback" style="display:none;">
+                                        T
+                                    </span>
+                                </span>
+
+                                <span class="modern-brand-text modern-topbar-brand-text">
+                                    <strong>TasteAtDoor</strong>
+                                    <small>Event catering nearby</small>
+                                </span>
+                            </a>
+
+                            <div class="modern-topbar-title">
+                                <span>@ViewData["Title"]</span>
+                                <small>TasteAtDoor Catering</small>
+                            </div>
                         </div>
 
                         <div class="modern-topbar-actions">
                             <a asp-controller="@profileController"
-                               asp-action="Profile"
+                               asp-action="@profileAction"
                                class="modern-account-pill">
                                 <span class="modern-account-avatar">
                                     @if (!string.IsNullOrWhiteSpace(accountImageSource))
@@ -267,3 +325,4 @@ else
     </body>
 }
 </html>
+

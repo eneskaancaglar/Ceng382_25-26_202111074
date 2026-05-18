@@ -1,4 +1,4 @@
-namespace TasteAtDoor.Models.ViewModels
+﻿namespace TasteAtDoor.Models.ViewModels
 {
     public class RestaurantListItemViewModel
     {
@@ -27,3 +27,5 @@ namespace TasteAtDoor.Models.ViewModels
         public bool CanOrder => DistanceKm <= 15;
     }
 }
+
+

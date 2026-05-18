@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Http;
 
 namespace TasteAtDoor.Models.ViewModels
@@ -34,3 +34,4 @@ namespace TasteAtDoor.Models.ViewModels
 			!string.IsNullOrWhiteSpace(ExistingImageContentType);
 	}
 }
+

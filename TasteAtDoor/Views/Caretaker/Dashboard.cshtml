@@ -1,32 +1,416 @@
-@model TasteAtDoor.Models.ViewModels.CaretakerDashboardViewModel
+﻿@model TasteAtDoor.Models.ViewModels.CaretakerDashboardViewModel
 
 @{
     ViewData["Title"] = "Caterer Dashboard";
+    var recentItems = Model.RecentOrderItems ?? new List<TasteAtDoor.Models.OrderItem>();
+    var activeItems = recentItems.Count(i => i.Order != null && !string.Equals(i.Order.Status, "Completed", StringComparison.OrdinalIgnoreCase));
 }
 
-<div class="dashboard-shell">
-    <div class="page-header-row">
-        <div>
-            <h1 class="page-title">Caterer Dashboard</h1>
-            <p class="page-subtitle">
-                Manage your catering packages, received catering requests, reviews, chat, and live calls.
-            </p>
-        </div>
+<style>
+    .role-dashboard {
+        display: grid;
+        gap: 24px;
+    }
 
-        <div class="hero-buttons">
-            <a asp-controller="Caretaker"
-               asp-action="Create"
-               class="btn-main">
-                Create Catering Package
-            </a>
+    .role-hero {
+        position: relative;
+        overflow: hidden;
+        border-radius: 30px;
+        padding: 34px;
+        color: #fff;
+        background:
+            radial-gradient(circle at 15% 10%, rgba(255,255,255,.28), transparent 30%),
+            linear-gradient(135deg, #064E3B 0%, #0F766E 45%, #0EA5E9 100%);
+        box-shadow: 0 24px 55px rgba(6, 78, 59, .24);
+    }
 
-            <a asp-controller="Caretaker"
-               asp-action="Index"
-               class="btn-secondary-main">
-                My Catering Packages
-            </a>
+    .role-hero::before {
+        content: "";
+        position: absolute;
+        right: -80px;
+        top: -80px;
+        width: 260px;
+        height: 260px;
+        border-radius: 50%;
+        background: rgba(255,255,255,.14);
+    }
+
+    .role-hero::after {
+        content: "";
+        position: absolute;
+        right: 80px;
+        bottom: -95px;
+        width: 210px;
+        height: 210px;
+        border-radius: 50%;
+        background: rgba(255,255,255,.11);
+    }
+
+    .role-hero-inner {
+        position: relative;
+        z-index: 2;
+        display: grid;
+        grid-template-columns: minmax(0, 1.4fr) minmax(250px, .6fr);
+        gap: 28px;
+        align-items: center;
+    }
+
+    .role-kicker {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 8px 14px;
+        background: rgba(255,255,255,.17);
+        border: 1px solid rgba(255,255,255,.24);
+        font-size: .78rem;
+        font-weight: 900;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        margin-bottom: 16px;
+    }
+
+    .role-hero h1 {
+        margin: 0;
+        max-width: 780px;
+        font-size: clamp(2.1rem, 4vw, 3.7rem);
+        line-height: 1.02;
+        font-weight: 950;
+        letter-spacing: -.045em;
+    }
+
+    .role-hero p {
+        max-width: 760px;
+        margin: 16px 0 0;
+        color: rgba(255,255,255,.9);
+        font-size: 1.06rem;
+        line-height: 1.65;
+    }
+
+    .role-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 24px;
+    }
+
+    .role-btn-primary,
+    .role-btn-ghost {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 46px;
+        border-radius: 999px;
+        padding: 11px 18px;
+        text-decoration: none;
+        font-weight: 900;
+        transition: .2s ease;
+    }
+
+    .role-btn-primary {
+        background: #fff;
+        color: #064E3B !important;
+        box-shadow: 0 14px 26px rgba(0,0,0,.18);
+    }
+
+    .role-btn-primary:hover,
+    .role-btn-ghost:hover {
+        transform: translateY(-2px);
+    }
+
+    .role-btn-ghost {
+        color: #fff !important;
+        background: rgba(255,255,255,.12);
+        border: 1px solid rgba(255,255,255,.34);
+    }
+
+    .role-hero-panel {
+        padding: 22px;
+        border-radius: 24px;
+        background: rgba(255,255,255,.14);
+        border: 1px solid rgba(255,255,255,.22);
+        backdrop-filter: blur(12px);
+    }
+
+    .role-hero-panel strong {
+        display: block;
+        font-size: 2.4rem;
+        line-height: 1;
+        margin-bottom: 8px;
+    }
+
+    .role-hero-panel span {
+        display: block;
+        color: rgba(255,255,255,.86);
+        line-height: 1.5;
+    }
+
+    .role-stat-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 16px;
+    }
+
+    .role-stat-card,
+    .role-card,
+    .role-table-card {
+        background: rgba(255,255,255,.95);
+        border: 1px solid rgba(36, 33, 36, .08);
+        border-radius: 24px;
+        box-shadow: 0 18px 42px rgba(36, 33, 36, .08);
+    }
+
+    .role-stat-card {
+        padding: 20px;
+    }
+
+    .role-stat-label {
+        color: #6F6870;
+        font-weight: 900;
+        font-size: .78rem;
+        letter-spacing: .07em;
+        text-transform: uppercase;
+    }
+
+    .role-stat-value {
+        margin-top: 8px;
+        color: #242124;
+        font-size: 2rem;
+        line-height: 1.05;
+        font-weight: 950;
+        letter-spacing: -.035em;
+    }
+
+    .role-stat-hint {
+        margin-top: 8px;
+        color: #6F6870;
+        font-size: .92rem;
+    }
+
+    .role-section-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: flex-end;
+        margin-top: 4px;
+    }
+
+    .role-section-head h2 {
+        margin: 0;
+        color: #242124;
+        font-size: 1.45rem;
+        font-weight: 950;
+        letter-spacing: -.02em;
+    }
+
+    .role-section-head p {
+        margin: 6px 0 0;
+        color: #6F6870;
+    }
+
+    .role-action-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+    }
+
+    .role-card {
+        display: block;
+        padding: 22px;
+        min-height: 168px;
+        color: #242124 !important;
+        text-decoration: none;
+        transition: .2s ease;
+    }
+
+    .role-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 24px 50px rgba(36, 33, 36, .13);
+    }
+
+    .role-card-icon {
+        width: 48px;
+        height: 48px;
+        display: grid;
+        place-items: center;
+        border-radius: 18px;
+        margin-bottom: 18px;
+        background: #E7F8F5;
+        color: #064E3B;
+        font-size: 1.2rem;
+        font-weight: 950;
+    }
+
+    .role-card h3 {
+        margin: 0 0 8px;
+        font-size: 1.1rem;
+        font-weight: 950;
+    }
+
+    .role-card p {
+        margin: 0;
+        color: #6F6870;
+        line-height: 1.55;
+        font-size: .95rem;
+    }
+
+    .role-table-card {
+        padding: 24px;
+    }
+
+    .role-request-list {
+        display: grid;
+        gap: 14px;
+        margin-top: 18px;
+    }
+
+    .role-request-item {
+        border: 1px solid rgba(36, 33, 36, .08);
+        border-radius: 20px;
+        padding: 18px;
+        background: linear-gradient(135deg, #fff, #f8fafc);
+    }
+
+    .role-request-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: flex-start;
+    }
+
+    .role-request-top h3 {
+        margin: 0 0 8px;
+        font-size: 1.05rem;
+        font-weight: 950;
+    }
+
+    .role-badge {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 6px 11px;
+        background: #E7F8F5;
+        color: #064E3B;
+        font-size: .78rem;
+        font-weight: 900;
+        white-space: nowrap;
+    }
+
+    .role-meta-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 12px;
+    }
+
+    .role-meta {
+        color: #6F6870;
+        font-size: .9rem;
+    }
+
+    .role-meta strong {
+        display: block;
+        color: #242124;
+        font-size: .82rem;
+        margin-bottom: 3px;
+    }
+
+    .role-mini-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 14px;
+    }
+
+    .role-mini-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        min-height: 38px;
+        padding: 8px 13px;
+        background: #064E3B;
+        color: #fff !important;
+        text-decoration: none;
+        font-weight: 850;
+        font-size: .9rem;
+    }
+
+    .role-mini-link.secondary {
+        color: #064E3B !important;
+        background: #E7F8F5;
+    }
+
+    .role-empty {
+        margin-top: 18px;
+        border-radius: 22px;
+        padding: 28px;
+        background: #ECFDF5;
+        border: 1px dashed rgba(6, 78, 59, .22);
+        text-align: center;
+    }
+
+    .role-empty h3 {
+        margin: 0 0 8px;
+        font-weight: 950;
+    }
+
+    .role-empty p {
+        color: #6F6870;
+        margin-bottom: 18px;
+    }
+
+    @@media (max-width: 1100px) {
+        .role-hero-inner,
+        .role-stat-grid,
+        .role-action-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @@media (max-width: 700px) {
+        .role-hero {
+            padding: 24px;
+        }
+
+        .role-hero-inner,
+        .role-stat-grid,
+        .role-action-grid,
+        .role-meta-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .role-request-top,
+        .role-section-head {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+</style>
+
+<div class="dashboard-shell role-dashboard">
+    <section class="role-hero">
+        <div class="role-hero-inner">
+            <div>
+                <div class="role-kicker">Caterer workspace</div>
+                <h1>Manage packages, requests, reviews, and live customer communication.</h1>
+                <p>
+                    Keep your catering business organized with quick access to package creation,
+                    restaurant location, customer requests, receipt PDFs, agreement PDFs, reviews, and live calls.
+                </p>
+
+                <div class="role-actions">
+                    <a asp-controller="Caretaker" asp-action="Create" class="role-btn-primary">Create Package</a>
+                    <a asp-controller="Caretaker" asp-action="Index" class="role-btn-ghost">My Packages</a>
+                    <a asp-controller="Caretaker" asp-action="RestaurantLocation" class="role-btn-ghost">Location</a>
+                </div>
+            </div>
+
+            <div class="role-hero-panel">
+                <strong>@Model.TotalRevenue.ToString("0.00") TL</strong>
+                <span>Total revenue from catering package requests.</span>
+            </div>
         </div>
-    </div>
+    </section>
 
     @if (TempData["Error"] is string errorMessage)
     {
@@ -38,75 +422,116 @@
         <div class="success-box">@successMessage</div>
     }
 
-    <div class="cards-section">
-        <div class="info-card">
-            <h3>Total Packages</h3>
-            <p class="dashboard-number">@Model.TotalMenus</p>
+    <section class="role-stat-grid">
+        <div class="role-stat-card">
+            <div class="role-stat-label">Total Packages</div>
+            <div class="role-stat-value">@Model.TotalMenus</div>
+            <div class="role-stat-hint">Packages created by this caterer.</div>
         </div>
 
-        <div class="info-card">
-            <h3>Received Requests</h3>
-            <p class="dashboard-number">@Model.TotalReceivedOrders</p>
+        <div class="role-stat-card">
+            <div class="role-stat-label">Received Requests</div>
+            <div class="role-stat-value">@Model.TotalReceivedOrders</div>
+            <div class="role-stat-hint">Order items connected to your packages.</div>
         </div>
 
-        <div class="info-card">
-            <h3>Completed Requests</h3>
-            <p class="dashboard-number">@Model.TotalCompletedOrders</p>
+        <div class="role-stat-card">
+            <div class="role-stat-label">Completed Requests</div>
+            <div class="role-stat-value">@Model.TotalCompletedOrders</div>
+            <div class="role-stat-hint">Requests marked as completed.</div>
         </div>
 
-        <div class="info-card">
-            <h3>Total Revenue</h3>
-            <p class="dashboard-number">@Model.TotalRevenue.ToString("0.00") ₺</p>
-        </div>
-
-        <div class="info-card">
-            <h3>Average Rating</h3>
-
+        <div class="role-stat-card">
+            <div class="role-stat-label">Average Rating</div>
             @if (Model.TotalReviewCount > 0)
             {
-                <p class="dashboard-number">⭐ @Model.AverageCatererRating.ToString("0.0") / 5</p>
+                <div class="role-stat-value">@Model.AverageCatererRating.ToString("0.0") / 5</div>
             }
             else
             {
-                <p class="dashboard-number">No rating</p>
+                <div class="role-stat-value">No rating</div>
             }
+            <div class="role-stat-hint">Based on @Model.TotalReviewCount customer reviews.</div>
+        </div>
+    </section>
+
+    <section class="role-stat-grid">
+        <div class="role-stat-card">
+            <div class="role-stat-label">Total Revenue</div>
+            <div class="role-stat-value">@Model.TotalRevenue.ToString("0.00") TL</div>
+            <div class="role-stat-hint">Calculated from related order items.</div>
         </div>
 
-        <div class="info-card">
-            <h3>Total Reviews</h3>
-            <p class="dashboard-number">@Model.TotalReviewCount</p>
+        <div class="role-stat-card">
+            <div class="role-stat-label">Total Reviews</div>
+            <div class="role-stat-value">@Model.TotalReviewCount</div>
+            <div class="role-stat-hint">Customer feedback records.</div>
         </div>
-    </div>
 
-    <div class="table-card">
-        <div class="page-header-row">
+        <div class="role-stat-card">
+            <div class="role-stat-label">Active Recent Items</div>
+            <div class="role-stat-value">@activeItems</div>
+            <div class="role-stat-hint">Recent items not completed yet.</div>
+        </div>
+
+        <div class="role-stat-card">
+            <div class="role-stat-label">Demo Focus</div>
+            <div class="role-stat-value">Backend</div>
+            <div class="role-stat-hint">Actions are controlled server-side.</div>
+        </div>
+    </section>
+
+    <section>
+        <div class="role-section-head">
             <div>
-                <h2 class="section-title">Recent Catering Requests</h2>
-                <p class="page-subtitle">
-                    Open the chat and live voice call for any customer request that includes one of your packages.
-                </p>
+                <h2>Quick caterer actions</h2>
+                <p>Show the main caterer features quickly during your video demo.</p>
             </div>
+        </div>
 
-            <a asp-controller="Caretaker"
-               asp-action="Reviews"
-               class="btn-secondary-main">
-                View Reviews
+        <div class="role-action-grid">
+            <a asp-controller="Caretaker" asp-action="Create" class="role-card">
+                <div class="role-card-icon">01</div>
+                <h3>Create Package</h3>
+                <p>Add a catering package with price, guest count, event type, details, and image.</p>
+            </a>
+
+            <a asp-controller="Caretaker" asp-action="Index" class="role-card">
+                <div class="role-card-icon">02</div>
+                <h3>Manage Packages</h3>
+                <p>Edit or delete packages and keep your public catering menu updated.</p>
+            </a>
+
+            <a asp-controller="Caretaker" asp-action="Reviews" class="role-card">
+                <div class="role-card-icon">03</div>
+                <h3>Customer Reviews</h3>
+                <p>View rating records connected to completed customer requests.</p>
             </a>
         </div>
+    </section>
 
-        @if (Model.RecentOrderItems is null || !Model.RecentOrderItems.Any())
+    <section class="role-table-card">
+        <div class="role-section-head">
+            <div>
+                <h2>Recent catering requests</h2>
+                <p>Open chat, live call, receipt PDF, and agreement PDF for customer requests.</p>
+            </div>
+
+            <a asp-controller="Caretaker" asp-action="Reviews" class="role-mini-link secondary">View Reviews</a>
+        </div>
+
+        @if (!recentItems.Any())
         {
-            <div class="empty-box">
+            <div class="role-empty">
                 <h3>No received catering requests yet</h3>
-                <p>
-                    When customers request one of your catering packages, they will appear here.
-                </p>
+                <p>When customers request one of your packages, those requests will appear here.</p>
+                <a asp-controller="Caretaker" asp-action="Create" class="role-mini-link">Create First Package</a>
             </div>
         }
         else
         {
-            <div class="group-stack">
-                @foreach (var item in Model.RecentOrderItems)
+            <div class="role-request-list">
+                @foreach (var item in recentItems)
                 {
                     var order = item.Order;
                     var package = item.MenuItem;
@@ -116,124 +541,91 @@
                         continue;
                     }
 
-                    <div class="group-card">
-                        <div class="group-card-header">
+                    <article class="role-request-item">
+                        <div class="role-request-top">
                             <div>
                                 <h3>Catering Request #@order.Id</h3>
+                                <span class="role-badge">@order.Status</span>
+                            </div>
+                            <span class="role-badge">@item.LineTotal.ToString("0.00") TL</span>
+                        </div>
 
-                                <div class="cart-meta">
-                                    <strong>Package:</strong>
-                                    @(package?.Name ?? "Catering Package")
-                                </div>
+                        <div class="role-meta-grid">
+                            <div class="role-meta">
+                                <strong>Package</strong>
+                                @(package?.Name ?? "Catering Package")
+                            </div>
+                            <div class="role-meta">
+                                <strong>Guest Count</strong>
+                                @item.Quantity
+                            </div>
+                            <div class="role-meta">
+                                <strong>Price Per Person</strong>
+                                @item.FinalUnitPrice.ToString("0.00") TL
+                            </div>
+                        </div>
 
-                                <div class="cart-meta">
-                                    <strong>Guest Count:</strong>
-                                    @item.Quantity
-                                </div>
+                        <div class="role-meta-grid">
+                            <div class="role-meta">
+                                <strong>Request Date</strong>
+                                @order.OrderDate.ToString("dd MMM yyyy HH:mm")
+                            </div>
+                            <div class="role-meta">
+                                <strong>Event Type</strong>
+                                @(string.IsNullOrWhiteSpace(order.EventType) ? "Not specified" : order.EventType)
+                            </div>
+                            <div class="role-meta">
+                                <strong>Event Date</strong>
+                                @(order.EventDate.HasValue ? order.EventDate.Value.ToString("dd MMM yyyy HH:mm") : "Not specified")
+                            </div>
+                        </div>
 
-                                <div class="cart-meta">
-                                    <strong>Price Per Person:</strong>
-                                    @item.FinalUnitPrice.ToString("0.00") ₺
-                                </div>
-
-                                <div class="cart-meta">
-                                    <strong>Package Total:</strong>
-                                    @item.LineTotal.ToString("0.00") ₺
-                                </div>
-
-                                <div class="cart-meta">
-                                    <strong>Request Date:</strong>
-                                    @order.OrderDate.ToString("dd MMM yyyy HH:mm")
-                                </div>
-
-                                <div class="cart-meta">
-                                    <strong>Status:</strong>
-                                    @order.Status
-                                </div>
-
-                                <div class="cart-meta">
-                                    <strong>Event Type:</strong>
-                                    @order.EventType
-                                </div>
-
-                                @if (order.EventDate.HasValue)
-                                {
-                                    <div class="cart-meta">
-                                        <strong>Event Date:</strong>
-                                        @order.EventDate.Value.ToString("dd MMM yyyy HH:mm")
-                                    </div>
-                                }
-
+                        @if (!string.IsNullOrWhiteSpace(order.EventAddress) || !string.IsNullOrWhiteSpace(order.EventNote))
+                        {
+                            <div class="role-meta-grid">
                                 @if (!string.IsNullOrWhiteSpace(order.EventAddress))
                                 {
-                                    <div class="cart-meta">
-                                        <strong>Event Address:</strong>
+                                    <div class="role-meta">
+                                        <strong>Event Address</strong>
                                         @order.EventAddress
                                     </div>
                                 }
 
                                 @if (!string.IsNullOrWhiteSpace(order.EventNote))
                                 {
-                                    <div class="cart-meta">
-                                        <strong>Event Note:</strong>
+                                    <div class="role-meta">
+                                        <strong>Event Note</strong>
                                         @order.EventNote
                                     </div>
                                 }
                             </div>
-
-                            <div class="group-actions">
-                                <a asp-controller="OrderChat"
-                                   asp-action="Room"
-                                   asp-route-id="@order.Id"
-                                   class="btn-main">
-                                    Open Chat / Live Call
-                                </a>
-
-                                <a asp-controller="OrderDocument"
-                                   asp-action="ReceiptPdf"
-                                   asp-route-id="@order.Id"
-                                   class="btn-secondary-main">
-                                    Receipt PDF
-                                </a>
-
-                                <a asp-controller="OrderDocument"
-                                   asp-action="AgreementPdf"
-                                   asp-route-id="@order.Id"
-                                   class="btn-secondary-main">
-                                    Agreement PDF
-                                </a>
-                            </div>
-                        </div>
+                        }
 
                         @if (item.SelectedCustomizations is not null && item.SelectedCustomizations.Any())
                         {
-                            <div class="option-list">
-                                <div class="option-row">
-                                    <div>
-                                        <strong>Selected Package Options</strong>
-
-                                        <ul class="user-option-list mt-2">
-                                            @foreach (var customization in item.SelectedCustomizations)
-                                            {
-                                                <li>
-                                                    @customization.GroupTitle: @customization.OptionName
-
-                                                    @if (customization.PriceChange != 0)
-                                                    {
-                                                        <span>
-                                                            (@customization.PriceChange.ToString("0.00") ₺ / person)
-                                                        </span>
-                                                    }
-                                                </li>
-                                            }
-                                        </ul>
+                            <div class="role-meta-grid">
+                                @foreach (var customization in item.SelectedCustomizations.Take(3))
+                                {
+                                    <div class="role-meta">
+                                        <strong>@customization.GroupTitle</strong>
+                                        @customization.OptionName
+                                        @if (customization.PriceChange != 0)
+                                        {
+                                            <span> (@customization.PriceChange.ToString("0.00") TL / person)</span>
+                                        }
                                     </div>
-                                </div>
+                                }
                             </div>
                         }
-                    </div>
+
+                        <div class="role-mini-actions">
+                            <a asp-controller="OrderChat" asp-action="Room" asp-route-rawId="@order.Id" class="role-mini-link">Open Chat / Live Call</a>
+                            <a asp-controller="OrderDocument" asp-action="ReceiptPdf" asp-route-rawId="@order.Id" class="role-mini-link secondary">Receipt PDF</a>
+                            <a asp-controller="OrderDocument" asp-action="AgreementPdf" asp-route-rawId="@order.Id" class="role-mini-link secondary">Agreement PDF</a>
+                        </div>
+                    </article>
                 }
             </div>
         }
-    </div>
+    </section>
 </div>

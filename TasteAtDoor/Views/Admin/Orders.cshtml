@@ -1,4 +1,4 @@
-@model TasteAtDoor.Models.ViewModels.AdminOrderListPageViewModel
+﻿@model TasteAtDoor.Models.ViewModels.AdminOrderListPageViewModel
 
 @{
     ViewData["Title"] = "Catering Requests";
@@ -190,7 +190,7 @@
                             </td>
 
                             <td>@order.Status</td>
-                            <td>@order.TotalPrice.ToString("0.00") ₺</td>
+                            <td>@order.TotalPrice.ToString("0.00") TL</td>
                             <td>@order.OrderDate.ToString("dd MMM yyyy HH:mm")</td>
 
                             <td>
@@ -260,3 +260,4 @@
         </div>
     </div>
 </div>
+

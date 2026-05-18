@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
     let connection = null;
     let peerConnection = null;
     let localStream = null;

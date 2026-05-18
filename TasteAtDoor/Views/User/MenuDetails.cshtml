@@ -1,4 +1,4 @@
-@model TasteAtDoor.Models.ViewModels.MenuDetailsPageViewModel
+﻿@model TasteAtDoor.Models.ViewModels.MenuDetailsPageViewModel
 
 @{
     ViewData["Title"] = $"{Model.MenuItem.Name} Details";
@@ -80,7 +80,7 @@
                     <span>Package Rating</span>
                     @if (Model.ReviewCount > 0)
                     {
-                        <strong>⭐ @Model.AverageMenuRating.ToString("0.0") / 5</strong>
+                        <strong>â­ @Model.AverageMenuRating.ToString("0.0") / 5</strong>
                     }
                     else
                     {
@@ -92,7 +92,7 @@
                     <span>Caterer Rating</span>
                     @if (Model.ReviewCount > 0)
                     {
-                        <strong>⭐ @Model.AverageCatererRating.ToString("0.0") / 5</strong>
+                        <strong>â­ @Model.AverageCatererRating.ToString("0.0") / 5</strong>
                     }
                     else
                     {
@@ -114,7 +114,7 @@
                 <div class="menu-detail-info-grid">
                     <div>
                         <span>Price Per Person</span>
-                        <strong>@item.Price.ToString("0.00") ₺</strong>
+                        <strong>@item.Price.ToString("0.00") TL</strong>
                     </div>
 
                     <div>
@@ -232,11 +232,11 @@
 
                                                 @if (option.PriceChange > 0)
                                                 {
-                                                    <small>+ @option.PriceChange.ToString("0.00") ₺ / guest</small>
+                                                    <small>+ @option.PriceChange.ToString("0.00") TL / guest</small>
                                                 }
                                                 else if (option.PriceChange < 0)
                                                 {
-                                                    <small>@option.PriceChange.ToString("0.00") ₺ / guest</small>
+                                                    <small>@option.PriceChange.ToString("0.00") TL / guest</small>
                                                 }
                                                 else
                                                 {
@@ -279,14 +279,14 @@
                 <strong id="detail-total-price"
                         data-base-price="@item.Price.ToString(System.Globalization.CultureInfo.InvariantCulture)"
                         data-current-price="@item.Price.ToString(System.Globalization.CultureInfo.InvariantCulture)">
-                    @item.Price.ToString("0.00") ₺
+                    @item.Price.ToString("0.00") TL
                 </strong>
             </div>
 
             <div class="menu-detail-price-box">
                 <span>Estimated Package Total</span>
                 <strong id="detail-package-total">
-                    @((item.Price * item.MinGuestCount).ToString("0.00")) ₺
+                    @((item.Price * item.MinGuestCount).ToString("0.00")) TL
                 </strong>
             </div>
 
@@ -343,13 +343,13 @@
                             <div>
                                 <h3>@review.CustomerName</h3>
                                 <p>
-                                    Request #@review.OrderId · @review.CreatedAt.ToString("dd MMM yyyy HH:mm")
+                                    Request #@review.OrderId Â· @review.CreatedAt.ToString("dd MMM yyyy HH:mm")
                                 </p>
                             </div>
 
                             <div class="menu-review-ratings">
-                                <span>Package: ⭐ @review.MenuRating / 5</span>
-                                <span>Caterer: ⭐ @review.CatererRating / 5</span>
+                                <span>Package: â­ @review.MenuRating / 5</span>
+                                <span>Caterer: â­ @review.CatererRating / 5</span>
                             </div>
                         </div>
 
@@ -369,7 +369,7 @@
                         <div class="menu-review-footer">
                             <span>Package: @review.MenuItemName</span>
                             <span>Guest Count: @review.Quantity</span>
-                            <span>Total: @review.LineTotal.ToString("0.00") ₺</span>
+                            <span>Total: @review.LineTotal.ToString("0.00") TL</span>
                         </div>
                     </div>
                 }
@@ -390,3 +390,5 @@
         });
     </script>
 }
+
+

@@ -1,0 +1,156 @@
+﻿@model TasteAtDoor.Models.ViewModels.AdminDashboardViewModel
+
+@{
+    ViewData["Title"] = "Admin Dashboard";
+}
+
+<div class="dashboard-shell">
+    <div class="page-header-row">
+        <div>
+            <h1 class="page-title">Admin Dashboard</h1>
+            <p class="page-subtitle">System overview, recent orders, and system activity.</p>
+        </div>
+
+        <div class="d-flex gap-2 flex-wrap">
+            <a asp-controller="Admin" asp-action="Users" class="btn-main">Users</a>
+            <a asp-controller="Admin" asp-action="Orders" class="btn-secondary-main">Orders</a>
+            <a asp-controller="Admin" asp-action="Ratings" class="btn-secondary-main">Ratings</a>
+            <a asp-controller="Admin" asp-action="Logs" class="btn-secondary-main">Logs</a>
+        </div>
+    </div>
+
+    <div class="menu-grid">
+        <div class="info-card">
+            <h3>Total Users</h3>
+            <p>@Model.TotalUsers</p>
+        </div>
+
+        <div class="info-card">
+            <h3>Customers</h3>
+            <p>@Model.TotalCustomers</p>
+        </div>
+
+        <div class="info-card">
+            <h3>Caterers</h3>
+            <p>@Model.TotalCaretakers</p>
+        </div>
+
+        <div class="info-card">
+            <h3>Admins</h3>
+            <p>@Model.TotalAdmins</p>
+        </div>
+
+        <div class="info-card">
+            <h3>Total Orders</h3>
+            <p>@Model.TotalOrders</p>
+        </div>
+
+        <div class="info-card">
+            <h3>Completed Orders</h3>
+            <p>@Model.CompletedOrders</p>
+        </div>
+
+        <div class="info-card">
+            <h3>Total Revenue</h3>
+            <p>@Model.TotalRevenue.ToString("0.00")</p>
+        </div>
+
+        <div class="info-card">
+            <h3>Catering Packages</h3>
+            <p>@Model.TotalMenuItems</p>
+        </div>
+
+        <div class="info-card">
+            <h3>Reviews</h3>
+            <p>@Model.TotalReviews</p>
+        </div>
+
+        <div class="info-card">
+            <h3>Logs</h3>
+            <p>@Model.TotalLogs</p>
+        </div>
+
+        <div class="info-card">
+            <h3>Avg Package Rating</h3>
+            <p>@Model.AverageMenuRating.ToString("0.0") / 5</p>
+        </div>
+
+        <div class="info-card">
+            <h3>Avg Caterer Rating</h3>
+            <p>@Model.AverageCatererRating.ToString("0.0") / 5</p>
+        </div>
+    </div>
+
+    <div class="row g-4 mt-2">
+        <div class="col-lg-6">
+            <div class="table-card">
+                <h2>Recent Orders</h2>
+
+                @if (!Model.RecentOrders.Any())
+                {
+                    <p>No recent orders.</p>
+                }
+                else
+                {
+                    <table class="custom-table">
+                        <thead>
+                            <tr>
+                                <th>Order</th>
+                                <th>User</th>
+                                <th>Status</th>
+                                <th>Total</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var order in Model.RecentOrders)
+                            {
+                                <tr>
+                                    <td>#@order.Id</td>
+                                    <td>@(order.ApplicationUser?.FullName ?? order.ApplicationUser?.Email ?? "-")</td>
+                                    <td>@order.Status</td>
+                                    <td>@order.TotalPrice.ToString("0.00")</td>
+                                    <td>@order.OrderDate</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="table-card">
+                <h2>Recent Logs</h2>
+
+                @if (!Model.RecentLogs.Any())
+                {
+                    <p>No recent logs.</p>
+                }
+                else
+                {
+                    <table class="custom-table">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Event</th>
+                                <th>User</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var log in Model.RecentLogs)
+                            {
+                                <tr>
+                                    <td>@log.CreatedAt</td>
+                                    <td>@log.EventType</td>
+                                    <td>@(log.UserEmail ?? "-")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+

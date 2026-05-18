@@ -32,6 +32,8 @@ namespace TasteAtDoor.Controllers
         [Authorize(Roles = "User,Caretaker,Admin")]
         public async Task<IActionResult> Index(string search = "")
         {
+            ViewBag.GoogleMapsApiKey = _configuration["GoogleMaps:ApiKey"] ?? string.Empty;
+
             var currentUser = await _userManager.GetUserAsync(User);
 
             if (currentUser is null)
@@ -44,7 +46,10 @@ namespace TasteAtDoor.Controllers
                 return View(new RestaurantListPageViewModel
                 {
                     UserLocationSaved = false,
-                    Search = search
+                    Search = search,
+                    UserLatitude = currentUser.Latitude,
+                    UserLongitude = currentUser.Longitude,
+                    UserAddress = currentUser.Address
                 });
             }
 
@@ -141,6 +146,9 @@ namespace TasteAtDoor.Controllers
             {
                 UserLocationSaved = true,
                 Search = search,
+                UserLatitude = currentUser.Latitude,
+                UserLongitude = currentUser.Longitude,
+                UserAddress = currentUser.Address,
                 Restaurants = restaurants
             };
 
@@ -237,7 +245,7 @@ namespace TasteAtDoor.Controllers
         [Authorize(Roles = "User,Caretaker,Admin")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> MyLocation(LocationInputViewModel model)
+        public async Task<IActionResult> MyLocation(LocationInputViewModel model, string? returnUrl = null)
         {
             ViewBag.GoogleMapsApiKey = _configuration["GoogleMaps:ApiKey"] ?? string.Empty;
 
@@ -270,6 +278,12 @@ namespace TasteAtDoor.Controllers
             }
 
             TempData["Success"] = "Your location was saved successfully.";
+
+            if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                return Redirect(returnUrl);
+            }
+
             return RedirectToAction(nameof(MyLocation));
         }
 
@@ -824,3 +838,5 @@ namespace TasteAtDoor.Controllers
         }
     }
 }
+
+

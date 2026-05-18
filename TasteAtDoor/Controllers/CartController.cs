@@ -1,10 +1,13 @@
+﻿using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using QuestPDF.Fluent;
 using TasteAtDoor.Data;
+using TasteAtDoor.Documents;
 using TasteAtDoor.Models;
 using TasteAtDoor.Models.ViewModels;
 using TasteAtDoor.Services;
@@ -19,6 +22,11 @@ namespace TasteAtDoor.Controllers
         private readonly IAppLogService _appLogService;
         private readonly IEmailService _emailService;
         private readonly IGoogleMapsService _googleMapsService;
+
+        private const string AgreementPreviewCartJsonSessionKey = "TasteAtDoor_AgreementPreviewCartJson";
+        private const string AgreementAcceptedSessionKey = "TasteAtDoor_AgreementAccepted";
+        private const string AgreementSignatureSessionKey = "TasteAtDoor_AgreementSignature";
+        private const string AgreementAcceptedAtSessionKey = "TasteAtDoor_AgreementAcceptedAt";
 
         public CartController(
             ApplicationDbContext context,
@@ -41,8 +49,179 @@ namespace TasteAtDoor.Controllers
         }
 
         [HttpGet]
+        public async Task<IActionResult> Agreement()
+        {
+            var cartJson = HttpContext.Session.GetString(AgreementPreviewCartJsonSessionKey);
+
+            if (string.IsNullOrWhiteSpace(cartJson))
+            {
+                TempData["Error"] = "Please review your cart before opening the agreement.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var clientCart = ParseCartFromJson(cartJson, out var cartError);
+
+            if (!string.IsNullOrWhiteSpace(cartError) || !clientCart.Any())
+            {
+                TempData["Error"] = cartError ?? "Your package cart is empty.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var currentUser = await _userManager.GetUserAsync(User);
+
+            if (currentUser is null)
+            {
+                return Challenge();
+            }
+
+            var model = await BuildAgreementViewModelAsync(clientCart, currentUser);
+
+            if (!model.Packages.Any())
+            {
+                TempData["Error"] = "Agreement could not be prepared because package details were not found.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Agreement(string cartJson)
+        {
+            var clientCart = ParseCartFromJson(cartJson, out var cartError);
+
+            if (!string.IsNullOrWhiteSpace(cartError) || !clientCart.Any())
+            {
+                TempData["Error"] = cartError ?? "Your package cart is empty.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            HttpContext.Session.SetString(AgreementPreviewCartJsonSessionKey, cartJson);
+            ClearAgreementAcceptanceSession();
+
+            var currentUser = await _userManager.GetUserAsync(User);
+
+            if (currentUser is null)
+            {
+                return Challenge();
+            }
+
+            var model = await BuildAgreementViewModelAsync(clientCart, currentUser);
+
+            if (!model.Packages.Any())
+            {
+                TempData["Error"] = "Agreement could not be prepared because package details were not found.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            return View(model);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> AgreementPreviewPdf(bool download = false)
+        {
+            var cartJson = HttpContext.Session.GetString(AgreementPreviewCartJsonSessionKey);
+
+            if (string.IsNullOrWhiteSpace(cartJson))
+            {
+                return Content("Agreement information was not found. Please return to the cart and open the agreement again.");
+            }
+
+            var clientCart = ParseCartFromJson(cartJson, out var cartError);
+
+            if (!string.IsNullOrWhiteSpace(cartError) || !clientCart.Any())
+            {
+                return Content(cartError ?? "Your package cart is empty.");
+            }
+
+            var currentUser = await _userManager.GetUserAsync(User);
+
+            if (currentUser is null)
+            {
+                return Challenge();
+            }
+
+            var model = await BuildAgreementViewModelAsync(clientCart, currentUser);
+
+            if (!model.Packages.Any())
+            {
+                return Content("Agreement could not be prepared because package details were not found.");
+            }
+
+            var pdfBytes = new CartAgreementPreviewDocument(model).GeneratePdf();
+            var fileName = $"TasteAtDoor_Agreement_Preview_{DateTime.Now:yyyyMMdd_HHmm}.pdf";
+
+            if (download)
+            {
+                return File(pdfBytes, "application/pdf", fileName);
+            }
+
+            Response.Headers["Content-Disposition"] = $"inline; filename=\"{fileName}\"";
+            return File(pdfBytes, "application/pdf");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AcceptAgreement(bool accepted)
+        {
+            var cartJson = HttpContext.Session.GetString(AgreementPreviewCartJsonSessionKey);
+
+            if (string.IsNullOrWhiteSpace(cartJson))
+            {
+                TempData["Error"] = "Agreement cart information was not found. Please return to cart and review the agreement again.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var clientCart = ParseCartFromJson(cartJson, out var cartError);
+
+            if (!string.IsNullOrWhiteSpace(cartError) || !clientCart.Any())
+            {
+                TempData["Error"] = cartError ?? "Your package cart is empty.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (!accepted)
+            {
+                TempData["Error"] = "You must accept the catering agreement before continuing to payment.";
+                return RedirectToAction(nameof(Agreement));
+            }
+
+            var currentUser = await _userManager.GetUserAsync(User);
+
+            if (currentUser is null)
+            {
+                return Challenge();
+            }
+
+            var agreementModel = await BuildAgreementViewModelAsync(clientCart, currentUser);
+
+            if (!agreementModel.Packages.Any())
+            {
+                TempData["Error"] = "Agreement could not be prepared because package details were not found.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var signature = BuildCartAgreementSignature(clientCart);
+
+            HttpContext.Session.SetString(AgreementAcceptedSessionKey, "true");
+            HttpContext.Session.SetString(AgreementSignatureSessionKey, signature);
+            HttpContext.Session.SetString(AgreementAcceptedAtSessionKey, DateTime.UtcNow.ToString("O"));
+
+            TempData["Success"] = "Agreement accepted successfully. You can now continue to payment.";
+
+            return RedirectToAction(nameof(Checkout));
+        }
+
+        [HttpGet]
         public async Task<IActionResult> Checkout()
         {
+            if (!IsAgreementAcceptedWithoutCartCheck())
+            {
+                TempData["Error"] = "Please review and accept the catering agreement before payment.";
+                return RedirectToAction(nameof(Agreement));
+            }
+
             var currentUser = await _userManager.GetUserAsync(User);
 
             var model = new CheckoutViewModel
@@ -70,29 +249,12 @@ namespace TasteAtDoor.Controllers
                 ModelState.AddModelError(nameof(model.EventDate), "Event date cannot be in the past.");
             }
 
-            var jsonOptions = new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            };
+            var clientCart = ParseCartFromJson(model.CartJson, out var cartError);
 
-            List<CartItem> clientCart = new();
-
-            if (!string.IsNullOrWhiteSpace(model.CartJson))
+            if (!string.IsNullOrWhiteSpace(cartError))
             {
-                try
-                {
-                    clientCart = JsonSerializer.Deserialize<List<CartItem>>(model.CartJson, jsonOptions)
-                                 ?? new List<CartItem>();
-                }
-                catch
-                {
-                    ModelState.AddModelError(string.Empty, "Invalid cart data.");
-                }
+                ModelState.AddModelError(string.Empty, cartError);
             }
-
-            clientCart = clientCart
-                .Where(c => c.MenuItemId > 0 && c.Quantity > 0)
-                .ToList();
 
             if (!clientCart.Any())
             {
@@ -102,6 +264,19 @@ namespace TasteAtDoor.Controllers
             if (!ModelState.IsValid)
             {
                 return View(model);
+            }
+
+            if (!IsAgreementAcceptedForCurrentCart(clientCart))
+            {
+                if (!string.IsNullOrWhiteSpace(model.CartJson))
+                {
+                    HttpContext.Session.SetString(AgreementPreviewCartJsonSessionKey, model.CartJson);
+                }
+
+                ClearAgreementAcceptanceSession();
+
+                TempData["Error"] = "Please review and accept the catering agreement before payment. If you changed the cart, you must accept the agreement again.";
+                return RedirectToAction(nameof(Agreement));
             }
 
             var currentUser = await _userManager.GetUserAsync(User);
@@ -259,6 +434,8 @@ namespace TasteAtDoor.Controllers
 
             _context.Orders.Add(order);
             await _context.SaveChangesAsync();
+
+            ClearAgreementSession();
 
             await _appLogService.LogAsync(
                 eventType: "PaymentAction",
@@ -449,7 +626,7 @@ namespace TasteAtDoor.Controllers
             sb.Append($"<li><strong>Request ID:</strong> #{order.Id}</li>");
             sb.Append($"<li><strong>Request Date:</strong> {order.OrderDate:dd.MM.yyyy HH:mm}</li>");
             sb.Append($"<li><strong>Status:</strong> {H(order.Status)}</li>");
-            sb.Append($"<li><strong>Total Estimated Price:</strong> {order.TotalPrice:0.00} ₺</li>");
+            sb.Append($"<li><strong>Total Estimated Price:</strong> {order.TotalPrice:0.00} TL</li>");
             sb.Append("</ul>");
 
             sb.Append("<h3>Selected Catering Packages</h3>");
@@ -477,7 +654,7 @@ namespace TasteAtDoor.Controllers
                     customizationText = string.Join("<br />",
                         item.SelectedCustomizations.Select(c =>
                             $"{H(c.GroupTitle)}: {H(c.OptionName)}" +
-                            (c.PriceChange != 0 ? $" ({c.PriceChange:0.00} ₺ / person)" : "")));
+                            (c.PriceChange != 0 ? $" ({c.PriceChange:0.00} TL / person)" : "")));
                 }
 
                 sb.Append("<tr>");
@@ -485,7 +662,7 @@ namespace TasteAtDoor.Controllers
                 sb.Append($"<td style='border:1px solid #ddd;padding:8px;'>{H(packageName)}</td>");
                 sb.Append($"<td style='border:1px solid #ddd;padding:8px;'>{item.Quantity}</td>");
                 sb.Append($"<td style='border:1px solid #ddd;padding:8px;'>{customizationText}</td>");
-                sb.Append($"<td style='border:1px solid #ddd;padding:8px;'>{item.LineTotal:0.00} ₺</td>");
+                sb.Append($"<td style='border:1px solid #ddd;padding:8px;'>{item.LineTotal:0.00} TL</td>");
                 sb.Append("</tr>");
             }
 
@@ -570,7 +747,7 @@ namespace TasteAtDoor.Controllers
             sb.Append($"<li><strong>Request ID:</strong> #{order.Id}</li>");
             sb.Append($"<li><strong>Request Date:</strong> {order.OrderDate:dd.MM.yyyy HH:mm}</li>");
             sb.Append($"<li><strong>Status:</strong> {H(order.Status)}</li>");
-            sb.Append($"<li><strong>Your Estimated Total:</strong> {catererTotal:0.00} ₺</li>");
+            sb.Append($"<li><strong>Your Estimated Total:</strong> {catererTotal:0.00} TL</li>");
             sb.Append("</ul>");
 
             sb.Append("<h3>Your Packages in This Request</h3>");
@@ -596,14 +773,14 @@ namespace TasteAtDoor.Controllers
                     customizationText = string.Join("<br />",
                         item.SelectedCustomizations.Select(c =>
                             $"{H(c.GroupTitle)}: {H(c.OptionName)}" +
-                            (c.PriceChange != 0 ? $" ({c.PriceChange:0.00} ₺ / person)" : "")));
+                            (c.PriceChange != 0 ? $" ({c.PriceChange:0.00} TL / person)" : "")));
                 }
 
                 sb.Append("<tr>");
                 sb.Append($"<td style='border:1px solid #ddd;padding:8px;'>{H(packageName)}</td>");
                 sb.Append($"<td style='border:1px solid #ddd;padding:8px;'>{item.Quantity}</td>");
                 sb.Append($"<td style='border:1px solid #ddd;padding:8px;'>{customizationText}</td>");
-                sb.Append($"<td style='border:1px solid #ddd;padding:8px;'>{item.LineTotal:0.00} ₺</td>");
+                sb.Append($"<td style='border:1px solid #ddd;padding:8px;'>{item.LineTotal:0.00} TL</td>");
                 sb.Append("</tr>");
             }
 
@@ -613,6 +790,320 @@ namespace TasteAtDoor.Controllers
             sb.Append("<p>Please login to TasteAtDoor to review the request and communicate with the customer.</p>");
 
             return sb.ToString();
+        }
+
+        private async Task<AgreementViewModel> BuildAgreementViewModelAsync(
+            List<CartItem> clientCart,
+            ApplicationUser currentUser)
+        {
+            var model = new AgreementViewModel
+            {
+                AgreementNumber = $"AGR-{DateTime.Now:yyyyMMddHHmmss}",
+                AgreementDate = DateTime.Now,
+                CustomerName = currentUser.FullName ?? currentUser.Email ?? "Customer",
+                CustomerEmail = currentUser.Email ?? "",
+                CustomerAddress = currentUser.Address ?? ""
+            };
+
+            var menuIds = clientCart
+                .Select(c => c.MenuItemId)
+                .Distinct()
+                .ToList();
+
+            var menuItems = await _context.MenuItems
+                .Include(m => m.Caretaker)
+                .Where(m => menuIds.Contains(m.Id))
+                .ToDictionaryAsync(m => m.Id);
+
+            foreach (var cartItem in clientCart)
+            {
+                if (!menuItems.TryGetValue(cartItem.MenuItemId, out var menuItem))
+                {
+                    continue;
+                }
+
+                var selectedOptionIds = cartItem.SelectedOptions
+                    .Select(o => o.OptionId)
+                    .Distinct()
+                    .ToList();
+
+                var dbOptions = await _context.CustomizationOptions
+                    .Include(o => o.CustomizationGroup)
+                    .Where(o =>
+                        selectedOptionIds.Contains(o.Id) &&
+                        o.CustomizationGroup != null &&
+                        o.CustomizationGroup.MenuItemId == menuItem.Id)
+                    .ToListAsync();
+
+                var finalUnitPrice = menuItem.Price + dbOptions.Sum(o => o.PriceChange);
+
+                var selectedOptionText = "None";
+
+                if (dbOptions.Any())
+                {
+                    selectedOptionText = string.Join("; ",
+                        dbOptions.Select(option =>
+                            $"{option.CustomizationGroup?.Title ?? "Option"}: " +
+                            $"{cartItem.SelectedOptions.FirstOrDefault(x => x.OptionId == option.Id)?.OptionName ?? option.Name}" +
+                            (option.PriceChange != 0 ? $" ({option.PriceChange:0.00} TL / person)" : "")));
+                }
+
+                var serviceDetails = ReadStringProperty(menuItem, "ServiceDetails");
+
+                if (!string.IsNullOrWhiteSpace(selectedOptionText) && selectedOptionText != "None")
+                {
+                    serviceDetails = string.IsNullOrWhiteSpace(serviceDetails)
+                        ? $"Selected options: {selectedOptionText}"
+                        : $"{serviceDetails}\nSelected options: {selectedOptionText}";
+                }
+
+                var package = new AgreementPackageLineViewModel
+                {
+                    MenuItemId = menuItem.Id,
+                    PackageName = menuItem.Name ?? "Catering Package",
+                    CatererName = menuItem.Caretaker is null
+                        ? "Caterer"
+                        : ReadStringProperty(
+                            menuItem.Caretaker,
+                            "FullName",
+                            "CompanyName",
+                            "RestaurantName",
+                            "UserName",
+                            "Email"),
+                    CatererEmail = menuItem.Caretaker?.Email ?? "",
+                    CatererAddress = menuItem.Caretaker?.Address ?? "",
+                    CatererLogoData = menuItem.Caretaker?.ProfileImageData,
+                    CatererLogoContentType = menuItem.Caretaker?.ProfileImageContentType,
+
+                    EventType = ReadStringProperty(menuItem, "EventType"),
+                    PackageCategory = ReadStringProperty(menuItem, "PackageCategory", "Category"),
+
+                    GuestCount = cartItem.Quantity,
+                    MinimumGuestCount = ReadNullableIntProperty(menuItem, "MinimumGuestCount", "MinGuestCount"),
+                    MaximumGuestCount = ReadNullableIntProperty(menuItem, "MaximumGuestCount", "MaxGuestCount"),
+
+                    PricePerPerson = finalUnitPrice,
+
+                    Description = ReadStringProperty(menuItem, "PackageDescription", "Description"),
+                    IncludedItems = ReadStringProperty(menuItem, "IncludedItems"),
+                    ServiceDetails = serviceDetails,
+
+                    IncludesMainCourse = ReadBoolProperty(menuItem, "IncludesMainCourse"),
+                    IncludesDessert = ReadBoolProperty(menuItem, "IncludesDessert"),
+                    IncludesSnacks = ReadBoolProperty(menuItem, "IncludesSnacks"),
+                    IncludesDrinks = ReadBoolProperty(menuItem, "IncludesDrinks")
+                };
+
+                model.Packages.Add(package);
+            }
+
+            return model;
+        }
+
+        private static List<CartItem> ParseCartFromJson(string? cartJson, out string? error)
+        {
+            error = null;
+
+            if (string.IsNullOrWhiteSpace(cartJson))
+            {
+                error = "Your package cart is empty.";
+                return new List<CartItem>();
+            }
+
+            try
+            {
+                var jsonOptions = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+
+                var cart = JsonSerializer.Deserialize<List<CartItem>>(cartJson, jsonOptions)
+                           ?? new List<CartItem>();
+
+                return cart
+                    .Where(c => c.MenuItemId > 0 && c.Quantity > 0)
+                    .ToList();
+            }
+            catch
+            {
+                error = "Invalid cart data.";
+                return new List<CartItem>();
+            }
+        }
+
+        private bool IsAgreementAcceptedWithoutCartCheck()
+        {
+            var accepted = HttpContext.Session.GetString(AgreementAcceptedSessionKey);
+            var savedSignature = HttpContext.Session.GetString(AgreementSignatureSessionKey);
+
+            return string.Equals(accepted, "true", StringComparison.OrdinalIgnoreCase) &&
+                   !string.IsNullOrWhiteSpace(savedSignature);
+        }
+
+        private bool IsAgreementAcceptedForCurrentCart(List<CartItem> clientCart)
+        {
+            if (clientCart is null || !clientCart.Any())
+            {
+                return false;
+            }
+
+            var accepted = HttpContext.Session.GetString(AgreementAcceptedSessionKey);
+            var savedSignature = HttpContext.Session.GetString(AgreementSignatureSessionKey);
+
+            if (!string.Equals(accepted, "true", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(savedSignature))
+            {
+                return false;
+            }
+
+            var currentSignature = BuildCartAgreementSignature(clientCart);
+
+            return string.Equals(savedSignature, currentSignature, StringComparison.Ordinal);
+        }
+
+        private static string BuildCartAgreementSignature(List<CartItem> clientCart)
+        {
+            var parts = clientCart
+                .Select(item =>
+                {
+                    var options = item.SelectedOptions is null
+                        ? ""
+                        : string.Join(",",
+                            item.SelectedOptions
+                                .OrderBy(o => o.OptionId)
+                                .Select(o => $"{o.OptionId}:{o.OptionName}"));
+
+                    return $"{item.MenuItemId}:{item.Quantity}:{options}";
+                })
+                .OrderBy(p => p)
+                .ToList();
+
+            var raw = string.Join("|", parts);
+
+            using var sha = SHA256.Create();
+            var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(raw));
+
+            return Convert.ToHexString(bytes);
+        }
+
+        private void ClearAgreementAcceptanceSession()
+        {
+            HttpContext.Session.Remove(AgreementAcceptedSessionKey);
+            HttpContext.Session.Remove(AgreementSignatureSessionKey);
+            HttpContext.Session.Remove(AgreementAcceptedAtSessionKey);
+        }
+
+        private void ClearAgreementSession()
+        {
+            HttpContext.Session.Remove(AgreementPreviewCartJsonSessionKey);
+            HttpContext.Session.Remove(AgreementAcceptedSessionKey);
+            HttpContext.Session.Remove(AgreementSignatureSessionKey);
+            HttpContext.Session.Remove(AgreementAcceptedAtSessionKey);
+        }
+
+        private static string ReadStringProperty(object? source, params string[] propertyNames)
+        {
+            if (source is null)
+            {
+                return "";
+            }
+
+            foreach (var propertyName in propertyNames)
+            {
+                var property = source.GetType().GetProperty(propertyName);
+
+                if (property is null)
+                {
+                    continue;
+                }
+
+                var value = property.GetValue(source);
+
+                if (value is not null && !string.IsNullOrWhiteSpace(value.ToString()))
+                {
+                    return value.ToString()!;
+                }
+            }
+
+            return "";
+        }
+
+        private static int? ReadNullableIntProperty(object? source, params string[] propertyNames)
+        {
+            if (source is null)
+            {
+                return null;
+            }
+
+            foreach (var propertyName in propertyNames)
+            {
+                var property = source.GetType().GetProperty(propertyName);
+
+                if (property is null)
+                {
+                    continue;
+                }
+
+                var value = property.GetValue(source);
+
+                if (value is null)
+                {
+                    continue;
+                }
+
+                if (value is int intValue)
+                {
+                    return intValue;
+                }
+
+                if (int.TryParse(value.ToString(), out var parsed))
+                {
+                    return parsed;
+                }
+            }
+
+            return null;
+        }
+
+        private static bool ReadBoolProperty(object? source, params string[] propertyNames)
+        {
+            if (source is null)
+            {
+                return false;
+            }
+
+            foreach (var propertyName in propertyNames)
+            {
+                var property = source.GetType().GetProperty(propertyName);
+
+                if (property is null)
+                {
+                    continue;
+                }
+
+                var value = property.GetValue(source);
+
+                if (value is null)
+                {
+                    continue;
+                }
+
+                if (value is bool boolValue)
+                {
+                    return boolValue;
+                }
+
+                if (bool.TryParse(value.ToString(), out var parsed))
+                {
+                    return parsed;
+                }
+            }
+
+            return false;
         }
 
         private async Task<double> GetVerifiedDistanceKmAsync(
@@ -667,6 +1158,7 @@ namespace TasteAtDoor.Controllers
         {
             return degrees * Math.PI / 180;
         }
+
         private static double CalculateFallbackDistanceKmForCheckout(
             double startLatitude,
             double startLongitude,
@@ -697,3 +1189,4 @@ namespace TasteAtDoor.Controllers
         }
     }
 }
+

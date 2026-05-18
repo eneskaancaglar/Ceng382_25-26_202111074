@@ -1,4 +1,4 @@
-namespace TasteAtDoor.Models
+﻿namespace TasteAtDoor.Models
 {
     public class CartItem
     {
@@ -29,3 +29,4 @@ namespace TasteAtDoor.Models
         public decimal LineTotal => FinalUnitPrice * Quantity;
     }
 }
+

@@ -1,4 +1,4 @@
-namespace TasteAtDoor.Models.ViewModels
+﻿namespace TasteAtDoor.Models.ViewModels
 {
     public class AdminUserListItemViewModel
     {
@@ -23,3 +23,4 @@ namespace TasteAtDoor.Models.ViewModels
         public double AverageCatererRating { get; set; }
     }
 }
+

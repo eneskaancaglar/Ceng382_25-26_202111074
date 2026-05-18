@@ -1,0 +1,180 @@
+﻿@model TasteAtDoor.Models.ViewModels.UserDashboardViewModel
+
+@{
+    ViewData["Title"] = "Customer Dashboard";
+}
+
+<div class="dashboard-shell">
+    <div class="page-header-row">
+        <div>
+            <h1 class="page-title">Customer Dashboard</h1>
+            <p class="page-subtitle">
+                Review your catering request summary, recent requests, receipts, and live chat access.
+            </p>
+        </div>
+
+        <div class="hero-buttons">
+            <a asp-controller="User"
+               asp-action="Index"
+               class="btn-main">
+                Browse Caterers
+            </a>
+
+            <a asp-controller="User"
+               asp-action="Orders"
+               class="btn-secondary-main">
+                View All Catering Requests
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["Error"] is string errorMessage)
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+
+    @if (TempData["Success"] is string successMessage)
+    {
+        <div class="success-box">@successMessage</div>
+    }
+
+    <div class="cards-section">
+        <div class="info-card">
+            <h3>Total Requests</h3>
+            <p class="dashboard-number">@Model.TotalOrders</p>
+        </div>
+
+        <div class="info-card">
+            <h3>Total Spent</h3>
+            <p class="dashboard-number">@Model.TotalSpent.ToString("0.00") TL</p>
+        </div>
+
+        <div class="info-card">
+            <h3>Total Guests Ordered</h3>
+            <p class="dashboard-number">@Model.TotalItemsPurchased</p>
+        </div>
+    </div>
+
+    <div class="table-card">
+        <div class="page-header-row">
+            <div>
+                <h2 class="section-title">Recent Catering Requests</h2>
+                <p class="page-subtitle">
+                    Open chat and live call from any recent catering request.
+                </p>
+            </div>
+
+            <a asp-controller="User"
+               asp-action="Orders"
+               class="btn-secondary-main">
+                View All
+            </a>
+        </div>
+
+        @if (Model.RecentOrders is null || !Model.RecentOrders.Any())
+        {
+            <div class="empty-box">
+                <h3>No catering requests yet</h3>
+                <p>You have not created any catering request yet.</p>
+
+                <a asp-controller="User"
+                   asp-action="Index"
+                   class="btn-main">
+                    Browse Caterers
+                </a>
+            </div>
+        }
+        else
+        {
+            <div class="group-stack">
+                @foreach (var order in Model.RecentOrders)
+                {
+                    <div class="group-card">
+                        <div class="group-card-header">
+                            <div>
+                                <h3>Catering Request #@order.Id</h3>
+
+                                <div class="cart-meta">
+                                    <strong>Request Date:</strong>
+                                    @order.OrderDate.ToString("dd MMM yyyy HH:mm")
+                                </div>
+
+                                <div class="cart-meta">
+                                    <strong>Status:</strong>
+                                    @order.Status
+                                </div>
+
+                                <div class="cart-meta">
+                                    <strong>Event Type:</strong>
+                                    @order.EventType
+                                </div>
+
+                                @if (order.EventDate.HasValue)
+                                {
+                                    <div class="cart-meta">
+                                        <strong>Event Date:</strong>
+                                        @order.EventDate.Value.ToString("dd MMM yyyy HH:mm")
+                                    </div>
+                                }
+
+                                <div class="cart-meta">
+                                    <strong>Total Guest Count:</strong>
+                                    @order.GuestCount
+                                </div>
+
+                                <div class="cart-meta">
+                                    <strong>Total Estimated Price:</strong>
+                                    @order.TotalPrice.ToString("0.00") TL
+                                </div>
+                            </div>
+
+                            <div class="group-actions">
+                                <a asp-controller="OrderChat"
+                                   asp-action="Room"
+                                   asp-route-id="@order.Id"
+                                   class="btn-main">
+                                    Open Chat / Live Call
+                                </a>
+
+                                <a asp-controller="User"
+                                   asp-action="Receipt"
+                                   asp-route-id="@order.Id"
+                                   class="btn-secondary-main">
+                                    View Receipt
+                                </a>
+                            </div>
+                        </div>
+
+                        @if (order.OrderItems is not null && order.OrderItems.Any())
+                        {
+                            <div class="option-list">
+                                @foreach (var item in order.OrderItems)
+                                {
+                                    <div class="option-row">
+                                        <div>
+                                            <strong>@(item.MenuItem?.Name ?? "Catering Package")</strong>
+
+                                            <span class="option-meta">
+                                                Guest Count: @item.Quantity |
+                                                Price Per Person: @item.FinalUnitPrice.ToString("0.00") TL |
+                                                Package Total: @item.LineTotal.ToString("0.00") TL
+                                            </span>
+
+                                            @if (item.MenuItem?.Caretaker is not null)
+                                            {
+                                                <span class="option-meta">
+                                                    Caterer: @item.MenuItem.Caretaker.FullName
+                                                </span>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+

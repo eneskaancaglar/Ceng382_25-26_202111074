@@ -1,4 +1,4 @@
-using TasteAtDoor.Models;
+﻿using TasteAtDoor.Models;
 
 namespace TasteAtDoor.Models.ViewModels
 {
@@ -8,3 +8,4 @@ namespace TasteAtDoor.Models.ViewModels
         public decimal TotalPrice => Items.Sum(i => i.LineTotal);
     }
 }
+

@@ -1,4 +1,4 @@
-@model TasteAtDoor.Models.Order
+﻿@model TasteAtDoor.Models.Order
 
 @{
     ViewData["Title"] = "Catering Receipt";
@@ -56,7 +56,7 @@
             <p><strong>Request ID:</strong> #@Model.Id</p>
             <p><strong>Request Date:</strong> @Model.OrderDate.ToString("dd MMM yyyy HH:mm")</p>
             <p><strong>Status:</strong> @Model.Status</p>
-            <p><strong>Total Estimated Price:</strong> @Model.TotalPrice.ToString("0.00") ₺</p>
+            <p><strong>Total Estimated Price:</strong> @Model.TotalPrice.ToString("0.00") TL</p>
         </div>
 
         <div class="table-card">
@@ -130,7 +130,7 @@
                                                 @if (customization.PriceChange != 0)
                                                 {
                                                     <span>
-                                                        (@customization.PriceChange.ToString("0.00") ₺ / person)
+                                                        (@customization.PriceChange.ToString("0.00") TL / person)
                                                     </span>
                                                 }
                                             </li>
@@ -145,9 +145,9 @@
 
                             <td>@(item.MenuItem?.Caretaker?.FullName ?? "Caterer")</td>
                             <td>@item.Quantity</td>
-                            <td>@item.BaseUnitPrice.ToString("0.00") ₺</td>
-                            <td>@item.FinalUnitPrice.ToString("0.00") ₺</td>
-                            <td>@item.LineTotal.ToString("0.00") ₺</td>
+                            <td>@item.BaseUnitPrice.ToString("0.00") TL</td>
+                            <td>@item.FinalUnitPrice.ToString("0.00") TL</td>
+                            <td>@item.LineTotal.ToString("0.00") TL</td>
                         </tr>
                     }
                 </tbody>
@@ -155,3 +155,4 @@
         }
     </div>
 </div>
+

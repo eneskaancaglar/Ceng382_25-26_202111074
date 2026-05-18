@@ -1,4 +1,4 @@
-namespace TasteAtDoor.Models
+﻿namespace TasteAtDoor.Models
 {
     public class OrderItem
     {
@@ -22,3 +22,4 @@ namespace TasteAtDoor.Models
         public ICollection<OrderItemReview> Reviews { get; set; } = new List<OrderItemReview>();
     }
 }
+

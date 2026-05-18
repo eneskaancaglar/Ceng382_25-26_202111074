@@ -1,4 +1,4 @@
-/* =========================================================
+﻿/* =========================================================
    TasteAtDoor - Clean Site Styles
    Replaces the overloaded site.css safely.
    Main background: light gray.
@@ -1953,3 +1953,1114 @@ textarea {
         align-items: center;
         justify-content: center;
     }
+/* =========================================================
+   FINAL LAYOUT FIX
+   Topbar spans the full page width.
+   Sidebar starts under the topbar.
+   Brand/logo stays inside the topbar.
+   Sidebar/menu corners are rounded like cards.
+   ========================================================= */
+
+.modern-app-shell {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+    grid-template-rows: 78px minmax(0, 1fr);
+    background: var(--modern-bg);
+}
+
+/* Allows topbar and content to become direct grid items */
+.modern-main {
+    display: contents;
+}
+
+.modern-topbar {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    width: 100%;
+    height: 78px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    padding: 0 30px;
+    border-bottom: 1px solid var(--modern-border);
+    border-radius: 0 0 22px 22px;
+    box-shadow: 0 12px 30px rgba(36, 33, 36, 0.10);
+}
+
+.modern-topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 26px;
+    min-width: 0;
+}
+
+.modern-topbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    text-decoration: none;
+    color: var(--modern-red) !important;
+    background: rgba(255, 255, 255, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    padding: 8px 14px 8px 8px;
+    border-radius: 24px;
+    box-shadow: 0 10px 22px rgba(36, 33, 36, 0.08);
+    flex-shrink: 0;
+}
+
+    .modern-topbar-brand:hover {
+        color: var(--modern-red-dark) !important;
+        background: rgba(255, 255, 255, 0.55);
+        transform: translateY(-1px);
+    }
+
+.modern-topbar-logo-box {
+    width: 48px;
+    height: 48px;
+    border-radius: 18px;
+}
+
+.modern-topbar-brand-text strong {
+    color: var(--modern-red);
+}
+
+.modern-topbar-brand-text small {
+    color: rgba(122, 6, 19, 0.70);
+}
+
+/* Hide the old brand from the sidebar because it is now in the topbar */
+.modern-sidebar > .modern-sidebar-brand {
+    display: none !important;
+}
+
+.modern-sidebar {
+    grid-column: 1;
+    grid-row: 2;
+    position: sticky;
+    top: 78px;
+    height: calc(100vh - 78px);
+    padding: 22px;
+    border-radius: 0 24px 24px 0;
+    box-shadow: 10px 0 30px rgba(36, 33, 36, 0.14);
+}
+
+.modern-sidebar-nav {
+    background: rgba(255, 255, 255, 0.045);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 24px;
+    padding: 10px;
+}
+
+.modern-sidebar-link {
+    border-radius: 18px;
+}
+
+.modern-content {
+    grid-column: 2;
+    grid-row: 2;
+    min-width: 0;
+    padding: 30px;
+    background: var(--modern-bg);
+}
+
+@media (max-width: 900px) {
+    .modern-app-shell {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto 1fr;
+    }
+
+    .modern-topbar {
+        grid-column: 1;
+        grid-row: 1;
+        height: auto;
+        min-height: 78px;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 12px 16px;
+    }
+
+    .modern-sidebar {
+        grid-column: 1;
+        grid-row: 2;
+        position: relative;
+        top: 0;
+        height: auto;
+        border-radius: 0 0 24px 24px;
+    }
+
+    .modern-sidebar-nav {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    }
+
+    .modern-content {
+        grid-column: 1;
+        grid-row: 3;
+        padding: 18px;
+    }
+}
+
+/* =========================================================
+   Final UI consistency fixes
+   - black detail text
+   - one font across the site
+   - smaller general buttons
+   - embedded map on user caterer page
+   ========================================================= */
+
+:root {
+    --app-font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+body,
+.modern-app-body,
+.modern-app-body *:not(svg):not(path) {
+    font-family: var(--app-font-family) !important;
+}
+
+/* Make gray request/detail texts black and consistent */
+.cart-meta,
+.option-meta,
+.restaurant-meta,
+.menu-meta,
+.checkout-summary-row,
+.group-card p,
+.group-card span:not(.restaurant-status-pill):not(.rating-inline-badge),
+.group-card div:not(.restaurant-status-pill):not(.rating-inline-badge),
+.table-card,
+.table-card td,
+.table-card th,
+.order-success-box,
+.selected-address-box,
+.location-picker-card p,
+.location-picker-card span:not(.restaurant-status-pill) {
+    color: #111827 !important;
+}
+
+.page-subtitle,
+.restaurant-bio,
+.restaurant-bio-large {
+    color: #374151 !important;
+}
+
+/* Keep big headings in the same strong style */
+.page-title,
+.section-title,
+.available-hero h1,
+.auth-card h1,
+.auth-card h2,
+.auth-card h3,
+.group-card-header h3,
+.restaurant-card-body-modern h3,
+.location-picker-card h2 {
+    font-family: var(--app-font-family) !important;
+    font-weight: 900 !important;
+    letter-spacing: -0.03em;
+}
+
+/* Smaller general buttons */
+.btn-main,
+.btn-secondary-main,
+.modern-logout-button {
+    padding: 8px 14px !important;
+    min-height: 36px !important;
+    border-radius: 10px !important;
+    font-size: 0.9rem !important;
+    line-height: 1.1 !important;
+}
+
+.modern-account-pill {
+    padding: 5px 10px 5px 5px !important;
+}
+
+.modern-account-avatar {
+    width: 36px !important;
+    height: 36px !important;
+}
+
+/* Keep package/detail add-to-cart style comfortable */
+.restaurant-menu-actions .btn-main,
+.restaurant-menu-actions .btn-secondary-main,
+.menu-detail-actions .btn-main,
+.menu-detail-actions .btn-secondary-main,
+.caterer-card-footer-modern .btn-main {
+    min-height: 42px !important;
+    padding: 10px 16px !important;
+    border-radius: 12px !important;
+}
+
+/* User caterer page embedded map */
+.location-picker-card {
+    background: #fff;
+    border: 1px solid var(--modern-border);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--modern-shadow-soft);
+    padding: 22px;
+}
+
+.location-picker-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 18px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+    .location-picker-header h2 {
+        color: var(--modern-red);
+        margin: 0 0 6px 0;
+    }
+
+.embedded-location-map {
+    width: 100%;
+    height: 390px;
+    border-radius: 18px;
+    background: #e5e7eb;
+    border: 1px solid var(--modern-border);
+    overflow: hidden;
+}
+
+.location-picker-footer {
+    margin-top: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.selected-address-box {
+    flex: 1 1 420px;
+    background: #f9fafb;
+    border: 1px solid var(--modern-border);
+    border-radius: 14px;
+    padding: 12px 14px;
+}
+
+.btn-compact-action {
+    white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+    .embedded-location-map {
+        height: 320px;
+    }
+
+    .location-picker-footer {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+        .location-picker-footer .btn-main {
+            width: 100%;
+        }
+}
+
+/* FINAL BUTTON SIZE FIX */
+/* General buttons smaller, but package/menu action buttons stay comfortable */
+
+.btn-main,
+.btn-secondary-main,
+button.btn-main,
+button.btn-secondary-main,
+a.btn-main,
+a.btn-secondary-main {
+    padding: 8px 16px !important;
+    min-height: 38px !important;
+    height: auto !important;
+    font-size: 0.86rem !important;
+    line-height: 1.15 !important;
+    border-radius: 12px !important;
+}
+
+/* Dashboard top right buttons */
+.page-header-row .btn-main,
+.page-header-row .btn-secondary-main,
+.dashboard-shell .page-header-row .btn-main,
+.dashboard-shell .page-header-row .btn-secondary-main {
+    padding: 8px 18px !important;
+    min-height: 38px !important;
+    font-size: 0.85rem !important;
+    border-radius: 12px !important;
+}
+
+/* Recent orders / request cards action buttons */
+.group-actions {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 10px !important;
+    flex-wrap: wrap !important;
+}
+
+    .group-actions .btn-main,
+    .group-actions .btn-secondary-main,
+    .group-card .btn-main,
+    .group-card .btn-secondary-main {
+        width: auto !important;
+        min-width: 120px !important;
+        max-width: 180px !important;
+        min-height: 40px !important;
+        height: auto !important;
+        padding: 9px 14px !important;
+        font-size: 0.82rem !important;
+        border-radius: 12px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        text-align: center !important;
+        white-space: normal !important;
+    }
+
+    /* Specifically fix huge Open Chat / View Receipt buttons */
+    .group-actions a[href*="OrderChat"],
+    .group-actions a[href*="Receipt"],
+    .group-actions a[href*="OrderDocument"] {
+        width: auto !important;
+        min-width: 120px !important;
+        max-width: 170px !important;
+        min-height: 40px !important;
+        padding: 9px 14px !important;
+        font-size: 0.82rem !important;
+    }
+
+/* Keep menu/package buttons readable */
+.restaurant-menu-actions .btn-main,
+.restaurant-menu-actions .btn-secondary-main,
+.menu-detail-actions .btn-main,
+.menu-detail-actions .btn-secondary-main,
+.caterer-card-footer-modern .btn-main,
+.caterer-card-footer-modern .btn-secondary-main {
+    min-height: 44px !important;
+    padding: 10px 18px !important;
+    font-size: 0.9rem !important;
+}
+
+/* Form/filter buttons smaller */
+.table-card .btn-main,
+.table-card .btn-secondary-main,
+form .btn-main,
+form .btn-secondary-main {
+    min-height: 38px !important;
+    padding: 8px 16px !important;
+    font-size: 0.84rem !important;
+}
+
+/* Make request text black and consistent */
+.group-card,
+.group-card *,
+.cart-meta,
+.option-meta,
+.page-subtitle,
+.dashboard-shell p,
+.dashboard-shell span,
+.dashboard-shell div {
+    color: #111827 !important;
+}
+
+    /* Keep red headings red */
+    .page-title,
+    .group-card h3,
+    .group-card-header h3,
+    .available-hero h1,
+    .restaurant-menu-hero h1,
+    .auth-card h1 {
+        color: #8b0014 !important;
+    }
+    /* FINAL REQUEST CARD BUTTON COLOR + SIZE FIX */
+    /* Applies to buttons inside Catering Request cards */
+
+    .group-card .group-actions .btn-main,
+    .group-card .group-actions .btn-secondary-main,
+    .group-card .group-actions a.btn-main,
+    .group-card .group-actions a.btn-secondary-main,
+    .group-card .group-actions a[href*="OrderChat"],
+    .group-card .group-actions a[href*="Receipt"],
+    .group-card .group-actions a[href*="OrderDocument"] {
+        background: #ffc72c !important;
+        color: #111827 !important;
+        border: 1px solid #e0a800 !important;
+        min-width: 145px !important;
+        max-width: 190px !important;
+        min-height: 48px !important;
+        padding: 11px 18px !important;
+        font-size: 0.88rem !important;
+        font-weight: 800 !important;
+        line-height: 1.2 !important;
+        border-radius: 14px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        text-align: center !important;
+        box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08) !important;
+    }
+
+        /* Hover effect */
+        .group-card .group-actions .btn-main:hover,
+        .group-card .group-actions .btn-secondary-main:hover,
+        .group-card .group-actions a.btn-main:hover,
+        .group-card .group-actions a.btn-secondary-main:hover,
+        .group-card .group-actions a[href*="OrderChat"]:hover,
+        .group-card .group-actions a[href*="Receipt"]:hover,
+        .group-card .group-actions a[href*="OrderDocument"]:hover {
+            background: #f2b900 !important;
+            color: #111827 !important;
+            border-color: #d39e00 !important;
+            transform: translateY(-1px);
+        }
+
+        /* Keep button text black even if old styles target spans/text */
+        .group-card .group-actions .btn-main *,
+        .group-card .group-actions .btn-secondary-main *,
+        .group-card .group-actions a.btn-main *,
+        .group-card .group-actions a.btn-secondary-main * {
+            color: #111827 !important;
+        }
+/* FINAL PACKAGE CARD IMAGE SIZE FIX */
+/* Makes catering package images smaller and consistent */
+
+.restaurant-menu-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 340px)) !important;
+    gap: 24px !important;
+    justify-content: center !important;
+    align-items: stretch !important;
+}
+
+.restaurant-menu-card {
+    max-width: 340px !important;
+    width: 100% !important;
+    border-radius: 20px !important;
+    overflow: hidden !important;
+}
+
+.restaurant-menu-image-wrapper {
+    width: 100% !important;
+    height: 180px !important;
+    max-height: 180px !important;
+    overflow: hidden !important;
+    border-radius: 18px 18px 0 0 !important;
+    background: #f3f4f6 !important;
+}
+
+.restaurant-menu-image {
+    width: 100% !important;
+    height: 180px !important;
+    max-height: 180px !important;
+    object-fit: cover !important;
+    object-position: center !important;
+    display: block !important;
+}
+
+.restaurant-menu-card-body {
+    padding: 18px !important;
+}
+
+/* Placeholder image area should also have the same size */
+.restaurant-menu-image-wrapper .menu-detail-image-placeholder,
+.restaurant-menu-card .menu-detail-image-placeholder {
+    width: 100% !important;
+    height: 180px !important;
+    max-height: 180px !important;
+    border-radius: 18px 18px 0 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* Mobile view */
+@media (max-width: 768px) {
+    .restaurant-menu-grid {
+        grid-template-columns: 1fr !important;
+        justify-content: stretch !important;
+    }
+
+    .restaurant-menu-card {
+        max-width: 100% !important;
+    }
+
+        .restaurant-menu-image-wrapper,
+        .restaurant-menu-image,
+        .restaurant-menu-image-wrapper .menu-detail-image-placeholder,
+        .restaurant-menu-card .menu-detail-image-placeholder {
+            height: 170px !important;
+            max-height: 170px !important;
+        }
+}
+/* FINAL PACKAGE CARDS LEFT ALIGN FIX */
+/* Catering package cards start from the left instead of being centered */
+
+.restaurant-menu-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 340px)) !important;
+    gap: 24px !important;
+    justify-content: start !important;
+    justify-items: start !important;
+    align-items: stretch !important;
+    width: 100% !important;
+}
+
+.restaurant-menu-card {
+    width: 340px !important;
+    max-width: 340px !important;
+    justify-self: start !important;
+}
+
+/* Mobile: full width */
+@media (max-width: 768px) {
+    .restaurant-menu-grid {
+        grid-template-columns: 1fr !important;
+        justify-content: stretch !important;
+        justify-items: stretch !important;
+    }
+
+    .restaurant-menu-card {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+}
+/* FINAL PACKAGE CARD HEIGHT + IMAGE NO-CROP FIX */
+/* Package cards stay equal height and images are fully visible */
+
+.restaurant-menu-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 340px)) !important;
+    gap: 24px !important;
+    justify-content: start !important;
+    justify-items: start !important;
+    align-items: stretch !important;
+    width: 100% !important;
+}
+
+.restaurant-menu-card {
+    width: 340px !important;
+    max-width: 340px !important;
+    min-height: 620px !important;
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    border-radius: 20px !important;
+    overflow: hidden !important;
+}
+
+.restaurant-menu-image-wrapper {
+    width: 100% !important;
+    height: 240px !important;
+    min-height: 240px !important;
+    max-height: 240px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: hidden !important;
+    background: #f3f4f6 !important;
+    border-radius: 18px 18px 0 0 !important;
+}
+
+.restaurant-menu-image {
+    width: 100% !important;
+    height: 100% !important;
+    max-height: 240px !important;
+    object-fit: contain !important;
+    object-position: center !important;
+    display: block !important;
+    background: #f3f4f6 !important;
+}
+
+.restaurant-menu-card-body {
+    flex: 1 1 auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 18px !important;
+}
+
+.restaurant-menu-description {
+    min-height: 88px !important;
+}
+
+.restaurant-menu-actions {
+    margin-top: auto !important;
+}
+
+/* Placeholder image area same size */
+.restaurant-menu-image-wrapper .menu-detail-image-placeholder,
+.restaurant-menu-card .menu-detail-image-placeholder {
+    width: 100% !important;
+    height: 240px !important;
+    min-height: 240px !important;
+    max-height: 240px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 18px 18px 0 0 !important;
+    background: #f3f4f6 !important;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    .restaurant-menu-grid {
+        grid-template-columns: 1fr !important;
+        justify-content: stretch !important;
+        justify-items: stretch !important;
+    }
+
+    .restaurant-menu-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-height: auto !important;
+    }
+
+        .restaurant-menu-image-wrapper,
+        .restaurant-menu-image,
+        .restaurant-menu-image-wrapper .menu-detail-image-placeholder,
+        .restaurant-menu-card .menu-detail-image-placeholder {
+            height: 220px !important;
+            min-height: 220px !important;
+            max-height: 220px !important;
+        }
+}
+/* FINAL RATE PACKAGE BUTTON FIX */
+/* Makes Rate Package button yellow and slightly larger */
+
+.option-row .btn-secondary-main,
+.option-row a.btn-secondary-main[href*="OrderReview"],
+.option-row a[href*="OrderReview"] {
+    background: #ffc72c !important;
+    color: #111827 !important;
+    border: 1px solid #e0a800 !important;
+    min-width: 145px !important;
+    min-height: 46px !important;
+    padding: 11px 18px !important;
+    font-size: 0.88rem !important;
+    font-weight: 800 !important;
+    line-height: 1.2 !important;
+    border-radius: 14px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08) !important;
+}
+
+    .option-row .btn-secondary-main:hover,
+    .option-row a.btn-secondary-main[href*="OrderReview"]:hover,
+    .option-row a[href*="OrderReview"]:hover {
+        background: #f2b900 !important;
+        color: #111827 !important;
+        border-color: #d39e00 !important;
+        transform: translateY(-1px);
+    }
+/* FINAL PAGINATION BUTTON FIX */
+/* Bottom Previous / Next buttons like Logout button */
+
+.table-card .d-flex.gap-2 .btn-secondary-main,
+.table-card a.btn-secondary-main[asp-action="Orders"],
+.table-card a.btn-secondary-main[href*="Orders"],
+.table-card a.btn-secondary-main[href*="page="] {
+    background: #8b0014 !important;
+    color: #ffffff !important;
+    border: 1px solid #8b0014 !important;
+    min-width: 110px !important;
+    min-height: 42px !important;
+    padding: 10px 18px !important;
+    font-size: 0.86rem !important;
+    font-weight: 800 !important;
+    border-radius: 14px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 8px 18px rgba(139, 0, 20, 0.18) !important;
+}
+
+    .table-card .d-flex.gap-2 .btn-secondary-main:hover,
+    .table-card a.btn-secondary-main[href*="Orders"]:hover,
+    .table-card a.btn-secondary-main[href*="page="]:hover {
+        background: #6f0010 !important;
+        color: #ffffff !important;
+        border-color: #6f0010 !important;
+        transform: translateY(-1px);
+    }
+/* FINAL AGREEMENT PDF PREVIEW PAGE FIX */
+.agreement-preview-card {
+    color: #111827 !important;
+}
+
+    .agreement-preview-card h2 {
+        color: #8b0014 !important;
+        font-weight: 900 !important;
+        margin-bottom: 8px;
+    }
+
+.agreement-preview-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+}
+
+.agreement-preview-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.agreement-download-button,
+.agreement-accept-button {
+    background: #ffc72c !important;
+    color: #111827 !important;
+    border: 1px solid #e0a800 !important;
+    min-height: 48px !important;
+    padding: 12px 20px !important;
+    border-radius: 14px !important;
+    font-weight: 900 !important;
+}
+
+    .agreement-download-button:hover,
+    .agreement-accept-button:hover {
+        background: #f2b900 !important;
+        color: #111827 !important;
+    }
+
+.agreement-pdf-frame-wrapper {
+    width: 100%;
+    height: 760px;
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+    overflow: hidden;
+    background: #f3f4f6;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+}
+
+.agreement-pdf-frame {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    background: #ffffff;
+}
+
+.agreement-readable-note {
+    margin-top: 18px;
+    background: #fff8dc;
+    border: 1px solid #f2d477;
+    border-radius: 18px;
+    padding: 16px 18px;
+    color: #111827 !important;
+    line-height: 1.45;
+}
+
+.agreement-checkbox-box {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: #fff8dc;
+    border: 1px solid #f2d477;
+    border-radius: 18px;
+    padding: 18px;
+    margin: 18px 0;
+}
+
+    .agreement-checkbox-box input {
+        margin-top: 5px;
+        width: 20px;
+        height: 20px;
+    }
+
+    .agreement-checkbox-box label {
+        font-weight: 800;
+        line-height: 1.45;
+        color: #111827 !important;
+    }
+
+.agreement-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+    .agreement-pdf-frame-wrapper {
+        height: 560px;
+    }
+
+    .agreement-preview-actions,
+    .agreement-actions {
+        justify-content: stretch;
+    }
+
+        .agreement-preview-actions a,
+        .agreement-actions a,
+        .agreement-actions button {
+            width: 100%;
+        }
+}
+
+/* =========================
+   TasteAtDoor Modern Dashboards
+   ========================= */
+
+.td-dashboard {
+    padding: 28px 0 40px;
+}
+
+.td-hero {
+    position: relative;
+    overflow: hidden;
+    border-radius: 28px;
+    padding: 34px;
+    color: #fff;
+    background: radial-gradient(circle at top left, rgba(255,255,255,.28), transparent 35%), linear-gradient(135deg, #ff7a18 0%, #ff3d54 45%, #42145f 100%);
+    box-shadow: 0 22px 55px rgba(66, 20, 95, .24);
+    margin-bottom: 24px;
+}
+
+    .td-hero.caterer {
+        background: radial-gradient(circle at top left, rgba(255,255,255,.26), transparent 35%), linear-gradient(135deg, #0f9b8e 0%, #1572a1 45%, #241468 100%);
+    }
+
+    .td-hero.admin {
+        background: radial-gradient(circle at top left, rgba(255,255,255,.25), transparent 35%), linear-gradient(135deg, #212529 0%, #3f2b96 48%, #a8c0ff 100%);
+    }
+
+    .td-hero::after {
+        content: "";
+        position: absolute;
+        right: -70px;
+        top: -70px;
+        width: 220px;
+        height: 220px;
+        border-radius: 50%;
+        background: rgba(255,255,255,.16);
+    }
+
+.td-hero-content {
+    position: relative;
+    z-index: 2;
+}
+
+.td-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 13px;
+    border-radius: 999px;
+    background: rgba(255,255,255,.18);
+    backdrop-filter: blur(8px);
+    font-weight: 700;
+    font-size: .82rem;
+    letter-spacing: .4px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+}
+
+.td-hero h1 {
+    font-size: clamp(2rem, 4vw, 3.4rem);
+    font-weight: 850;
+    line-height: 1.05;
+    margin-bottom: 14px;
+}
+
+.td-hero p {
+    max-width: 720px;
+    font-size: 1.05rem;
+    opacity: .94;
+    margin-bottom: 22px;
+}
+
+.td-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.td-btn-light,
+.td-btn-outline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 999px;
+    padding: 11px 18px;
+    text-decoration: none;
+    font-weight: 800;
+    transition: .2s ease;
+}
+
+.td-btn-light {
+    background: #fff;
+    color: #2d123f;
+    box-shadow: 0 12px 25px rgba(0,0,0,.16);
+}
+
+    .td-btn-light:hover {
+        transform: translateY(-2px);
+        color: #2d123f;
+    }
+
+.td-btn-outline {
+    color: #fff;
+    border: 1px solid rgba(255,255,255,.45);
+    background: rgba(255,255,255,.08);
+}
+
+    .td-btn-outline:hover {
+        background: rgba(255,255,255,.18);
+        color: #fff;
+        transform: translateY(-2px);
+    }
+
+.td-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.td-stat-card {
+    border: 1px solid rgba(15, 23, 42, .08);
+    background: rgba(255,255,255,.92);
+    border-radius: 22px;
+    padding: 20px;
+    box-shadow: 0 15px 35px rgba(15, 23, 42, .08);
+}
+
+    .td-stat-card .label {
+        font-size: .82rem;
+        color: #64748b;
+        font-weight: 750;
+        text-transform: uppercase;
+        letter-spacing: .4px;
+    }
+
+    .td-stat-card .value {
+        margin-top: 6px;
+        font-size: 1.9rem;
+        font-weight: 850;
+        color: #111827;
+    }
+
+    .td-stat-card .hint {
+        margin-top: 4px;
+        color: #64748b;
+        font-size: .9rem;
+    }
+
+.td-section-title {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 26px 0 14px;
+}
+
+    .td-section-title h2 {
+        font-size: 1.35rem;
+        font-weight: 850;
+        color: #111827;
+        margin: 0;
+    }
+
+    .td-section-title p {
+        margin: 0;
+        color: #64748b;
+    }
+
+.td-action-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.td-action-card {
+    position: relative;
+    overflow: hidden;
+    display: block;
+    min-height: 170px;
+    padding: 22px;
+    border-radius: 24px;
+    text-decoration: none;
+    color: #111827;
+    background: #fff;
+    border: 1px solid rgba(15, 23, 42, .08);
+    box-shadow: 0 16px 38px rgba(15, 23, 42, .08);
+    transition: .22s ease;
+}
+
+    .td-action-card:hover {
+        transform: translateY(-5px);
+        color: #111827;
+        box-shadow: 0 22px 46px rgba(15, 23, 42, .13);
+    }
+
+.td-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 17px;
+    display: grid;
+    place-items: center;
+    font-size: 1.45rem;
+    margin-bottom: 18px;
+    background: #fff3e8;
+}
+
+.td-action-card h3 {
+    font-size: 1.1rem;
+    font-weight: 850;
+    margin-bottom: 8px;
+}
+
+.td-action-card p {
+    color: #64748b;
+    margin: 0;
+    font-size: .94rem;
+}
+
+.td-soft-panel {
+    margin-top: 18px;
+    border-radius: 24px;
+    padding: 22px;
+    background: linear-gradient(135deg, #fff7ed, #ffffff);
+    border: 1px solid rgba(251, 146, 60, .20);
+}
+
+    .td-soft-panel h3 {
+        font-weight: 850;
+        font-size: 1.15rem;
+        margin-bottom: 8px;
+    }
+
+    .td-soft-panel p {
+        color: #64748b;
+        margin-bottom: 0;
+    }
+
+@media (max-width: 992px) {
+    .td-stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .td-action-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 576px) {
+    .td-hero {
+        padding: 24px;
+    }
+
+    .td-stats-grid,
+    .td-action-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .td-section-title {
+        align-items: start;
+        flex-direction: column;
+    }
+}

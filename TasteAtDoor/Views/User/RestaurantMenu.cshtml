@@ -1,4 +1,4 @@
-@model TasteAtDoor.Models.ViewModels.RestaurantMenuPageViewModel
+﻿@model TasteAtDoor.Models.ViewModels.RestaurantMenuPageViewModel
 
 @{
     ViewData["Title"] = $"{Model.RestaurantName} Packages";
@@ -44,7 +44,7 @@
                     @if (Model.CatererReviewCount > 0)
                     {
                         <small class="rating-inline-badge">
-                            ⭐ @Model.AverageCatererRating.ToString("0.0") / 5
+                            â­ @Model.AverageCatererRating.ToString("0.0") / 5
                             (@Model.CatererReviewCount reviews)
                         </small>
                     }
@@ -145,7 +145,7 @@
                             @if (hasMenuRating)
                             {
                                 <small class="rating-inline-badge">
-                                    ⭐ @menuAverage.ToString("0.0") / 5
+                                    â­ @menuAverage.ToString("0.0") / 5
                                     (@menuReviewCount)
                                 </small>
                             }
@@ -166,7 +166,7 @@
                         </p>
 
                         <p>
-                            <strong>Price Per Guest:</strong> @item.Price.ToString("0.00") ₺
+                            <strong>Price Per Guest:</strong> @item.Price.ToString("0.00") TL
                         </p>
 
                         @if (!Model.CanOrder)
@@ -222,3 +222,5 @@
         });
     </script>
 }
+
+

@@ -1,4 +1,4 @@
-namespace TasteAtDoor.Services
+﻿namespace TasteAtDoor.Services
 {
     public interface IGoogleMapsService
     {
@@ -17,3 +17,4 @@ namespace TasteAtDoor.Services
             double lon2);
     }
 }
+

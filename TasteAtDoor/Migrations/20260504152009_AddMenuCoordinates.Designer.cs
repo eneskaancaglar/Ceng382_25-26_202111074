@@ -775,3 +775,4 @@ namespace TasteAtDoor.Migrations
         }
     }
 }
+

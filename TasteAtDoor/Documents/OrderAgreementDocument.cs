@@ -226,7 +226,7 @@ namespace TasteAtDoor.Documents
                 AddInfoRow(table, "Total Guest Count", _order.GuestCount > 0 ? _order.GuestCount.ToString() : CalculateGuestCount().ToString());
                 AddInfoRow(table, "Event Address", Safe(_order.EventAddress, "Not specified"));
                 AddInfoRow(table, "Customer Note", Safe(_order.EventNote, "None"));
-                AddInfoRow(table, "Total Estimated Price", $"{_order.TotalPrice:0.00} ₺");
+                AddInfoRow(table, "Total Estimated Price", $"{_order.TotalPrice:0.00} TL");
             });
         }
 
@@ -285,7 +285,7 @@ namespace TasteAtDoor.Documents
                             foreach (var customization in item.SelectedCustomizations)
                             {
                                 var price = customization.PriceChange != 0
-                                    ? $" ({customization.PriceChange:0.00} ₺ / guest)"
+                                    ? $" ({customization.PriceChange:0.00} TL / guest)"
                                     : "";
 
                                 package.Item().Text($"- {customization.GroupTitle}: {customization.OptionName}{price}")
@@ -302,16 +302,16 @@ namespace TasteAtDoor.Documents
 
                     table.Cell().Element(BodyCell).Text(Safe(item.MenuItem?.Caretaker?.FullName, "Caterer"));
                     table.Cell().Element(BodyCell).Text(item.Quantity.ToString());
-                    table.Cell().Element(BodyCell).Text($"{item.BaseUnitPrice:0.00} ₺");
-                    table.Cell().Element(BodyCell).Text($"{item.FinalUnitPrice:0.00} ₺");
-                    table.Cell().Element(BodyCell).Text($"{item.LineTotal:0.00} ₺");
+                    table.Cell().Element(BodyCell).Text($"{item.BaseUnitPrice:0.00} TL");
+                    table.Cell().Element(BodyCell).Text($"{item.FinalUnitPrice:0.00} TL");
+                    table.Cell().Element(BodyCell).Text($"{item.LineTotal:0.00} TL");
                 }
             });
 
             column.Item()
                 .AlignRight()
                 .PaddingTop(5)
-                .Text($"GRAND TOTAL: {_order.TotalPrice:0.00} ₺")
+                .Text($"GRAND TOTAL: {_order.TotalPrice:0.00} TL")
                 .Bold()
                 .FontSize(12)
                 .FontColor(Colors.Red.Darken4);
@@ -590,3 +590,4 @@ namespace TasteAtDoor.Documents
         }
     }
 }
+

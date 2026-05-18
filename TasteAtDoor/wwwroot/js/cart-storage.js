@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
     const STORAGE_KEY = "tasteAtDoorCart";
     const DEFAULT_MIN_GUESTS = 1;
     const DEFAULT_MAX_GUESTS = 100000;

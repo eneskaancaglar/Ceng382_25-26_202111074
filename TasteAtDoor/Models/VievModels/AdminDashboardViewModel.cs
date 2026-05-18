@@ -1,4 +1,4 @@
-using TasteAtDoor.Models;
+﻿using TasteAtDoor.Models;
 
 namespace TasteAtDoor.Models.ViewModels
 {
@@ -24,3 +24,4 @@ namespace TasteAtDoor.Models.ViewModels
         public List<AppLog> RecentLogs { get; set; } = new();
     }
 }
+

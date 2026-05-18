@@ -1,4 +1,4 @@
-@{
+﻿@{
     ViewData["Title"] = "Package Cart";
 }
 
@@ -7,10 +7,24 @@
         <div>
             <h1 class="page-title">Package Cart</h1>
             <p class="page-subtitle">
-                Review selected catering packages and update guest counts before payment.
+                Review selected catering packages and update guest counts before agreement and payment.
             </p>
         </div>
     </div>
+
+    @if (TempData["Error"] is string error)
+    {
+        <div class="alert alert-danger">
+            @error
+        </div>
+    }
+
+    @if (TempData["Success"] is string success)
+    {
+        <div class="alert alert-success">
+            @success
+        </div>
+    }
 
     <div id="cart-empty-state" class="empty-box" style="display:none;">
         <h3>Your cart is empty</h3>
@@ -23,7 +37,22 @@
         <h3 id="cart-total-price">Total Price: 0.00</h3>
 
         <div class="checkout-button-row">
-            <a asp-controller="Cart" asp-action="Checkout" class="btn-main">Proceed to Payment</a>
+            <form id="agreement-form"
+                  asp-controller="Cart"
+                  asp-action="Agreement"
+                  method="post"
+                  class="cart-agreement-form">
+                @Html.AntiForgeryToken()
+
+                <input type="hidden"
+                       id="cart-json-input"
+                       name="cartJson"
+                       value="" />
+
+                <button type="submit" class="btn-main">
+                    Review Agreement and Continue
+                </button>
+            </form>
         </div>
     </div>
 </div>
@@ -37,11 +66,14 @@
                 return;
             }
 
+            const agreementForm = document.getElementById("agreement-form");
+            const cartJsonInput = document.getElementById("cart-json-input");
+
             function formatMoney(value) {
                 return new Intl.NumberFormat("tr-TR", {
-                    style: "currency",
-                    currency: "TRY"
-                }).format(value);
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }).format(value) + " TL";
             }
 
             function escapeHtml(value) {
@@ -59,6 +91,15 @@
 
             function getTotal(cart) {
                 return cart.reduce((sum, item) => sum + (item.finalUnitPrice * item.quantity), 0);
+            }
+
+            function syncAgreementCartJson() {
+                if (!cartJsonInput) {
+                    return;
+                }
+
+                const cart = window.TasteAtDoorCart.getCart();
+                cartJsonInput.value = JSON.stringify(cart);
             }
 
             function renderSelectedOptions(item) {
@@ -139,6 +180,7 @@
                 if (cart.length === 0) {
                     emptyBox.style.display = "block";
                     summaryBox.style.display = "none";
+                    syncAgreementCartJson();
                     return;
                 }
 
@@ -238,9 +280,25 @@
                 });
 
                 totalBox.textContent = "Total Price: " + formatMoney(getTotal(cart));
+                syncAgreementCartJson();
+            }
+
+            if (agreementForm) {
+                agreementForm.addEventListener("submit", function (event) {
+                    const cart = window.TasteAtDoorCart.getCart();
+
+                    if (!cart || cart.length === 0) {
+                        event.preventDefault();
+                        alert("Your package cart is empty.");
+                        return;
+                    }
+
+                    cartJsonInput.value = JSON.stringify(cart);
+                });
             }
 
             render();
         });
     </script>
 }
+

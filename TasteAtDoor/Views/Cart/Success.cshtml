@@ -1,4 +1,4 @@
-@model TasteAtDoor.Models.ViewModels.OrderSuccessViewModel
+﻿@model TasteAtDoor.Models.ViewModels.OrderSuccessViewModel
 
 @{
     ViewData["Title"] = "Catering Request Created";
@@ -25,7 +25,7 @@
 
             <div><strong>Total Guest Count:</strong> @Model.GuestCount</div>
             <div><strong>Event Address:</strong> @Model.EventAddress</div>
-            <div><strong>Total Estimated Price:</strong> @Model.TotalPrice.ToString("0.00") ₺</div>
+            <div><strong>Total Estimated Price:</strong> @Model.TotalPrice.ToString("0.00") TL</div>
         </div>
 
         <div class="hero-buttons">
@@ -73,3 +73,4 @@
         });
     </script>
 }
+

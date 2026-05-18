@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace TasteAtDoor.Models;
 
@@ -22,3 +22,4 @@ public class Caterer
 
     public ICollection<MenuItem> MenuItems { get; set; } = new List<MenuItem>();
 }
+

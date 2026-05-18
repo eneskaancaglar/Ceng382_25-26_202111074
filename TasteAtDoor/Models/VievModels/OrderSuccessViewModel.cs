@@ -1,4 +1,4 @@
-namespace TasteAtDoor.Models.ViewModels
+﻿namespace TasteAtDoor.Models.ViewModels
 {
     public class OrderSuccessViewModel
     {
@@ -19,3 +19,4 @@ namespace TasteAtDoor.Models.ViewModels
         public string EventAddress { get; set; } = string.Empty;
     }
 }
+

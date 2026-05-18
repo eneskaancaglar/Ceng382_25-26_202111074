@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace TasteAtDoor.Models.ViewModels
 {
@@ -20,3 +20,4 @@ namespace TasteAtDoor.Models.ViewModels
         public string Comment { get; set; } = string.Empty;
     }
 }
+

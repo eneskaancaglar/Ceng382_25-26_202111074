@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace TasteAtDoor.Models.ViewModels.Account
 {
@@ -18,3 +18,4 @@ namespace TasteAtDoor.Models.ViewModels.Account
         public bool RememberMe { get; set; } = false;
     }
 }
+

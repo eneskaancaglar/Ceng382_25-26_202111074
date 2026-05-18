@@ -1,4 +1,4 @@
-using TasteAtDoor.Models;
+﻿using TasteAtDoor.Models;
 
 namespace TasteAtDoor.Models.ViewModels
 {
@@ -10,3 +10,4 @@ namespace TasteAtDoor.Models.ViewModels
         public List<Order> RecentOrders { get; set; } = new();
     }
 }
+

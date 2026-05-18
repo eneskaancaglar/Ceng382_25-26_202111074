@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 using TasteAtDoor.Models;
 
@@ -24,5 +24,31 @@ namespace TasteAtDoor.Controllers
                 RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier
             });
         }
+        [HttpGet]
+        public IActionResult Dashboard()
+        {
+            if (!User.Identity?.IsAuthenticated ?? true)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            if (User.IsInRole("Admin"))
+            {
+                return RedirectToAction("Dashboard", "Admin");
+            }
+
+            if (User.IsInRole("Caterer") || User.IsInRole("Caretaker"))
+            {
+                return RedirectToAction("Dashboard", "Caretaker");
+            }
+
+            if (User.IsInRole("User"))
+            {
+                return RedirectToAction("Dashboard", "User");
+            }
+
+            return RedirectToAction("Index", "Home");
+        }
     }
 }
+

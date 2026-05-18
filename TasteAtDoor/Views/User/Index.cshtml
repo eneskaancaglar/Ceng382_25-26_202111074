@@ -1,4 +1,4 @@
-@model TasteAtDoor.Models.ViewModels.RestaurantListPageViewModel
+﻿@model TasteAtDoor.Models.ViewModels.RestaurantListPageViewModel
 
 @{
     ViewData["Title"] = "Available Caterers";
@@ -10,30 +10,72 @@
             <span class="available-eyebrow">TasteAtDoor</span>
             <h1>Available Caterers Near You</h1>
             <p>
-                Choose a caterer first. Distances are calculated from your saved location.
-                You can request catering packages from caterers within 15 km.
+                Select or update your location from the map, then choose a caterer.
+                You can view all catering packages, and requests are allowed within 15 km.
             </p>
         </div>
-
-        <a asp-controller="User" asp-action="MyLocation" class="btn-secondary-main">
-            Change My Location
-        </a>
     </div>
+
+    @if (TempData["Success"] is string success)
+    {
+        <div class="success-box">@success</div>
+    }
 
     @if (TempData["Error"] is string error)
     {
         <div class="alert alert-danger mb-3">@error</div>
     }
 
+    <div class="location-picker-card">
+        <div class="location-picker-header">
+            <div>
+                <h2>Choose Your Location</h2>
+                <p>
+                    Click on the map to select your event location. Caterer distances will be calculated from this point.
+                </p>
+            </div>
+
+            @if (Model.UserLocationSaved)
+            {
+                <span class="restaurant-status-pill status-open">Location saved</span>
+            }
+            else
+            {
+                <span class="restaurant-status-pill status-closed">Location required</span>
+            }
+        </div>
+
+        <form asp-controller="User" asp-action="MyLocation" method="post" class="location-picker-form">
+            @Html.AntiForgeryToken()
+
+            <input type="hidden" name="returnUrl" value="@Url.Action("Index", "User", new { search = Model.Search })" />
+
+            <div id="locationMap" class="embedded-location-map"></div>
+
+            <div class="location-picker-footer">
+                <div class="selected-address-box">
+                    <strong>Selected address:</strong>
+                    <span id="selectedAddressText">@(Model.UserAddress ?? "No location selected yet.")</span>
+                </div>
+
+                <input type="hidden" name="Latitude" id="Latitude" value="@Model.UserLatitude" />
+                <input type="hidden" name="Longitude" id="Longitude" value="@Model.UserLongitude" />
+                <input type="hidden" name="Address" id="Address" value="@Model.UserAddress" />
+
+                <button type="submit" class="btn-main btn-compact-action">
+                    Save Location
+                </button>
+            </div>
+        </form>
+    </div>
+
     @if (!Model.UserLocationSaved)
     {
         <div class="empty-state-card">
-            <h2>Save your location first</h2>
-            <p>You must save your location before viewing caterers near you.</p>
-
-            <a asp-controller="User" asp-action="MyLocation" class="btn-main">
-                Save My Location
-            </a>
+            <h2>Select your location first</h2>
+            <p>
+                Use the map above and save your location to calculate nearby caterers.
+            </p>
         </div>
     }
     else
@@ -45,7 +87,7 @@
                    placeholder="Search by caterer name, address, or description..."
                    class="form-control" />
 
-            <button type="submit" class="btn-main">
+            <button type="submit" class="btn-main btn-compact-action">
                 Search
             </button>
         </form>
@@ -102,7 +144,7 @@
                                 @if (caterer.CatererReviewCount > 0)
                                 {
                                     <small class="rating-inline-badge">
-                                        ⭐ @caterer.AverageCatererRating.ToString("0.0") / 5
+                                        â­ @caterer.AverageCatererRating.ToString("0.0") / 5
                                         (@caterer.CatererReviewCount)
                                     </small>
                                 }
@@ -168,3 +210,14 @@
         }
     }
 </div>
+
+@section Scripts {
+    <script src="~/js/location-save-map.js" asp-append-version="true"></script>
+
+    <script async
+            src="https://maps.googleapis.com/maps/api/js?key=@ViewBag.GoogleMapsApiKey&loading=async&language=en&region=US&callback=initLocationSaveMap&libraries=marker,geocoding&v=weekly">
+    </script>
+}
+
+
+

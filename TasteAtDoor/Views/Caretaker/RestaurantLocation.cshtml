@@ -1,4 +1,4 @@
-@model TasteAtDoor.Models.ViewModels.LocationInputViewModel
+﻿@model TasteAtDoor.Models.ViewModels.LocationInputViewModel
 
 @{
     ViewData["Title"] = "Restaurant Location";
@@ -47,6 +47,7 @@
     <script src="~/js/location-save-map.js" asp-append-version="true"></script>
 
     <script async
-            src="https://maps.googleapis.com/maps/api/js?key=@ViewBag.GoogleMapsApiKey&loading=async&callback=initLocationSaveMap&libraries=marker,geocoding&v=weekly">
-    </script>
+        src="https://maps.googleapis.com/maps/api/js?key=@ViewBag.GoogleMapsApiKey&loading=async&language=en&region=US&callback=initLocationSaveMap&libraries=marker,geocoding&v=weekly">       </script>
 }
+
+

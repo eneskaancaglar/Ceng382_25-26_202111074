@@ -1,0 +1,268 @@
+﻿@model TasteAtDoor.Models.ViewModels.AgreementViewModel
+
+@{
+    ViewData["Title"] = "Catering Agreement";
+}
+
+<div class="page-header-row">
+    <div>
+        <h1 class="page-title">Catering Agreement</h1>
+        <p class="page-subtitle">
+            Please review and accept the agreement before continuing to payment.
+        </p>
+    </div>
+
+    <a asp-controller="Cart" asp-action="Index" class="btn-secondary-main">
+        Back to Cart
+    </a>
+</div>
+
+@if (TempData["Error"] is string error)
+{
+    <div class="alert alert-danger">
+        @error
+    </div>
+}
+
+@if (TempData["Success"] is string success)
+{
+    <div class="alert alert-success">
+        @success
+    </div>
+}
+
+<div class="table-card agreement-card">
+    <div class="agreement-header">
+        <div>
+            <h2>Catering Service Agreement</h2>
+            <p>
+                Agreement No:
+                <strong>@Model.AgreementNumber</strong>
+            </p>
+        </div>
+
+        <div class="agreement-date-box">
+            <span>Agreement Date</span>
+            <strong>@Model.AgreementDate.ToString("dd MMMM yyyy HH:mm")</strong>
+        </div>
+    </div>
+
+    <hr />
+
+    <section class="agreement-section">
+        <h3>1. Parties</h3>
+
+        <p>
+            This Catering Service Agreement is made electronically between the customer and the selected caterer or caterers
+            through the TasteAtDoor platform. The customer confirms that the selected catering packages, guest counts,
+            service details, estimated prices, and package conditions have been reviewed before payment.
+        </p>
+
+        <div class="agreement-info-grid">
+            <div>
+                <span>Customer Name</span>
+                <strong>@Model.CustomerName</strong>
+            </div>
+
+            <div>
+                <span>Customer Email</span>
+                <strong>@Model.CustomerEmail</strong>
+            </div>
+
+            <div>
+                <span>Customer Address / Location</span>
+                <strong>@(string.IsNullOrWhiteSpace(Model.CustomerAddress) ? "Saved customer location will be used." : Model.CustomerAddress)</strong>
+            </div>
+        </div>
+    </section>
+
+    <section class="agreement-section">
+        <h3>2. Selected Catering Packages</h3>
+
+        <div class="agreement-package-list">
+            @foreach (var item in Model.Packages)
+            {
+                <div class="agreement-package-card">
+                    <div class="agreement-package-top">
+                        <div>
+                            <h4>@item.PackageName</h4>
+                            <p>@item.CatererName</p>
+                        </div>
+
+                        <div class="agreement-package-price">
+                            <span>Total</span>
+                            <strong>@item.TotalPrice.ToString("N2") ₺</strong>
+                        </div>
+                    </div>
+
+                    <div class="agreement-package-grid">
+                        <div>
+                            <span>Event Type</span>
+                            <strong>@(string.IsNullOrWhiteSpace(item.EventType) ? "Not specified" : item.EventType)</strong>
+                        </div>
+
+                        <div>
+                            <span>Package Category</span>
+                            <strong>@(string.IsNullOrWhiteSpace(item.PackageCategory) ? "Not specified" : item.PackageCategory)</strong>
+                        </div>
+
+                        <div>
+                            <span>Guest Count</span>
+                            <strong>@item.GuestCount</strong>
+                        </div>
+
+                        <div>
+                            <span>Price Per Person</span>
+                            <strong>@item.PricePerPerson.ToString("N2") ₺</strong>
+                        </div>
+
+                        <div>
+                            <span>Minimum Guest Count</span>
+                            <strong>@(item.MinimumGuestCount?.ToString() ?? "Not specified")</strong>
+                        </div>
+
+                        <div>
+                            <span>Maximum Guest Count</span>
+                            <strong>@(item.MaximumGuestCount?.ToString() ?? "Not specified")</strong>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(item.Description))
+                    {
+                        <div class="agreement-text-block">
+                            <span>Package Description</span>
+                            <p>@item.Description</p>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(item.IncludedItems))
+                    {
+                        <div class="agreement-text-block">
+                            <span>Included Items</span>
+                            <p>@item.IncludedItems</p>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(item.ServiceDetails))
+                    {
+                        <div class="agreement-text-block">
+                            <span>Service Details</span>
+                            <p>@item.ServiceDetails</p>
+                        </div>
+                    }
+
+                    <div class="agreement-includes-row">
+                        <span class="agreement-badge @(item.IncludesMainCourse ? "active" : "")">Main Course</span>
+                        <span class="agreement-badge @(item.IncludesDessert ? "active" : "")">Dessert</span>
+                        <span class="agreement-badge @(item.IncludesSnacks ? "active" : "")">Snacks</span>
+                        <span class="agreement-badge @(item.IncludesDrinks ? "active" : "")">Drinks</span>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="agreement-total-box">
+            <div>
+                <span>Total Guest Count</span>
+                <strong>@Model.TotalGuestCount</strong>
+            </div>
+
+            <div>
+                <span>Total Estimated Price</span>
+                <strong>@Model.TotalEstimatedPrice.ToString("N2") ₺</strong>
+            </div>
+        </div>
+    </section>
+
+    <section class="agreement-section">
+        <h3>3. Payment Condition and Order Creation</h3>
+
+        <p>
+            The customer understands and accepts that this agreement review step does not create a confirmed catering order by itself.
+            The catering request will only be created after the customer completes the payment simulation successfully.
+        </p>
+
+        <p>
+            If the customer does not complete the payment step, no confirmed order will be created. In that case, the selected caterer
+            will not be under an obligation to prepare, reserve, deliver, or provide the selected catering service.
+        </p>
+    </section>
+
+    <section class="agreement-section">
+        <h3>4. Non-Payment Consequences</h3>
+
+        <p>
+            If payment is not completed, the customer cannot claim that a confirmed catering service has been purchased.
+            The platform may treat the unpaid request as incomplete. The caterer may continue to offer the same package to other customers,
+            and the selected price or availability may change until payment is completed.
+        </p>
+
+        <p>
+            The customer accepts that no delivery, preparation, staff assignment, ingredient purchase, reservation, compensation,
+            or damage claim can be demanded from the caterer or platform for an unpaid and incomplete request.
+        </p>
+    </section>
+
+    <section class="agreement-section">
+        <h3>5. Claims, Complaints, and Service Responsibility</h3>
+
+        <p>
+            After payment is completed and the order is created, the customer may submit claims or complaints only for the paid and confirmed
+            catering request. Claims must be related to the selected package details, guest count, included items, service details,
+            confirmed customer location, and confirmed order information.
+        </p>
+
+        <p>
+            The customer is responsible for providing accurate event information, address details, guest count, contact information,
+            and access conditions. Claims arising from incorrect or incomplete information provided by the customer may be rejected.
+        </p>
+    </section>
+
+    <section class="agreement-section">
+        <h3>6. Compensation and Legal Claims</h3>
+
+        <p>
+            The customer and caterer accept that compensation claims may only be evaluated for direct, proven, and order-related damages
+            connected to a paid and confirmed catering request. Indirect damages, loss of expectation, emotional damages, loss of reputation,
+            or speculative claims are outside the scope of this platform agreement unless required by mandatory law.
+        </p>
+
+        <p>
+            If a dispute occurs, the parties should first use the platform records, order details, payment status, messages, agreement PDF,
+            receipt information, and review records as supporting evidence. This agreement text is prepared for project demonstration purposes
+            and should be reviewed by a qualified legal professional before real commercial use.
+        </p>
+    </section>
+
+    <section class="agreement-section">
+        <h3>7. Customer Acceptance</h3>
+
+        <p>
+            By clicking the acceptance button below, the customer confirms that all selected package details, guest counts, estimated prices,
+            included services, payment conditions, non-payment consequences, claims rules, and compensation limits have been read and accepted.
+        </p>
+
+        <form asp-controller="Cart" asp-action="AcceptAgreement" method="post" class="agreement-accept-form">
+            @Html.AntiForgeryToken()
+
+            <div class="agreement-checkbox-box">
+                <input type="checkbox" id="accepted" name="accepted" value="true" />
+                <label for="accepted">
+                    I have read and accepted the catering agreement, payment condition, non-payment consequences,
+                    claims rules, and compensation terms.
+                </label>
+            </div>
+
+            <div class="agreement-actions">
+                <a asp-controller="Cart" asp-action="Index" class="btn-secondary-main">
+                    Back to Cart
+                </a>
+
+                <button type="submit" class="btn-main agreement-accept-button">
+                    I Accept and Continue to Payment
+                </button>
+            </div>
+        </form>
+    </section>
+</div>
+

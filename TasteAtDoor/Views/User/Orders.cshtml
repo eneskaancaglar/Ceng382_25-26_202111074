@@ -1,4 +1,4 @@
-@model TasteAtDoor.Models.ViewModels.OrderHistoryPageViewModel
+﻿@model TasteAtDoor.Models.ViewModels.OrderHistoryPageViewModel
 
 @{
     ViewData["Title"] = "My Catering Requests";
@@ -141,7 +141,7 @@
                             }
 
                             <div class="cart-meta">
-                                <strong>Total Estimated Price:</strong> @order.TotalPrice.ToString("0.00") ₺
+                                <strong>Total Estimated Price:</strong> @order.TotalPrice.ToString("0.00") TL
                             </div>
                         </div>
 
@@ -189,8 +189,8 @@
 
                                         <span class="option-meta">
                                             Guest Count: @item.Quantity |
-                                            Price Per Person: @item.FinalUnitPrice.ToString("0.00") ₺ |
-                                            Package Total: @item.LineTotal.ToString("0.00") ₺
+                                            Price Per Person: @item.FinalUnitPrice.ToString("0.00") TL |
+                                            Package Total: @item.LineTotal.ToString("0.00") TL
                                         </span>
 
                                         @if (item.MenuItem?.Caretaker is not null)
@@ -211,7 +211,7 @@
                                                         @if (customization.PriceChange != 0)
                                                         {
                                                             <span>
-                                                                (@customization.PriceChange.ToString("0.00") ₺ / guest)
+                                                                (@customization.PriceChange.ToString("0.00") TL / guest)
                                                             </span>
                                                         }
                                                     </li>
@@ -299,3 +299,4 @@
         </div>
     }
 </div>
+

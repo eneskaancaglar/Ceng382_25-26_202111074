@@ -1,6 +1,8 @@
 https://gemini.google.com/app/1eec5cc1ad6809fb
 https://gemini.google.com/app/8eff488634c0f88b
 https://chatgpt.com/c/69f4d88b-53c8-83eb-b77a-bc5bab30dd35
+https://chatgpt.com/g/g-p-69b954b9663c819191787a031e699bd0-ceng382/c/69fef701-5a1c-8395-a31c-8a1439633310
 https://chatgpt.com/c/69fefac3-a2e4-838d-b2fb-cb457f747a74
 https://chatgpt.com/g/g-p-69b954b9663c819191787a031e699bd0-ceng382/c/69fefbb2-a5a8-8392-9d7d-02fed7ca1536
-http://localhost:5002/
+https://chatgpt.com/g/g-p-69b954b9663c819191787a031e699bd0-ceng382/c/69e1db07-0cdc-83eb-90a0-a9dde6b2d165
+https://chatgpt.com/g/g-p-69b954b9663c819191787a031e699bd0-ceng382/c/69fef701-5a1c-8395-a31c-8a1439633310

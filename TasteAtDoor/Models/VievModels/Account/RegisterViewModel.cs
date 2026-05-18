@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace TasteAtDoor.Models.ViewModels.Account
 {
@@ -26,3 +26,4 @@ namespace TasteAtDoor.Models.ViewModels.Account
         public string Role { get; set; } = "User";
     }
 }
+

@@ -1,4 +1,4 @@
-namespace TasteAtDoor.Models.ViewModels
+﻿namespace TasteAtDoor.Models.ViewModels
 {
     public class ReviewListItemViewModel
     {
@@ -33,3 +33,4 @@ namespace TasteAtDoor.Models.ViewModels
         public decimal LineTotal { get; set; }
     }
 }
+

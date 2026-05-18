@@ -1,4 +1,4 @@
-namespace TasteAtDoor.Models
+﻿namespace TasteAtDoor.Models
 {
     public class OrderItemCustomization
     {
@@ -16,3 +16,4 @@ namespace TasteAtDoor.Models
         public decimal PriceChange { get; set; }
     }
 }
+

@@ -1,4 +1,4 @@
-namespace TasteAtDoor.Models.ViewModels
+﻿namespace TasteAtDoor.Models.ViewModels
 {
 	public class AdminUserListPageViewModel
 	{
@@ -13,3 +13,4 @@ namespace TasteAtDoor.Models.ViewModels
 		public int TotalPages { get; set; }
 	}
 }
+

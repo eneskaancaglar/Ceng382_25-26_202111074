@@ -339,3 +339,4 @@ namespace TasteAtDoor.Migrations
         }
     }
 }
+

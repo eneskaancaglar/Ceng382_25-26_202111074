@@ -1,0 +1,240 @@
+﻿@model TasteAtDoor.Models.ViewModels.CaretakerDashboardViewModel
+
+@{
+    ViewData["Title"] = "Caterer Dashboard";
+}
+
+<div class="dashboard-shell">
+    <div class="page-header-row">
+        <div>
+            <h1 class="page-title">Caterer Dashboard</h1>
+            <p class="page-subtitle">
+                Manage your catering packages, received catering requests, reviews, chat, and live calls.
+            </p>
+        </div>
+
+        <div class="hero-buttons">
+            <a asp-controller="Caretaker"
+               asp-action="Create"
+               class="btn-main">
+                Create Catering Package
+            </a>
+
+            <a asp-controller="Caretaker"
+               asp-action="Index"
+               class="btn-secondary-main">
+                My Catering Packages
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["Error"] is string errorMessage)
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+
+    @if (TempData["Success"] is string successMessage)
+    {
+        <div class="success-box">@successMessage</div>
+    }
+
+    <div class="cards-section">
+        <div class="info-card">
+            <h3>Total Packages</h3>
+            <p class="dashboard-number">@Model.TotalMenus</p>
+        </div>
+
+        <div class="info-card">
+            <h3>Received Requests</h3>
+            <p class="dashboard-number">@Model.TotalReceivedOrders</p>
+        </div>
+
+        <div class="info-card">
+            <h3>Completed Requests</h3>
+            <p class="dashboard-number">@Model.TotalCompletedOrders</p>
+        </div>
+
+        <div class="info-card">
+            <h3>Total Revenue</h3>
+            <p class="dashboard-number">@Model.TotalRevenue.ToString("0.00") TL</p>
+        </div>
+
+        <div class="info-card">
+            <h3>Average Rating</h3>
+
+            @if (Model.TotalReviewCount > 0)
+            {
+                <p class="dashboard-number">â­ @Model.AverageCatererRating.ToString("0.0") / 5</p>
+            }
+            else
+            {
+                <p class="dashboard-number">No rating</p>
+            }
+        </div>
+
+        <div class="info-card">
+            <h3>Total Reviews</h3>
+            <p class="dashboard-number">@Model.TotalReviewCount</p>
+        </div>
+    </div>
+
+    <div class="table-card">
+        <div class="page-header-row">
+            <div>
+                <h2 class="section-title">Recent Catering Requests</h2>
+                <p class="page-subtitle">
+                    Open the chat and live voice call for any customer request that includes one of your packages.
+                </p>
+            </div>
+
+            <a asp-controller="Caretaker"
+               asp-action="Reviews"
+               class="btn-secondary-main">
+                View Reviews
+            </a>
+        </div>
+
+        @if (Model.RecentOrderItems is null || !Model.RecentOrderItems.Any())
+        {
+            <div class="empty-box">
+                <h3>No received catering requests yet</h3>
+                <p>
+                    When customers request one of your catering packages, they will appear here.
+                </p>
+            </div>
+        }
+        else
+        {
+            <div class="group-stack">
+                @foreach (var item in Model.RecentOrderItems)
+                {
+                    var order = item.Order;
+                    var package = item.MenuItem;
+
+                    if (order is null)
+                    {
+                        continue;
+                    }
+
+                    <div class="group-card">
+                        <div class="group-card-header">
+                            <div>
+                                <h3>Catering Request #@order.Id</h3>
+
+                                <div class="cart-meta">
+                                    <strong>Package:</strong>
+                                    @(package?.Name ?? "Catering Package")
+                                </div>
+
+                                <div class="cart-meta">
+                                    <strong>Guest Count:</strong>
+                                    @item.Quantity
+                                </div>
+
+                                <div class="cart-meta">
+                                    <strong>Price Per Person:</strong>
+                                    @item.FinalUnitPrice.ToString("0.00") TL
+                                </div>
+
+                                <div class="cart-meta">
+                                    <strong>Package Total:</strong>
+                                    @item.LineTotal.ToString("0.00") TL
+                                </div>
+
+                                <div class="cart-meta">
+                                    <strong>Request Date:</strong>
+                                    @order.OrderDate.ToString("dd MMM yyyy HH:mm")
+                                </div>
+
+                                <div class="cart-meta">
+                                    <strong>Status:</strong>
+                                    @order.Status
+                                </div>
+
+                                <div class="cart-meta">
+                                    <strong>Event Type:</strong>
+                                    @order.EventType
+                                </div>
+
+                                @if (order.EventDate.HasValue)
+                                {
+                                    <div class="cart-meta">
+                                        <strong>Event Date:</strong>
+                                        @order.EventDate.Value.ToString("dd MMM yyyy HH:mm")
+                                    </div>
+                                }
+
+                                @if (!string.IsNullOrWhiteSpace(order.EventAddress))
+                                {
+                                    <div class="cart-meta">
+                                        <strong>Event Address:</strong>
+                                        @order.EventAddress
+                                    </div>
+                                }
+
+                                @if (!string.IsNullOrWhiteSpace(order.EventNote))
+                                {
+                                    <div class="cart-meta">
+                                        <strong>Event Note:</strong>
+                                        @order.EventNote
+                                    </div>
+                                }
+                            </div>
+
+                            <div class="group-actions">
+                                <a asp-controller="OrderChat"
+                                   asp-action="Room"
+                                   asp-route-id="@order.Id"
+                                   class="btn-main">
+                                    Open Chat / Live Call
+                                </a>
+
+                                <a asp-controller="OrderDocument"
+                                   asp-action="ReceiptPdf"
+                                   asp-route-id="@order.Id"
+                                   class="btn-secondary-main">
+                                    Receipt PDF
+                                </a>
+
+                                <a asp-controller="OrderDocument"
+                                   asp-action="AgreementPdf"
+                                   asp-route-id="@order.Id"
+                                   class="btn-secondary-main">
+                                    Agreement PDF
+                                </a>
+                            </div>
+                        </div>
+
+                        @if (item.SelectedCustomizations is not null && item.SelectedCustomizations.Any())
+                        {
+                            <div class="option-list">
+                                <div class="option-row">
+                                    <div>
+                                        <strong>Selected Package Options</strong>
+
+                                        <ul class="user-option-list mt-2">
+                                            @foreach (var customization in item.SelectedCustomizations)
+                                            {
+                                                <li>
+                                                    @customization.GroupTitle: @customization.OptionName
+
+                                                    @if (customization.PriceChange != 0)
+                                                    {
+                                                        <span>
+                                                            (@customization.PriceChange.ToString("0.00") TL / person)
+                                                        </span>
+                                                    }
+                                                </li>
+                                            }
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+

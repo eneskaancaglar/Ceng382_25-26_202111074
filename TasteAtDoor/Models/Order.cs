@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace TasteAtDoor.Models
 {
@@ -33,3 +33,4 @@ namespace TasteAtDoor.Models
         public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
     }
 }
+

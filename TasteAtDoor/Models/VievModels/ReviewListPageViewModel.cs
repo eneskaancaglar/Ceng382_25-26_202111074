@@ -1,4 +1,4 @@
-namespace TasteAtDoor.Models.ViewModels
+﻿namespace TasteAtDoor.Models.ViewModels
 {
     public class ReviewListPageViewModel
     {
@@ -21,3 +21,4 @@ namespace TasteAtDoor.Models.ViewModels
         public string PageTitle { get; set; } = "Reviews";
     }
 }
+

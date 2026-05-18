@@ -1,4 +1,4 @@
-html {
+﻿html {
     font-size: 14px;
     position: relative;
     min-height: 100%;
@@ -2614,7 +2614,7 @@ body {
     color: var(--text-main) !important;
 }
 
-/* Ana içerik alanı */
+/* Ana iÃ§erik alanÄ± */
 
 .app-main,
 .app-content {
@@ -2622,7 +2622,7 @@ body {
 }
 
 /* =========================================================
-   SOL MENÜ
+   SOL MENÃœ
    ========================================================= */
 
 .theme-sidebar {
@@ -2682,7 +2682,7 @@ body {
 }
 
 /* =========================================================
-   ÜST MENÜ
+   ÃœST MENÃœ
    ========================================================= */
 
 .theme-topbar {
@@ -2772,7 +2772,7 @@ body {
     }
 
 /* =========================================================
-   HERO / BAŞLIK BLOKLARI
+   HERO / BAÅLIK BLOKLARI
    ========================================================= */
 
 .available-hero,
@@ -2915,10 +2915,10 @@ body {
 }
 
 /* =========================================================
-   MENÜ KARTLARI
-   Burada istediğin şey:
-   kartın tamamı tek parça, sınırlar sert olmasın,
-   menü card ile arka plan arasında yumuşak görünüm olsun
+   MENÃœ KARTLARI
+   Burada istediÄŸin ÅŸey:
+   kartÄ±n tamamÄ± tek parÃ§a, sÄ±nÄ±rlar sert olmasÄ±n,
+   menÃ¼ card ile arka plan arasÄ±nda yumuÅŸak gÃ¶rÃ¼nÃ¼m olsun
    ========================================================= */
 
 .restaurant-menu-grid {
@@ -2939,7 +2939,7 @@ body {
         box-shadow: 0 20px 42px rgba(36, 25, 25, 0.10) !important;
     }
 
-/* Kartın üst görsel bölümü ile alt yazı bölümü arasında sert çizgi kaldırıldı */
+/* KartÄ±n Ã¼st gÃ¶rsel bÃ¶lÃ¼mÃ¼ ile alt yazÄ± bÃ¶lÃ¼mÃ¼ arasÄ±nda sert Ã§izgi kaldÄ±rÄ±ldÄ± */
 .restaurant-menu-image-wrapper {
     height: 235px !important;
     background: var(--surface) !important;
@@ -2956,7 +2956,7 @@ body {
     display: block !important;
 }
 
-/* Alt kısım da kartın devamı gibi */
+/* Alt kÄ±sÄ±m da kartÄ±n devamÄ± gibi */
 .restaurant-menu-card-body {
     background: var(--surface) !important;
     border-top: none !important;
@@ -2965,7 +2965,7 @@ body {
     border-bottom-right-radius: 34px !important;
 }
 
-/* İç aksiyonlar */
+/* Ä°Ã§ aksiyonlar */
 .restaurant-menu-actions {
     gap: 12px !important;
 }
@@ -3037,7 +3037,7 @@ body {
     }
 
 /* =========================================================
-   PROFİL
+   PROFÄ°L
    ========================================================= */
 
 .profile-avatar-wrap {
@@ -3048,7 +3048,7 @@ body {
     color: #fff !important;
 }
 
-/* Başarı kutusu */
+/* BaÅŸarÄ± kutusu */
 
 .success-box {
     background: #F1FAF4 !important;
@@ -3102,7 +3102,7 @@ body {
     color: var(--td-charcoal) !important;
 }
 
-/* Ana içerik alanı */
+/* Ana iÃ§erik alanÄ± */
 
 .app-main,
 .app-content {
@@ -3110,7 +3110,7 @@ body {
 }
 
 /* =========================================================
-   SOL MENÜ
+   SOL MENÃœ
    ========================================================= */
 
 .theme-sidebar {
@@ -3158,7 +3158,7 @@ body {
         box-shadow: none !important;
     }
 
-/* Logo alanı */
+/* Logo alanÄ± */
 
 .sidebar-logo-box,
 .guest-logo-box {
@@ -3179,7 +3179,7 @@ body {
 }
 
 /* =========================================================
-   ÜST MENÜ
+   ÃœST MENÃœ
    ========================================================= */
 
 .theme-topbar {
@@ -3280,7 +3280,7 @@ body {
     }
 
 /* =========================================================
-   HERO / BAŞLIK ALANLARI
+   HERO / BAÅLIK ALANLARI
    ========================================================= */
 
 .available-hero,
@@ -3447,8 +3447,8 @@ body {
 }
 
 /* =========================================================
-   MENÜ KARTLARI
-   Tek parça, yumuşak köşe, sert çizgisiz
+   MENÃœ KARTLARI
+   Tek parÃ§a, yumuÅŸak kÃ¶ÅŸe, sert Ã§izgisiz
    ========================================================= */
 
 .restaurant-menu-grid {
@@ -3513,7 +3513,7 @@ body {
     gap: 12px !important;
 }
 
-/* Görsel yok placeholder */
+/* GÃ¶rsel yok placeholder */
 
 .menu-detail-image-placeholder {
     background: var(--td-cream-soft) !important;
@@ -3522,7 +3522,7 @@ body {
 }
 
 /* =========================================================
-   MENÜ DETAY SAYFASI
+   MENÃœ DETAY SAYFASI
    ========================================================= */
 
 .menu-detail-layout {
@@ -3592,7 +3592,7 @@ body {
     }
 
 /* =========================================================
-   PROFİL
+   PROFÄ°L
    ========================================================= */
 
 .profile-avatar-wrap {
@@ -3605,7 +3605,7 @@ body {
 }
 
 /* =========================================================
-   UYARI / BAŞARI KUTULARI
+   UYARI / BAÅARI KUTULARI
    ========================================================= */
 
 .success-box {
@@ -3616,7 +3616,7 @@ body {
 }
 
 /* =========================================================
-   MOBİL
+   MOBÄ°L
    ========================================================= */
 
 @media (max-width: 768px) {
@@ -3661,7 +3661,7 @@ body {
     --td-red-glow: 0 12px 28px rgba(74, 4, 4, 0.22);
 }
 
-/* Genel yapı */
+/* Genel yapÄ± */
 
 html,
 body {
@@ -3675,7 +3675,7 @@ body {
 }
 
 /* =========================================================
-   SOL MENÜ
+   SOL MENÃœ
    ========================================================= */
 
 .theme-sidebar {
@@ -3736,7 +3736,7 @@ body {
 }
 
 /* =========================================================
-   ÜST MENÜ
+   ÃœST MENÃœ
    ========================================================= */
 
 .theme-topbar {
@@ -4002,8 +4002,8 @@ body {
 }
 
 /* =========================================================
-   MENÜ KARTLARI
-   Tek parça, yumuşak, premium
+   MENÃœ KARTLARI
+   Tek parÃ§a, yumuÅŸak, premium
    ========================================================= */
 
 .restaurant-menu-grid {
@@ -4156,7 +4156,7 @@ body {
     }
 
 /* =========================================================
-   PROFİL
+   PROFÄ°L
    ========================================================= */
 
 .profile-avatar-wrap {
@@ -4185,7 +4185,7 @@ body {
 }
 
 /* =========================================================
-   Küçük premium vurgular
+   KÃ¼Ã§Ã¼k premium vurgular
    ========================================================= */
 
 .section-title-accent,
@@ -4254,7 +4254,7 @@ body {
     background: var(--tk-cream);
 }
 
-/* Üst menü */
+/* Ãœst menÃ¼ */
 
 .tradition-header {
     position: sticky;
@@ -4454,7 +4454,7 @@ body {
     font-size: 1.05rem;
 }
 
-/* Bölüm başlığı şeridi */
+/* BÃ¶lÃ¼m baÅŸlÄ±ÄŸÄ± ÅŸeridi */
 
 .restaurant-card-grid,
 .restaurant-menu-grid {
@@ -4480,7 +4480,7 @@ body {
         border: 1px solid rgba(212, 175, 55, 0.22);
     }
 
-/* Restaurant kartları */
+/* Restaurant kartlarÄ± */
 
 .restaurant-card-modern,
 .restaurant-menu-card {
@@ -4526,7 +4526,7 @@ body {
     font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Görseller */
+/* GÃ¶rseller */
 
 .restaurant-menu-image-wrapper {
     height: 230px !important;
